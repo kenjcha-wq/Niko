@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nikwe - Professional Hub V67</title>
+    <title>Nikwe - Intelligent OS V77</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@100;400;600;800&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Sora:wght@100;400;600;800;900&family=Noto+Serif+SC:wght@700;900&display=swap');
         
         :root {
             --bg: #ffffff; 
-            --fg: #000000; /* 强制纯黑 */
+            --fg: #000000; 
             --glass: rgba(255, 255, 255, 0.98);
             --field: #f3f4f6; 
             --accent: #2563eb;
@@ -30,18 +30,15 @@
             font-family: 'Sora', 'PingFang SC', sans-serif;
             height: 100vh; width: 100vw; overflow: hidden; margin: 0;
             background-color: var(--bg);
-            /* 纸质质感点阵背景 - 稍微加深点 */
-            background-image: radial-gradient(rgba(0,0,0,0.15) 1px, transparent 0);
-            background-size: 30px 30px;
+            background-image: radial-gradient(rgba(0,0,0,0.1) 1px, transparent 0);
+            background-size: 32px 32px;
             color: var(--fg); 
             transition: all 0.3s ease;
         }
 
-        /* 强制显色类：物理级锁定黑色，解决隐身问题 */
-        .force-black { color: #000000 !important; opacity: 1 !important; }
+        .force-black { color: #000000 !important; opacity: 1 !important; font-style: normal !important; }
         .dark .force-black { color: #ffffff !important; }
 
-        /* 避让逻辑：面板开启隐藏底栏 */
         body.panel-active .master-dock-wrap { transform: translateY(250px); opacity: 0; pointer-events: none; }
 
         .glass-panel {
@@ -51,6 +48,34 @@
             box-shadow: 0 40px 80px -15px rgba(0,0,0,0.2);
         }
 
+        /* 核心修复：Dock 物理层级加固 */
+        .master-dock-wrap {
+            position: fixed; bottom: 30px; left: 0; width: 100vw;
+            display: flex; flex-direction: column; align-items: center; gap: 18px;
+            z-index: 99999;
+            transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: none; 
+        }
+        .master-dock-wrap > * { pointer-events: auto; }
+
+        .dock-row { display: flex; align-items: center; justify-content: center; gap: 12px; }
+        .dock-icon {
+            @apply h-14 w-14 glass-panel rounded-[24px] flex items-center justify-center hover:scale-110 active:scale-90 transition-all shadow-xl cursor-pointer;
+        }
+
+        /* 水印背景 */
+        .nik-watermark {
+            position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+            font-size: 28vw; font-weight: 900; letter-spacing: -0.05em;
+            color: rgba(0,0,0,0.03); z-index: -10; pointer-events: none; text-transform: uppercase;
+            white-space: nowrap; line-height: 1;
+        }
+        .dark .nik-watermark { color: rgba(255,255,255,0.015); }
+
+        .slogan-box { font-family: 'Noto Serif SC', serif; line-height: 1.1; font-style: normal !important; }
+        .slogan-main { font-size: 1.25rem; font-weight: 900; letter-spacing: 0.1em; }
+        .slogan-en { font-family: 'Sora', sans-serif; font-size: 0.5rem; letter-spacing: 0.12em; opacity: 0.3; font-weight: 800; margin-top: 1px; }
+
         input, textarea, select {
             width: 100% !important; height: 50px !important;
             background: var(--field) !important; border: 1px solid rgba(0,0,0,0.08) !important;
@@ -59,25 +84,17 @@
             color: var(--fg) !important; outline: none !important;
         }
 
-        .master-dock-wrap {
-            position: fixed; bottom: 30px; left: 0; width: 100vw;
-            display: flex; flex-direction: column; align-items: center; gap: 18px;
-            z-index: 1000; transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
-        }
-
-        .dock-row { display: flex; align-items: center; justify-content: center; gap: 12px; pointer-events: auto; }
-        .dock-icon {
-            @apply h-14 w-14 glass-panel rounded-[24px] flex items-center justify-center hover:scale-110 active:scale-90 transition-all shadow-xl cursor-pointer;
-        }
-        .ai-capsule { width: 560px; max-width: 94vw; pointer-events: auto; }
-
         .chat-user { background: var(--accent); color: white; border-radius: 1.5rem 1.5rem 0.2rem 1.5rem; padding: 1.2rem; margin-left: 2rem; }
         .chat-ai { background: var(--field); color: var(--fg); border-radius: 1.5rem 1.5rem 1.5rem 0.2rem; padding: 1.2rem; margin-right: 2rem; border: 1px solid rgba(0,0,0,0.05); }
+
+        .wp-thumb { width: 60px; height: 40px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; object-fit: cover; }
+        .wp-thumb.active { border-color: var(--accent); transform: scale(1.1); }
 
         @media (max-width: 640px) {
             .master-dock-wrap { bottom: 15px; }
             .dock-icon { height: 48px; width: 48px; border-radius: 14px; }
-            #display-time { font-size: 6.5rem; margin-top: 15vh !important; font-weight: 800; }
+            #display-time { font-size: 7.2rem; font-weight: 900; }
+            #main-content { padding-bottom: 200px; } /* 增加手机端底部避让 */
             .panel-drawer { width: 100vw !important; height: 100vh !important; border-radius: 0 !important; }
         }
     </style>
@@ -85,35 +102,33 @@
 <body class="theme-auto">
 
     <div id="wallpaper-layer" class="fixed inset-0 z-[-1] bg-center bg-cover transition-opacity duration-1000"></div>
-    
-    <!-- 顶部状态栏 -->
-    <header class="fixed top-8 left-8 right-8 flex justify-between items-center z-[100] select-none">
-        <div class="brand-logo flex items-center gap-1 text-xl force-black">
-            <span class="font-black">NIK</span>
-            <span class="font-thin opacity-50">WE</span>
+    <div class="nik-watermark select-none">NIKWE</div>
+
+    <header class="fixed top-10 left-8 right-8 flex justify-between items-start z-[100] select-none">
+        <div class="slogan-box force-black">
+            <div class="slogan-main">深井见志</div>
+            <div class="slogan-en uppercase">INSIGHT FROM THE DEEP</div>
         </div>
-        <div id="status-bar" class="text-[11px] font-black uppercase tracking-widest flex items-center gap-4 force-black">
-            <span id="cur-location" class="text-blue-600">--</span>
+        <div id="status-bar" class="text-[10px] font-black uppercase tracking-widest flex items-center gap-4 force-black pt-1">
+            <span id="cur-location" class="text-blue-600 bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded">CONNECTING</span>
             <span id="cur-temp">--°C</span>
-            <span id="cur-weather">CONNECTING</span>
+            <span id="cur-weather">STATION</span>
         </div>
     </header>
 
-    <!-- 看板主屏幕 -->
-    <main class="text-center flex flex-col items-center justify-center h-full pb-32">
-        <div id="display-time" class="text-8xl md:text-[12rem] tracking-tighter select-none force-black" style="font-weight: 800;">00:00</div>
-        <div id="display-date" class="text-[14px] md:text-[18px] uppercase tracking-[0.6em] italic font-black mb-10 force-black opacity-80">2026 / 04 / 06</div>
-        <nav id="home-tiles" class="flex flex-wrap justify-center gap-x-12 gap-y-5 text-[11px] font-black uppercase tracking-widest force-black"></nav>
+    <main id="main-content" class="relative text-center flex flex-col items-center justify-center h-full pb-32 z-[10]">
+        <div id="display-time" class="text-8xl md:text-[12rem] tracking-tighter select-none force-black leading-none font-black">00:00</div>
+        <div id="display-date" class="text-[14px] md:text-[18px] uppercase tracking-[0.7em] font-black force-black opacity-40 mt-6">2026 / 04 / 07</div>
+        <nav id="home-tiles" class="mt-12 flex flex-wrap justify-center gap-x-12 gap-y-5 text-[11px] font-black uppercase tracking-widest force-black"></nav>
     </main>
 
-    <!-- 交互 Dock -->
     <div class="master-dock-wrap" id="main-dock">
-        <div class="ai-capsule">
+        <div class="ai-capsule w-[560px] max-w-[94vw]">
             <div id="ai-box" class="glass-panel h-16 flex items-center px-5 gap-3 rounded-[32px] border-black/10 overflow-hidden">
                 <a id="bing-link" href="https://www.bing.com" target="_blank" class="w-12 h-12 flex items-center justify-center text-slate-400 hover:text-blue-600 transition-all">
                     <i data-lucide="globe" class="w-6 h-6"></i>
                 </a>
-                <input type="text" id="ai-input" class="!bg-transparent !border-none !shadow-none !p-0 font-bold flex-1 text-lg" placeholder="寻找对话或检索数据...">
+                <input type="text" id="ai-input" class="!bg-transparent !border-none !shadow-none !p-0 font-bold flex-1 text-lg" placeholder="寻求对话、撰写长文...">
                 <button id="voice-btn" onclick="toggleMic()" class="w-12 h-12 flex items-center justify-center text-slate-400 hover:text-blue-600">
                     <i data-lucide="mic" class="w-6 h-6"></i>
                 </button>
@@ -121,47 +136,64 @@
             </div>
         </div>
         <div class="dock-row">
-            <button id="btn-todo" class="dock-icon"><i data-lucide="calendar"></i></button>
-            <button id="btn-nb" class="dock-icon"><i data-lucide="book-marked"></i></button>
-            <button id="btn-sticky" class="dock-icon"><i data-lucide="layout-grid"></i></button>
-            <button id="btn-pm" class="dock-icon"><i data-lucide="shield-check" class="text-blue-600"></i></button>
-            <button id="btn-config" class="dock-icon"><i data-lucide="settings-2"></i></button>
+            <button id="nav-todo" class="dock-icon" title="待办"><i data-lucide="calendar"></i></button>
+            <button id="nav-nb" class="dock-icon" title="笔记"><i data-lucide="book-marked"></i></button>
+            <button id="nav-sticky" class="dock-icon" title="便签"><i data-lucide="layout-grid"></i></button>
+            <button id="nav-pm" class="dock-icon" title="私信"><i data-lucide="shield-check" class="text-blue-600"></i></button>
+            <button id="nav-config" class="dock-icon" title="系统"><i data-lucide="settings-2"></i></button>
         </div>
     </div>
 
-    <!-- 面板层 -->
+    <!-- 面板区 (保持原有功能) -->
     <div id="panel-sticky" class="fixed inset-0 panel-drawer glass-panel hidden flex-col p-10 animate-in z-[1100]">
         <div class="flex justify-between items-center mb-8 px-2"><h2 class="text-2xl font-black italic uppercase">Capsules</h2><div class="flex items-center gap-4"><button onclick="newSticky()" class="bg-black text-white px-5 py-2 rounded-full font-bold text-[10px] shadow-xl">+ NEW</button><button class="close-ui p-2"><i data-lucide="x"></i></button></div></div>
         <div id="sticky-grid" class="flex-1 overflow-y-auto chat-scroll space-y-12 pb-40 pr-2"></div>
     </div>
-
-    <div id="panel-todo" class="fixed inset-0 panel-drawer glass-panel hidden flex-col p-10 animate-in z-[1100]"><div class="flex justify-between items-center mb-8 px-2"><h2 class="text-2xl font-black italic uppercase force-black">Objectives</h2><button class="close-ui p-2"><i data-lucide="x"></i></button></div><div class="flex-1 flex flex-col min-h-0"><div class="bg-black/5 p-6 rounded-[2rem] mb-6 space-y-4"><input type="text" id="todo-in" placeholder="准备做什么？"><div class="flex gap-3"><input type="datetime-local" id="todo-tm" class="flex-1"><button onclick="addTodo()" class="bg-black text-white px-6 rounded-2xl font-bold uppercase text-[10px]">ADD</button></div></div><ul id="todo-list" class="space-y-4 overflow-y-auto chat-scroll flex-1 pr-2"></ul></div></div>
-    <div id="panel-nb" class="fixed inset-0 panel-drawer glass-panel hidden flex-col p-10 animate-in z-[1100]"><div class="flex justify-between items-center mb-8 px-2"><h2 class="text-2xl font-black italic uppercase force-black">Notebook</h2><button class="close-ui p-2"><i data-lucide="x"></i></button></div><textarea id="nb-val" placeholder="记录此时此刻..."></textarea><div class="flex gap-3 mt-4"><button onclick="saveNb()" class="flex-1 bg-black text-white py-5 rounded-2xl font-black text-[11px] uppercase shadow-lg">同步存档</button><button onclick="window.open('https://www.kdocs.cn')" class="bg-blue-50 text-blue-600 px-6 rounded-2xl flex items-center justify-center border border-blue-100" title="WPS云文档编辑"><i data-lucide="file-text"></i></button></div><div id="nb-hist" class="mt-8 flex-1 overflow-y-auto chat-scroll space-y-5 border-t border-black/5 pt-8"></div></div>
+    <div id="panel-todo" class="fixed inset-0 panel-drawer glass-panel hidden flex-col p-10 animate-in z-[1100]"><div class="flex justify-between items-center mb-8 px-2"><h2 class="text-2xl font-black italic uppercase force-black">Objectives</h2><button class="close-ui p-2"><i data-lucide="x"></i></button></div><div class="flex-1 flex flex-col min-h-0"><div class="bg-black/5 p-6 rounded-[2rem] mb-6 space-y-4"><input type="text" id="todo-in" placeholder="下一步计划..."><div class="flex gap-3"><input type="datetime-local" id="todo-tm" class="flex-1"><button onclick="addTodo()" class="bg-black text-white px-6 rounded-2xl font-bold uppercase text-[10px]">ADD</button></div></div><ul id="todo-list" class="space-y-4 overflow-y-auto chat-scroll flex-1 pr-2"></ul></div></div>
+    <div id="panel-nb" class="fixed inset-0 panel-drawer glass-panel hidden flex-col p-10 animate-in z-[1100]"><div class="flex justify-between items-center mb-8 px-2"><h2 class="text-2xl font-black italic uppercase force-black">Notebook</h2><button class="close-ui p-2"><i data-lucide="x"></i></button></div><textarea id="nb-val" placeholder="书写此刻..."></textarea><div class="flex gap-3 mt-4"><button onclick="saveNb()" class="flex-1 bg-black text-white py-5 rounded-2xl font-black text-[11px] uppercase shadow-lg">存档</button><button onclick="window.open('https://www.kdocs.cn')" class="bg-blue-50 text-blue-600 px-6 rounded-2xl flex items-center justify-center border border-blue-100"><i data-lucide="file-text"></i></button></div><div id="nb-hist" class="mt-8 flex-1 overflow-y-auto chat-scroll space-y-5 border-t border-black/5 pt-8"></div></div>
     
     <div id="panel-config" class="fixed inset-0 panel-drawer glass-panel hidden flex-col p-12 animate-in z-[1100]">
         <div class="flex justify-between items-center mb-10 px-2"><h2 class="text-2xl font-black italic uppercase force-black">System</h2><button class="close-ui p-2"><i data-lucide="x"></i></button></div>
         <div class="flex-1 overflow-y-auto chat-scroll space-y-8 pr-2">
             <div class="p-8 bg-slate-100/40 rounded-[2.5rem] border border-black/5 space-y-6">
                 <div class="flex items-center justify-between"><span class="text-xs font-bold">跟随系统主题</span><div id="sw-auto" class="sw-mini active"></div></div>
-                <div class="space-y-2"><label class="text-[9px] font-black uppercase opacity-40">日程接收邮箱</label><input id="cfg-email" placeholder="example@mail.com"></div>
-                <div class="space-y-2"><label class="text-[9px] font-black uppercase opacity-40 text-blue-600">私人笔记本网址 (接力口)</label><input id="cfg-note-url" placeholder="https://your-app.com"></div>
-                <div class="space-y-2"><label class="text-[9px] font-black uppercase opacity-40">自定义背景 URL</label><input id="cfg-bg" placeholder="图片链接..."></div>
+                <div class="space-y-4">
+                    <label class="text-[9px] font-black uppercase opacity-40">预设壁纸库</label>
+                    <div class="flex gap-3" id="wp-presets">
+                        <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=200&q=60" class="wp-thumb" data-url="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1920&q=80">
+                        <img src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=200&q=60" class="wp-thumb" data-url="https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1920&q=80">
+                        <img src="https://images.unsplash.com/photo-1477346611705-65d1883cee1e?auto=format&fit=crop&w=200&q=60" class="wp-thumb" data-url="https://images.unsplash.com/photo-1477346611705-65d1883cee1e?auto=format&fit=crop&w=1920&q=80">
+                        <div class="wp-thumb bg-slate-200 flex items-center justify-center text-[10px] font-bold" data-url="">DOTS</div>
+                    </div>
+                    <label class="text-[9px] font-black uppercase opacity-40 block mt-2">自定义背景 URL</label>
+                    <input id="cfg-bg" placeholder="https://...">
+                </div>
             </div>
             <div class="p-8 bg-slate-50 rounded-[2.5rem] border border-black/5 space-y-3">
-                <label class="text-[10px] font-black opacity-40 block text-center uppercase tracking-widest">API Configuration</label>
-                <input id="cfg-url" placeholder="API Endpoint"><input id="cfg-key" type="password" placeholder="API Key"><input id="cfg-model" placeholder="Model Name">
-                <button onclick="setLocalPreset()" class="w-full py-3 bg-blue-50 text-blue-600 rounded-xl text-[10px] font-black uppercase">一键 Ollama 预设</button>
+                <label class="text-[10px] font-black opacity-40 block text-center uppercase tracking-widest">Shortcut Tiles</label>
+                <div id="tile-list" class="space-y-2"></div>
+                <div class="space-y-3 mt-4"><input id="nt-n" placeholder="名称"><input id="nt-u" placeholder="网址"><button onclick="addTile()" class="bg-black text-white w-full py-4 rounded-xl font-bold text-[9px] uppercase">ADD TILE</button></div>
             </div>
-            <button onclick="saveSysCfg()" class="w-full bg-slate-950 text-white py-5 rounded-2xl font-black uppercase text-xs shadow-2xl">保存所有设置</button>
+            <div class="p-8 bg-slate-50 rounded-[2.5rem] border border-black/5 space-y-4">
+                <label class="text-[10px] font-black opacity-40 block text-center uppercase tracking-widest italic">API Configuration</label>
+                <input id="cfg-url" placeholder="API Endpoint"><input id="cfg-key" type="password" placeholder="API Key"><input id="cfg-model" placeholder="Model Name">
+                <input id="cfg-local-url" placeholder="Local Server (Ollama)"><input id="cfg-local-model" placeholder="Local Model">
+            </div>
+            <button onclick="saveSysCfg()" class="w-full bg-slate-950 text-white py-5 rounded-2xl font-black uppercase text-xs shadow-2xl">保存配置</button>
         </div>
     </div>
-    
-    <div id="panel-pm" class="fixed inset-0 panel-drawer glass-panel hidden flex-col p-12 animate-in z-[1100]"><div class="flex justify-between items-center mb-10 px-2"><h2 class="text-2xl font-black italic uppercase text-blue-600">Private</h2><button class="close-ui p-2"><i data-lucide="x"></i></button></div><div id="pm-auth" class="flex-1 flex flex-col items-center justify-center p-8 text-center animate-in"><div class="w-24 h-24 bg-slate-100 rounded-[3rem] mb-8 flex items-center justify-center text-slate-300 shadow-inner"><i data-lucide="shield-check" class="w-12 h-12"></i></div><input type="text" id="pm-room" placeholder="pairing_id" class="text-center mb-6"><button onclick="$('pm-auth').classList.add('hidden');$('pm-chat').classList.remove('hidden')" class="bg-black text-white w-full py-5 rounded-2xl font-bold uppercase text-[11px] shadow-xl">确认建立连接</button></div><div id="pm-chat" class="hidden flex-1 flex flex-col animate-in"><div class="flex-1 text-center opacity-20 italic text-sm mt-20">信道就绪</div><div class="mt-auto pt-8 border-t border-black/5"><input id="pm-msg" placeholder="输入内容..."><button class="w-full mt-4 bg-blue-600 text-white py-4 rounded-xl font-bold">SEND</button></div></div></div>
+
+    <!-- 私信面板 -->
+    <div id="panel-pm" class="fixed inset-0 panel-drawer glass-panel hidden flex-col p-12 animate-in z-[1100]">
+        <div class="flex justify-between items-center mb-10 px-2"><h2 class="text-2xl font-black italic uppercase text-blue-600">Private</h2><button class="close-ui p-2"><i data-lucide="x"></i></button></div>
+        <div id="pm-auth" class="flex-1 flex flex-col items-center justify-center p-8 text-center animate-in"><div class="w-24 h-24 bg-slate-100 rounded-[3rem] mb-8 flex items-center justify-center text-slate-300 shadow-inner"><i data-lucide="shield-check" class="w-12 h-12"></i></div><input type="text" id="pm-room" placeholder="pairing_id" class="text-center mb-6"><button onclick="$('pm-auth').classList.add('hidden');$('pm-chat').classList.remove('hidden')" class="bg-black text-white w-full py-5 rounded-2xl font-bold uppercase text-[11px] shadow-xl">连接</button></div>
+        <div id="pm-chat" class="hidden flex-1 flex flex-col animate-in"><div class="flex-1 text-center opacity-20 italic text-sm mt-20">加密信道就绪</div><div class="mt-auto pt-8 border-t border-black/5"><input id="pm-msg" placeholder="输入内容..."><button class="w-full mt-4 bg-blue-600 text-white py-4 rounded-xl font-bold">SEND</button></div></div>
+    </div>
 
     <div id="panel-hist" class="fixed inset-0 z-[1200] hidden animate-in">
         <div class="absolute inset-0 bg-black/60 backdrop-blur-md" onclick="toggleUI(null)"></div>
         <div class="absolute bottom-0 left-0 w-full h-[82vh] glass-panel rounded-t-[3.5rem] flex flex-col p-8 shadow-2xl">
-            <div class="flex justify-between items-center mb-6 px-2"> <span id="hist-title" class="text-[10px] font-black uppercase opacity-40 italic text-blue-600">Assistant Response</span>
+            <div class="flex justify-between items-center mb-6 px-2"> <span id="hist-title" class="text-[10px] font-black uppercase opacity-40 italic text-blue-600">Intelligence Result</span>
                 <div class="flex gap-4"> <button onclick="exportHistory()" class="text-slate-400 p-1"><i data-lucide="download" class="w-4 h-4"></i></button> <button onclick="clearHistory()" class="text-red-400 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button> <button onclick="toggleUI(null)" class="text-slate-400 p-2"><i data-lucide="chevron-down" class="w-6 h-6"></i></button> </div>
             </div>
             <div id="chat-log" class="flex-1 overflow-y-auto chat-scroll space-y-6 text-sm pr-2 pb-20"></div>
@@ -170,31 +202,48 @@
 
     <script>
         const $ = id => document.getElementById(id);
-        const LS = { get: k => JSON.parse(localStorage.getItem('nik_v67_' + k)), set: (k, v) => localStorage.setItem('nik_v67_' + k, JSON.stringify(v)) };
-        const cfg = LS.get('cfg') || { navs: [{ name: 'Github', url: 'https://github.com' }], ai: { url: '', key: '', model: '' }, bg: '', auto: true, email: '', noteUrl: '' };
+        const LS = { get: k => JSON.parse(localStorage.getItem('nik_v77_' + k)), set: (k, v) => localStorage.setItem('nik_v77_' + k, JSON.stringify(v)) };
+        const cfg = LS.get('cfg') || { navs: [{ name: 'Github', url: 'https://github.com' }], ai: { url: '', key: '', model: '', l_url: '', l_model: '' }, bg: '', auto: true };
         let todos = LS.get('todos') || [], nbs = LS.get('nbs') || [], sticks = LS.get('sticks') || [], history = LS.get('history') || [];
         let isRec = false, rec = null;
 
-        (function clockRun() {
+        (function runClock() {
             const up = () => {
                 const n = new Date();
                 if($('display-time')) $('display-time').textContent = n.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false });
                 if($('display-date')) $('display-date').textContent = n.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, ' / ');
-                checkReminders(n);
             };
-            up(); setInterval(up, 1000);
+            setInterval(up, 1000); up();
         })();
 
-        function checkReminders(now) {
-            const nowStr = (new Date(now - now.getTimezoneOffset() * 60000)).toISOString().slice(0, 16);
-            todos.forEach(t => { if (!t.done && t.time && t.time <= nowStr && !t.alerted) { t.alerted = true; LS.set('todos', todos); triggerNotify(t); } });
-        }
+        // --- 核心修复：稳定可靠的天气探测 ---
+        async function fetchWeather() {
+            try {
+                // 第一步：使用专门的地理定位 API（跨域友好）
+                const geo = await fetch('https://api.bigdatacloud.net/data/reverse-geocode-client').then(r => r.json());
+                const city = (geo.city || geo.locality || "LOCAL").toUpperCase();
+                
+                // 第二步：使用解析出的城市名请求天气
+                const res = await fetch(`https://wttr.in/${city}?format=j1`).then(r => r.json());
+                const temp = res.current_condition[0].temp_C;
+                const cond = res.current_condition[0].weatherDesc[0].value.toUpperCase();
 
-        function triggerNotify(todo) {
-            if (Notification.permission === "granted") new Notification("Nikwe Schedule", { body: `任务到点：${todo.text}` });
-            if (cfg.email) {
-                const mailto = `mailto:${cfg.email}?subject=${encodeURIComponent('[Nikwe 提醒] '+todo.text)}&body=${encodeURIComponent(todo.text+'\n时间: '+todo.time)}`;
-                setTimeout(() => { window.location.href = mailto; }, 500);
+                $('cur-location').textContent = city;
+                $('cur-temp').textContent = temp + "°C";
+                $('cur-weather').textContent = cond;
+            } catch(e) {
+                // 终极回退：文本解析模式
+                try {
+                    const text = await fetch('https://wttr.in/?format=3').then(r => r.text());
+                    if(text.includes(':')) {
+                        const p = text.split(': ');
+                        $('cur-location').textContent = p[0].trim().toUpperCase();
+                        $('cur-temp').textContent = p[1].split(' ')[0];
+                        $('cur-weather').textContent = (p[1].split(' ')[1] || "CLEAR").toUpperCase();
+                    }
+                } catch(e2) {
+                    $('cur-location').textContent = "OFFLINE";
+                }
             }
         }
 
@@ -202,23 +251,19 @@
             try {
                 if (cfg.bg) $('wallpaper-layer').style.backgroundImage = `url('${cfg.bg}')`;
                 if (cfg.auto) { document.body.classList.add('theme-auto'); $('sw-auto').classList.add('active'); }
-                $('cfg-url').value = cfg.ai.url; $('cfg-key').value = cfg.ai.key; $('cfg-model').value = cfg.ai.model || ''; $('cfg-bg').value = cfg.bg;
-                $('cfg-email').value = cfg.email || ''; $('cfg-note-url').value = cfg.noteUrl || '';
-                renderAll(); fetchWeather();
-                if (Notification.permission === "default") Notification.requestPermission();
-            } catch(e) {}
-        }
-
-        async function fetchWeather() {
-            try {
-                const res = await fetch('https://wttr.in/?format=%l:+%t+%C');
-                const text = await res.text();
-                const p = text.split(': ');
-                if(p.length > 1) { 
-                    $('cur-location').textContent = p[0].toUpperCase(); 
-                    $('cur-temp').textContent = p[1].split(' ')[0]; 
-                    $('cur-weather').textContent = p[1].split(' ')[1].toUpperCase(); 
-                }
+                $('cfg-url').value = cfg.ai.url || ''; $('cfg-key').value = cfg.ai.key || ''; $('cfg-model').value = cfg.ai.model || ''; 
+                $('cfg-local-url').value = cfg.ai.l_url || ''; $('cfg-local-model').value = cfg.ai.l_model || '';
+                $('cfg-bg').value = cfg.bg;
+                renderAll(); 
+                fetchWeather(); // 异步加载，不阻塞计时器
+                document.querySelectorAll('.wp-thumb').forEach(el => {
+                    el.onclick = () => {
+                        const url = el.getAttribute('data-url');
+                        $('cfg-bg').value = url;
+                        $('wallpaper-layer').style.backgroundImage = url ? `url('${url}')` : '';
+                        cfg.bg = url; LS.set('cfg', cfg);
+                    };
+                });
             } catch(e) {}
         }
 
@@ -238,89 +283,52 @@
 
         function renderAll() { renderTodos(); renderStickies(); renderTiles(); renderHistory(); if($('nb-hist')) renderNb(); }
 
-        function renderStickies() {
-            const c = ['#ffffff', '#fef3c7', '#dcfce7', '#dbeafe', '#fce7f3', '#f1f5f9'];
-            $('sticky-grid').innerHTML = sticks.map((s) => `
-                <div class="p-8 rounded-[3.5rem] flex flex-col shadow-2xl border-l-[12px] bg-white dark:bg-slate-900 relative animate-in" style="border-left-color: ${s.color || '#000'}">
-                    <textarea oninput="upStick('${s.id}', this.value)" class="bg-transparent flex-1 text-[16px] font-bold resize-none outline-none dark:text-white min-h-[160px]" placeholder="记录灵感...">${s.content}</textarea>
-                    <div class="mt-4 flex flex-col gap-4 p-5 bg-black/5 dark:bg-white/5 rounded-[2.5rem] border border-black/5">
-                        <div class="flex gap-2.5 justify-center">${c.map(col => `<div class="w-5 h-5 rounded-full cursor-pointer border border-black/10" style="background:${col}" onclick="setStickColor('${s.id}', '${col}')"></div>`).join('')}</div>
-                        <select onchange="linkStickToTodo('${s.id}', this.value)" class="!h-10 !text-[10px] font-black uppercase !bg-white/80 dark:!bg-black/80"><option value="">+ 引用目标日程</option>${todos.map((t, idx) => `<option value="${idx}">${t.text}</option>`).join('')}</select>
-                        <div class="flex justify-between items-center border-t border-black/5 pt-4">
-                            <div class="flex gap-4"><button id="sv-${s.id}" onclick="saveStickData('${s.id}')" class="text-[11px] font-black text-blue-600 uppercase">Save</button><button onclick="stickToTask('${s.id}')" class="text-[11px] font-black text-emerald-600 uppercase">To Task</button></div>
-                            <button onclick="delSticky('${s.id}')" class="text-[11px] font-black text-red-500 uppercase">Delete</button>
-                        </div>
-                    </div>
-                </div>`).join('');
-            lucide.createIcons();
-        }
-
-        function renderHistory() {
-            $('chat-log').innerHTML = history.map((h) => `
-                <div class="animate-in ${h.role==='user'?'text-right pl-12':'pr-12'}">
-                    <div class="inline-block p-5 ${h.role==='user'?'chat-user shadow-lg':'chat-ai shadow-sm'}">
-                        <p class="leading-relaxed font-bold">${h.content}</p>
-                        ${h.role==='assistant' ? `
-                            <div class="mt-4 pt-4 border-t border-black/5 flex gap-4">
-                                <button onclick="speakOut('${h.content.replace(/'/g, "\\'")}')" class="text-[10px] font-black opacity-40 uppercase">播报</button>
-                                <button onclick="pushToPrivateApp('${h.content.replace(/'/g, "\\'")}')" class="text-[10px] font-black text-blue-600 uppercase">闪送至私人笔记本</button>
-                            </div>` : ''}
-                    </div>
-                </div>`).join('') + (history.length === 0 ? '<p class="text-center italic opacity-20 py-20">无历史存档</p>' : '');
-            lucide.createIcons();
-        }
-
-        window.pushToPrivateApp = (txt) => {
-            if(!cfg.noteUrl) { alert('请先在 System 设置中填入私人笔记本网址'); toggleUI('panel-config'); return; }
-            const finalUrl = `${cfg.noteUrl}${cfg.noteUrl.includes('?')?'&':'?'}content=${encodeURIComponent(txt)}`;
-            window.open(finalUrl, '_blank');
-        };
-
         window.executeLogic = () => {
             const v = $('ai-input').value.trim(); if(!v) return;
-            history.push({ role: 'user', content: v }); LS.set('history', history);
-            $('ai-input').value = ''; $('ai-input').dispatchEvent(new Event('input')); toggleUI('panel-hist'); renderHistory();
-            const res = [...todos, ...nbs, ...sticks].filter(x => (x.text || x.content).toLowerCase().includes(v.toLowerCase()));
-            if(res.length > 0) { history.push({ role: 'assistant', content: `【检索结果】找到了 ${res.length} 条记录。` }); }
-            else { history.push({ role: 'assistant', content: `指令已收到，正在处理会话内容...` }); }
+            history.push({ role: 'user', content: v }); 
+            $('ai-input').value = ''; toggleUI('panel-hist'); renderHistory();
+            history.push({ role: 'assistant', content: "指令已收到。请确保在 System 中配置了有效的 API 信息。" });
             LS.set('history', history); renderHistory();
         };
 
-        window.toggleUI = (id) => { const p = ['panel-todo', 'panel-sticky', 'panel-nb', 'panel-config', 'panel-hist', 'panel-pm']; let open = false; p.forEach(pid => { const t = $(pid); if(!t) return; if(pid === id){ const isH=t.classList.contains('hidden'); t.classList.toggle('hidden',!isH); t.style.display=isH?'flex':'none'; if(isH) open=true; } else { t.classList.add('hidden'); t.style.display='none'; } }); document.body.classList.toggle('panel-active', open); };
+        window.toggleUI = (id) => {
+            const p = ['panel-todo', 'panel-sticky', 'panel-nb', 'panel-config', 'panel-hist', 'panel-pm'];
+            let open = false;
+            p.forEach(pid => {
+                const t = $(pid); if(!t) return;
+                if(pid === id){ const isH=t.classList.contains('hidden'); t.classList.toggle('hidden',!isH); t.style.display=isH?'flex':'none'; if(isH) open=true; }
+                else { t.classList.add('hidden'); t.style.display='none'; }
+            });
+            document.body.classList.toggle('panel-active', open);
+        };
+
         window.renderTodos = () => { $('todo-list').innerHTML = todos.map((t, i) => `<li class="bg-black/5 p-6 rounded-[2rem] flex items-center gap-5 animate-in"><input type="checkbox" ${t.done?'checked':''} onchange="toggleT(${i}, this.checked)" class="!w-6 !h-6"><span class="flex-1 text-[15px] font-bold ${t.done?'line-through opacity-20':''} force-black">${t.text}</span><button onclick="delT(${i})" class="text-red-400"><i data-lucide="trash-2" class="w-5 h-5"></i></button></li>`).join(''); lucide.createIcons(); };
-        window.renderNb = () => { $('nb-hist').innerHTML = nbs.map((n, i) => `<div class="p-8 bg-black/5 rounded-[2.5rem] shadow-sm mb-4 animate-in force-black"><p class="text-sm font-bold leading-relaxed">${n.content}</p><div class="mt-4 pt-4 border-t border-black/5 flex justify-between items-center text-[10px] font-black opacity-30"><span>${n.time}</span><button onclick="delNb(${i})" class="text-red-500">删除</button></div></div>`).join(''); };
-        window.renderTiles = () => { $('home-tiles').innerHTML = cfg.navs.map(n => `<a href="${n.url}" target="_blank" class="hover:underline decoration-4 underline-offset-8 transition-all font-black uppercase force-black">${n.name}</a>`).join(''); $('tile-list').innerHTML = cfg.navs.map((n, i) => `<div class="flex justify-between items-center bg-white dark:bg-slate-800 p-4 rounded-2xl border shadow-sm mb-2"><span class="text-[11px] font-black uppercase force-black">${n.name}</span><button onclick="delTile(${i})" class="text-red-400"><i data-lucide="x" class="w-4 h-4"></i></button></div>`).join(''); lucide.createIcons(); };
+        window.renderNb = () => { $('nb-hist').innerHTML = nbs.map((n, i) => `<div class="p-8 bg-black/5 rounded-[2.5rem] shadow-sm mb-4 animate-in force-black font-bold"><p class="text-sm leading-relaxed">${n.content}</p><div class="mt-4 pt-4 border-t border-black/5 flex justify-between items-center text-[10px] opacity-30"><span>${n.time}</span><button onclick="delNb(${i})" class="text-red-500 font-black">删除</button></div></div>`).join(''); };
+        window.renderTiles = () => { $('home-tiles').innerHTML = cfg.navs.map(n => `<a href="${n.url}" target="_blank" class="hover:underline decoration-4 underline-offset-8 transition-all font-black uppercase force-black">${n.name}</a>`).join(''); lucide.createIcons(); };
         window.saveNb = () => { const v=$('nb-val').value.trim(); if(v){ nbs.unshift({content:v, time:new Date().toLocaleString()}); $('nb-val').value=''; LS.set('nbs',nbs); renderNb(); } };
         window.delNb = i => { nbs.splice(i,1); LS.set('nbs',nbs); renderNb(); };
         window.newSticky = () => { const id='s-'+Date.now(); sticks.unshift({id, content:'', color:'#000'}); LS.set('sticks', sticks); renderStickies(); };
         window.upStick = (id, v) => { const s=sticks.find(n=>n.id===id); if(s){ s.content=v; LS.set('sticks',sticks); } };
-        window.saveStickData = (id) => { const b=$(`sv-${id}`); b.textContent="SAVED"; setTimeout(()=>b.textContent="Save",1000); };
         window.setStickColor = (id, c) => { const s=sticks.find(n=>n.id===id); if(s){ s.color=c; LS.set('sticks',sticks); renderStickies(); } };
         window.delSticky = id => { sticks=sticks.filter(n=>n.id!==id); LS.set('sticks',sticks); renderStickies(); };
-        window.stickToTask = id => { const s=sticks.find(n=>n.id===id); if(s){ todos.unshift({text:s.content, done:false}); LS.set('todos',todos); renderTodos(); toggleUI('panel-todo'); } };
+        window.stickToTask = id => { const s=sticks.find(n=>n.id===id); if(s){ todos.unshift({text:s.content, done:false, alerted:false}); LS.set('todos',todos); renderTodos(); toggleUI('panel-todo'); } };
         window.linkStickToTodo = (id, idx) => { if(!idx) return; const s=sticks.find(n=>n.id===id); if(s){ s.content = `[Ref: ${todos[idx].text}] ` + s.content; LS.set('sticks', sticks); renderStickies(); } };
-        window.addTodo = () => { const v=$('todo-in').value.trim(), t=$('todo-tm').value; if(v){ todos.unshift({text:v, time:t, done:false}); $('todo-in').value=''; $('todo-tm').value=''; LS.set('todos',todos); renderTodos(); } };
+        window.addTodo = () => { const v=$('todo-in').value.trim(), t=$('todo-tm').value; if(v){ todos.unshift({text:v, time:t, done:false, alerted:false}); $('todo-in').value=''; $('todo-tm').value=''; LS.set('todos',todos); renderTodos(); } };
         window.toggleT = (i,v) => { todos[i].done=v; LS.set('todos',todos); renderTodos(); };
         window.delT = i => { todos.splice(i,1); LS.set('todos',todos); renderTodos(); };
-        window.addTile = () => { const n=$('nt-n').value, u=$('nt-u').value; if(n&&u){ cfg.navs.push({name:n, url:u}); LS.set('cfg',cfg); renderTiles(); } };
+        window.addTile = () => { const n=$('nt-n').value, u=$('nt-u').value; if(n&&u){ cfg.navs.push({name:n, url:u}); LS.set('cfg',cfg); renderTiles(); $('nt-n').value=''; $('nt-u').value=''; } };
         window.delTile = i => { cfg.navs.splice(i,1); LS.set('cfg',cfg); renderTiles(); };
-        window.setLocalPreset = () => { $('cfg-url').value="http://localhost:11434/v1"; $('cfg-key').value="ollama"; $('cfg-model').value="llama3"; };
-        window.saveSysCfg = () => { cfg.ai.url=$('cfg-url').value; cfg.ai.key=$('cfg-key').value; cfg.ai.model=$('cfg-model').value; cfg.bg=$('cfg-bg').value; cfg.auto=$('sw-auto').classList.contains('active'); cfg.email=$('cfg-email').value; cfg.noteUrl=$('cfg-note-url').value; LS.set('cfg',cfg); location.reload(); };
-        window.speakOut = (t) => { const m = new SpeechSynthesisUtterance(t); m.lang = 'zh-CN'; window.speechSynthesis.speak(m); };
-        window.exportHistory = () => { const txt = history.map(h => `${h.role}: ${h.content}`).join('\n\n'); const b = new Blob([txt], {type:'text/plain'}); const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = 'chat.txt'; a.click(); };
-        window.clearHistory = () => { if(confirm('清空历史？')){ history = []; LS.set('history', []); renderHistory(); } };
-
-        window.onload = () => {
-            init();
-            const b = (id, fn) => { if($(id)) $(id).onclick = fn; };
-            b('btn-todo', () => toggleUI('panel-todo'));
-            b('btn-nb', () => toggleUI('panel-nb'));
-            b('btn-sticky', () => toggleUI('panel-sticky'));
-            b('btn-pm', () => toggleUI('panel-pm'));
-            b('btn-config', () => toggleUI('panel-config'));
-            b('sw-auto', () => $('sw-auto').classList.toggle('active'));
-            document.querySelectorAll('.close-ui').forEach(btn => btn.onclick = () => toggleUI(null));
-            window.addEventListener('keydown', e => { if (e.key === 'Escape') toggleUI(null); if (e.key === 'Enter' && document.activeElement === $('ai-input')) executeLogic(); });
+        window.saveSysCfg = () => { cfg.ai.url=$('cfg-url').value; cfg.ai.key=$('cfg-key').value; cfg.ai.model=$('cfg-model').value; cfg.ai.l_url=$('cfg-local-url').value; cfg.ai.l_model=$('cfg-local-model').value; cfg.bg=$('cfg-bg').value; LS.set('cfg',cfg); location.reload(); };
+        function renderStickies() { const c = ['#ffffff', '#fef3c7', '#dcfce7', '#dbeafe', '#fce7f3', '#f1f5f9']; $('sticky-grid').innerHTML = sticks.map((s) => `<div class="p-8 rounded-[3.5rem] flex flex-col shadow-2xl border-l-[12px] bg-white dark:bg-slate-900 relative animate-in" style="border-left-color: ${s.color || '#000'}"><textarea oninput="upStick('${s.id}', this.value)" class="bg-transparent flex-1 text-[16px] font-bold resize-none outline-none dark:text-white min-h-[160px]">${s.content}</textarea><div class="mt-4 flex flex-col gap-4 p-5 bg-black/5 dark:bg-white/5 rounded-[2.5rem] border border-black/5"><div class="flex gap-2.5 justify-center">${c.map(col => `<div class="w-5 h-5 rounded-full cursor-pointer border border-black/10" style="background:${col}" onclick="setStickColor('${s.id}', '${col}')"></div>`).join('')}</div><select onchange="linkStickToTodo('${s.id}', this.value)" class="!h-10 !text-[10px] font-black uppercase !bg-white/80 dark:!bg-black/80"><option value="">+ 引用日程</option>${todos.map((t, idx) => `<option value="${idx}">${t.text}</option>`).join('')}</select><div class="flex justify-between items-center border-t border-black/5 pt-4"><div class="flex gap-4"><button onclick="LS.set('sticks',sticks)" class="text-[10px] font-black text-blue-600 uppercase">Save</button><button onclick="stickToTask('${s.id}')" class="text-[10px] font-black text-emerald-600 uppercase">To Task</button></div><button onclick="delSticky('${s.id}')" class="text-[9px] font-black text-red-500 uppercase">Delete</button></div></div></div>`).join(''); lucide.createIcons(); }
+        function renderHistory() { $('chat-log').innerHTML = history.map((h) => `<div class="animate-in ${h.role==='user'?'text-right pl-12':'pr-12'}"><div class="inline-block p-5 ${h.role==='user'?'chat-user shadow-lg':'chat-ai shadow-sm'}"><p class="leading-relaxed font-bold">${h.content}</p></div></div>`).join('') + (history.length === 0 ? '<p class="text-center italic opacity-20 py-20 force-black">无对话记录</p>' : ''); lucide.createIcons(); }
+        
+        window.onload = () => { 
+            init(); 
+            document.querySelectorAll('.close-ui').forEach(btn => btn.onclick = () => toggleUI(null)); 
+            // 修复：建立物理一致的 ID 映射
+            const navIds = ['nav-todo', 'nav-nb', 'nav-sticky', 'nav-pm', 'nav-config'];
+            const panelIds = ['panel-todo', 'panel-nb', 'panel-sticky', 'panel-pm', 'panel-config'];
+            navIds.forEach((id, idx) => { if($(id)) $(id).onclick = () => toggleUI(panelIds[idx]); });
             lucide.createIcons();
         };
     </script>
