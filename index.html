@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Nikwe - Intelligent OS V77</title>
+    <title>Nikwe - Intelligent OS V90</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/lucide@latest"></script>
     <style>
@@ -48,7 +48,6 @@
             box-shadow: 0 40px 80px -15px rgba(0,0,0,0.2);
         }
 
-        /* 核心修复：Dock 物理层级加固 */
         .master-dock-wrap {
             position: fixed; bottom: 30px; left: 0; width: 100vw;
             display: flex; flex-direction: column; align-items: center; gap: 18px;
@@ -56,14 +55,13 @@
             transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
             pointer-events: none; 
         }
-        .master-dock-wrap > * { pointer-events: auto; }
+        .master-dock-wrap > * { pointer-events: auto !important; }
 
         .dock-row { display: flex; align-items: center; justify-content: center; gap: 12px; }
         .dock-icon {
             @apply h-14 w-14 glass-panel rounded-[24px] flex items-center justify-center hover:scale-110 active:scale-90 transition-all shadow-xl cursor-pointer;
         }
 
-        /* 水印背景 */
         .nik-watermark {
             position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
             font-size: 28vw; font-weight: 900; letter-spacing: -0.05em;
@@ -76,25 +74,47 @@
         .slogan-main { font-size: 1.25rem; font-weight: 900; letter-spacing: 0.1em; }
         .slogan-en { font-family: 'Sora', sans-serif; font-size: 0.5rem; letter-spacing: 0.12em; opacity: 0.3; font-weight: 800; margin-top: 1px; }
 
-        input, textarea, select {
+        input, select {
             width: 100% !important; height: 50px !important;
             background: var(--field) !important; border: 1px solid rgba(0,0,0,0.08) !important;
             border-radius: 18px !important; padding: 0 20px !important;
-            font-size: 15px !important; font-weight: 600 !important;
+            font-size: 14px !important; font-weight: 600 !important;
             color: var(--fg) !important; outline: none !important;
         }
 
-        .chat-user { background: var(--accent); color: white; border-radius: 1.5rem 1.5rem 0.2rem 1.5rem; padding: 1.2rem; margin-left: 2rem; }
-        .chat-ai { background: var(--field); color: var(--fg); border-radius: 1.5rem 1.5rem 1.5rem 0.2rem; padding: 1.2rem; margin-right: 2rem; border: 1px solid rgba(0,0,0,0.05); }
+        #nb-editor { 
+            width: 100%; min-height: 320px; 
+            background: var(--field); border: 1px solid rgba(0,0,0,0.08); 
+            border-radius: 0 0 18px 18px; padding: 20px;
+            font-size: 16px; line-height: 1.6; color: var(--fg);
+            overflow-y: auto; outline: none;
+        }
+        .nb-toolbar { 
+            background: var(--field); border: 1px solid rgba(0,0,0,0.08); border-bottom: none; 
+            border-radius: 18px 18px 0 0; padding: 12px 20px; display: flex; flex-wrap: wrap; gap: 12px; align-items: center; 
+        }
+        .tool-select { !height: 28px !important; !width: auto !important; !padding: 0 8px !important; font-size: 10px !important; border-radius: 8px !important; }
+        .tool-btn { @apply p-1.5 rounded-lg hover:bg-black/5 transition-all cursor-pointer; }
 
-        .wp-thumb { width: 60px; height: 40px; border-radius: 8px; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; object-fit: cover; }
+        .mood-dot { width: 34px; height: 34px; border-radius: 10px; cursor: pointer; display: flex; items-center; justify-center; transition: all 0.2s; border: 1px solid rgba(0,0,0,0.05); background: rgba(0,0,0,0.02); }
+        .mood-dot.active { background: var(--accent); color: white; border-color: var(--accent); }
+        .color-dot { width: 18px; height: 18px; border-radius: 50%; cursor: pointer; border: 1px solid rgba(0,0,0,0.1); }
+
+        .wp-thumb { width: 45px; height: 45px; border-radius: 10px; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; object-fit: cover; }
         .wp-thumb.active { border-color: var(--accent); transform: scale(1.1); }
+
+        /* 开关按钮样式 */
+        .switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 20px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 2px; bottom: 2px; background-color: white; transition: .4s; border-radius: 50%; }
+        input:checked + .slider { background-color: var(--accent); }
+        input:checked + .slider:before { transform: translateX(20px); }
 
         @media (max-width: 640px) {
             .master-dock-wrap { bottom: 15px; }
             .dock-icon { height: 48px; width: 48px; border-radius: 14px; }
             #display-time { font-size: 7.2rem; font-weight: 900; }
-            #main-content { padding-bottom: 200px; } /* 增加手机端底部避让 */
             .panel-drawer { width: 100vw !important; height: 100vh !important; border-radius: 0 !important; }
         }
     </style>
@@ -109,17 +129,15 @@
             <div class="slogan-main">深井见志</div>
             <div class="slogan-en uppercase">INSIGHT FROM THE DEEP</div>
         </div>
-        <div id="status-bar" class="text-[10px] font-black uppercase tracking-widest flex items-center gap-4 force-black pt-1">
-            <span id="cur-location" class="text-blue-600 bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded">CONNECTING</span>
-            <span id="cur-temp">--°C</span>
-            <span id="cur-weather">STATION</span>
-        </div>
+        <!-- 插件物理插槽 (Plugin Slot) -->
+        <div id="plugin-header-slot" class="flex items-center gap-4 force-black pt-1"></div>
     </header>
 
     <main id="main-content" class="relative text-center flex flex-col items-center justify-center h-full pb-32 z-[10]">
         <div id="display-time" class="text-8xl md:text-[12rem] tracking-tighter select-none force-black leading-none font-black">00:00</div>
         <div id="display-date" class="text-[14px] md:text-[18px] uppercase tracking-[0.7em] font-black force-black opacity-40 mt-6">2026 / 04 / 07</div>
-        <nav id="home-tiles" class="mt-12 flex flex-wrap justify-center gap-x-12 gap-y-5 text-[11px] font-black uppercase tracking-widest force-black"></nav>
+        <div id="app-dock" class="mt-8 flex gap-5 justify-center flex-wrap px-4"></div>
+        <nav id="home-tiles" class="mt-8 flex flex-wrap justify-center gap-x-12 gap-y-5 text-[11px] font-black uppercase tracking-widest force-black"></nav>
     </main>
 
     <div class="master-dock-wrap" id="main-dock">
@@ -128,10 +146,7 @@
                 <a id="bing-link" href="https://www.bing.com" target="_blank" class="w-12 h-12 flex items-center justify-center text-slate-400 hover:text-blue-600 transition-all">
                     <i data-lucide="globe" class="w-6 h-6"></i>
                 </a>
-                <input type="text" id="ai-input" class="!bg-transparent !border-none !shadow-none !p-0 font-bold flex-1 text-lg" placeholder="寻求对话、撰写长文...">
-                <button id="voice-btn" onclick="toggleMic()" class="w-12 h-12 flex items-center justify-center text-slate-400 hover:text-blue-600">
-                    <i data-lucide="mic" class="w-6 h-6"></i>
-                </button>
+                <input type="text" id="ai-input" class="!bg-transparent !border-none !shadow-none !p-0 font-bold flex-1 text-lg" placeholder="寻找对话、撰写长文...">
                 <button onclick="executeLogic()" class="bg-black text-white w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-2xl active:scale-90 transition-all">↑</button>
             </div>
         </div>
@@ -144,57 +159,103 @@
         </div>
     </div>
 
-    <!-- 面板区 (保持原有功能) -->
+    <!-- 便签 -->
     <div id="panel-sticky" class="fixed inset-0 panel-drawer glass-panel hidden flex-col p-10 animate-in z-[1100]">
-        <div class="flex justify-between items-center mb-8 px-2"><h2 class="text-2xl font-black italic uppercase">Capsules</h2><div class="flex items-center gap-4"><button onclick="newSticky()" class="bg-black text-white px-5 py-2 rounded-full font-bold text-[10px] shadow-xl">+ NEW</button><button class="close-ui p-2"><i data-lucide="x"></i></button></div></div>
+        <div class="flex justify-between items-center mb-8 px-2">
+            <h2 class="text-2xl font-black italic uppercase">Capsules</h2>
+            <div class="flex items-center gap-4">
+                <button onclick="newSticky()" class="bg-black text-white px-6 py-2.5 rounded-full font-bold text-[10px] shadow-xl">+ NEW NOTE</button>
+                <button class="close-ui p-2"><i data-lucide="x"></i></button>
+            </div>
+        </div>
         <div id="sticky-grid" class="flex-1 overflow-y-auto chat-scroll space-y-12 pb-40 pr-2"></div>
     </div>
+
+    <!-- 待办 -->
     <div id="panel-todo" class="fixed inset-0 panel-drawer glass-panel hidden flex-col p-10 animate-in z-[1100]"><div class="flex justify-between items-center mb-8 px-2"><h2 class="text-2xl font-black italic uppercase force-black">Objectives</h2><button class="close-ui p-2"><i data-lucide="x"></i></button></div><div class="flex-1 flex flex-col min-h-0"><div class="bg-black/5 p-6 rounded-[2rem] mb-6 space-y-4"><input type="text" id="todo-in" placeholder="下一步计划..."><div class="flex gap-3"><input type="datetime-local" id="todo-tm" class="flex-1"><button onclick="addTodo()" class="bg-black text-white px-6 rounded-2xl font-bold uppercase text-[10px]">ADD</button></div></div><ul id="todo-list" class="space-y-4 overflow-y-auto chat-scroll flex-1 pr-2"></ul></div></div>
-    <div id="panel-nb" class="fixed inset-0 panel-drawer glass-panel hidden flex-col p-10 animate-in z-[1100]"><div class="flex justify-between items-center mb-8 px-2"><h2 class="text-2xl font-black italic uppercase force-black">Notebook</h2><button class="close-ui p-2"><i data-lucide="x"></i></button></div><textarea id="nb-val" placeholder="书写此刻..."></textarea><div class="flex gap-3 mt-4"><button onclick="saveNb()" class="flex-1 bg-black text-white py-5 rounded-2xl font-black text-[11px] uppercase shadow-lg">存档</button><button onclick="window.open('https://www.kdocs.cn')" class="bg-blue-50 text-blue-600 px-6 rounded-2xl flex items-center justify-center border border-blue-100"><i data-lucide="file-text"></i></button></div><div id="nb-hist" class="mt-8 flex-1 overflow-y-auto chat-scroll space-y-5 border-t border-black/5 pt-8"></div></div>
+
+    <!-- 笔记本 -->
+    <div id="panel-nb" class="fixed inset-0 panel-drawer glass-panel hidden flex-col p-10 animate-in z-[1100]">
+        <div class="flex justify-between items-center mb-6 px-2"><h2 class="text-2xl font-black italic uppercase force-black">Notebook</h2><button class="close-ui p-2"><i data-lucide="x"></i></button></div>
+        <div class="nb-toolbar shadow-sm">
+            <select onchange="exec('fontName', this.value)" class="tool-select !w-24 !h-8"><option value="Sora">Default</option><option value="Noto Serif SC">Serif</option><option value="Courier New">Mono</option></select>
+            <select onchange="exec('fontSize', this.value)" class="tool-select !w-16 !h-8"><option value="3">Size</option><option value="2">Small</option><option value="4">Large</option><option value="6">Heading</option></select>
+            <button onclick="exec('bold')" class="tool-btn"><i data-lucide="bold" class="w-4 h-4"></i></button>
+            <button onclick="exec('foreColor', '#2563eb')" class="tool-btn text-blue-600"><i data-lucide="palette" class="w-4 h-4"></i></button>
+            <button onclick="exec('insertUnorderedList')" class="tool-btn"><i data-lucide="list" class="w-4 h-4"></i></button>
+            <div class="h-6 w-[1px] bg-black/10 mx-1"></div>
+            <button onclick="insertTime()" class="tool-btn"><i data-lucide="clock" class="w-4 h-4"></i></button>
+            <button onclick="confirmClearNb()" class="tool-btn text-red-500"><i data-lucide="trash" class="w-4 h-4"></i></button>
+        </div>
+        <div id="nb-editor" contenteditable="true" placeholder="开始创作..."></div>
+        <div class="flex gap-3 mt-4">
+            <button id="nb-save-btn" onclick="saveNb()" class="flex-1 bg-black text-white py-5 rounded-2xl font-black text-[11px] uppercase shadow-lg transition-colors">同步存档</button>
+            <button onclick="window.open('https://www.kdocs.cn')" class="bg-blue-50 text-blue-600 px-6 rounded-2xl flex items-center justify-center border border-blue-100"><i data-lucide="file-text"></i></button>
+        </div>
+        <div id="nb-hist" class="mt-8 flex-1 overflow-y-auto chat-scroll space-y-3 border-t border-black/5 pt-8 pr-2"></div>
+    </div>
     
+    <!-- 设置 -->
     <div id="panel-config" class="fixed inset-0 panel-drawer glass-panel hidden flex-col p-12 animate-in z-[1100]">
         <div class="flex justify-between items-center mb-10 px-2"><h2 class="text-2xl font-black italic uppercase force-black">System</h2><button class="close-ui p-2"><i data-lucide="x"></i></button></div>
         <div class="flex-1 overflow-y-auto chat-scroll space-y-8 pr-2">
+            <!-- 插件中心：物理开关 -->
+            <div class="p-8 bg-blue-50/50 rounded-[2.5rem] border border-blue-100 space-y-4">
+                <label class="text-[10px] font-black text-blue-600 block text-center uppercase tracking-widest italic">Plugin Hub (插件中心)</label>
+                <div class="flex items-center justify-between p-4 bg-white rounded-2xl shadow-sm">
+                    <span class="text-xs font-bold">天气与地点显示</span>
+                    <label class="switch"><input type="checkbox" id="pl-weather-on" onchange="toggleWeatherPlugin(this.checked)"><span class="slider"></span></label>
+                </div>
+                <p class="text-[9px] opacity-30 text-center uppercase">如果开启后无法显示，请检查网络是否拦截 CORS</p>
+            </div>
+
+            <div class="p-8 bg-slate-50 rounded-[2.5rem] border border-black/5 space-y-3">
+                <label class="text-[10px] font-black opacity-40 block text-center uppercase tracking-widest italic">Software Dock</label>
+                <div id="sw-list" class="space-y-2"></div>
+                <div class="space-y-3 mt-4"><input id="sw-n" placeholder="简称"><input id="sw-u" placeholder="网址 URL"><button onclick="addSw()" class="bg-black text-white w-full py-4 rounded-xl font-bold text-[9px] uppercase">ADD</button></div>
+            </div>
+
             <div class="p-8 bg-slate-100/40 rounded-[2.5rem] border border-black/5 space-y-6">
-                <div class="flex items-center justify-between"><span class="text-xs font-bold">跟随系统主题</span><div id="sw-auto" class="sw-mini active"></div></div>
                 <div class="space-y-4">
-                    <label class="text-[9px] font-black uppercase opacity-40">预设壁纸库</label>
-                    <div class="flex gap-3" id="wp-presets">
-                        <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=200&q=60" class="wp-thumb" data-url="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1920&q=80">
-                        <img src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=200&q=60" class="wp-thumb" data-url="https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1920&q=80">
-                        <img src="https://images.unsplash.com/photo-1477346611705-65d1883cee1e?auto=format&fit=crop&w=200&q=60" class="wp-thumb" data-url="https://images.unsplash.com/photo-1477346611705-65d1883cee1e?auto=format&fit=crop&w=1920&q=80">
+                    <label class="text-[9px] font-black uppercase opacity-40">Wallpapers</label>
+                    <div class="flex flex-wrap gap-4" id="wp-presets">
+                        <img src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=100&q=60" class="wp-thumb" data-url="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1920&q=80">
+                        <img src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=100&q=60" class="wp-thumb" data-url="https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1920&q=80">
+                        <img src="https://images.unsplash.com/photo-1477346611705-65d1883cee1e?auto=format&fit=crop&w=100&q=60" class="wp-thumb" data-url="https://images.unsplash.com/photo-1477346611705-65d1883cee1e?auto=format&fit=crop&w=1920&q=80">
+                        <img src="https://images.unsplash.com/photo-1439405326854-014607f694d7?auto=format&fit=crop&w=100&q=60" class="wp-thumb" data-url="https://images.unsplash.com/photo-1439405326854-014607f694d7?auto=format&fit=crop&w=1920&q=80">
+                        <img src="https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?auto=format&fit=crop&w=100&q=60" class="wp-thumb" data-url="https://images.unsplash.com/photo-1419242902214-272b3f66ee7a?auto=format&fit=crop&w=1920&q=80">
                         <div class="wp-thumb bg-slate-200 flex items-center justify-center text-[10px] font-bold" data-url="">DOTS</div>
                     </div>
-                    <label class="text-[9px] font-black uppercase opacity-40 block mt-2">自定义背景 URL</label>
-                    <input id="cfg-bg" placeholder="https://...">
                 </div>
             </div>
+
             <div class="p-8 bg-slate-50 rounded-[2.5rem] border border-black/5 space-y-3">
-                <label class="text-[10px] font-black opacity-40 block text-center uppercase tracking-widest">Shortcut Tiles</label>
+                <label class="text-[10px] font-black opacity-40 block text-center uppercase tracking-widest">Home Tiles (快捷引用列表)</label>
                 <div id="tile-list" class="space-y-2"></div>
                 <div class="space-y-3 mt-4"><input id="nt-n" placeholder="名称"><input id="nt-u" placeholder="网址"><button onclick="addTile()" class="bg-black text-white w-full py-4 rounded-xl font-bold text-[9px] uppercase">ADD TILE</button></div>
             </div>
+
             <div class="p-8 bg-slate-50 rounded-[2.5rem] border border-black/5 space-y-4">
-                <label class="text-[10px] font-black opacity-40 block text-center uppercase tracking-widest italic">API Configuration</label>
-                <input id="cfg-url" placeholder="API Endpoint"><input id="cfg-key" type="password" placeholder="API Key"><input id="cfg-model" placeholder="Model Name">
-                <input id="cfg-local-url" placeholder="Local Server (Ollama)"><input id="cfg-local-model" placeholder="Local Model">
+                <label class="text-[10px] font-black opacity-40 block text-center uppercase tracking-widest italic">API Settings</label>
+                <input id="cfg-url" placeholder="Cloud API URL"><input id="cfg-key" type="password" placeholder="API Key"><input id="cfg-model" placeholder="Model Name">
+                <div class="pt-4 border-t border-black/5"><label class="text-[9px] font-black opacity-40 block text-center mb-2 uppercase">Local Model (Ollama)</label><input id="cfg-local-url" placeholder="Local URL"><input id="cfg-local-model" placeholder="Model Name"></div>
             </div>
-            <button onclick="saveSysCfg()" class="w-full bg-slate-950 text-white py-5 rounded-2xl font-black uppercase text-xs shadow-2xl">保存配置</button>
+            <button onclick="saveSysCfg()" class="w-full bg-slate-950 text-white py-5 rounded-2xl font-black uppercase text-xs shadow-2xl">保存所有设置</button>
         </div>
     </div>
 
-    <!-- 私信面板 -->
+    <!-- 私信 -->
     <div id="panel-pm" class="fixed inset-0 panel-drawer glass-panel hidden flex-col p-12 animate-in z-[1100]">
         <div class="flex justify-between items-center mb-10 px-2"><h2 class="text-2xl font-black italic uppercase text-blue-600">Private</h2><button class="close-ui p-2"><i data-lucide="x"></i></button></div>
         <div id="pm-auth" class="flex-1 flex flex-col items-center justify-center p-8 text-center animate-in"><div class="w-24 h-24 bg-slate-100 rounded-[3rem] mb-8 flex items-center justify-center text-slate-300 shadow-inner"><i data-lucide="shield-check" class="w-12 h-12"></i></div><input type="text" id="pm-room" placeholder="pairing_id" class="text-center mb-6"><button onclick="$('pm-auth').classList.add('hidden');$('pm-chat').classList.remove('hidden')" class="bg-black text-white w-full py-5 rounded-2xl font-bold uppercase text-[11px] shadow-xl">连接</button></div>
-        <div id="pm-chat" class="hidden flex-1 flex flex-col animate-in"><div class="flex-1 text-center opacity-20 italic text-sm mt-20">加密信道就绪</div><div class="mt-auto pt-8 border-t border-black/5"><input id="pm-msg" placeholder="输入内容..."><button class="w-full mt-4 bg-blue-600 text-white py-4 rounded-xl font-bold">SEND</button></div></div>
+        <div id="pm-chat" class="hidden flex-1 flex flex-col animate-in"><div class="flex-1 text-center opacity-20 italic text-sm mt-20">加密信道就绪</div><div class="mt-auto pt-8 border-t border-black/5"><input id="pm-msg" placeholder="内容..."><button class="w-full mt-4 bg-blue-600 text-white py-4 rounded-xl font-bold">SEND</button></div></div>
     </div>
 
     <div id="panel-hist" class="fixed inset-0 z-[1200] hidden animate-in">
         <div class="absolute inset-0 bg-black/60 backdrop-blur-md" onclick="toggleUI(null)"></div>
         <div class="absolute bottom-0 left-0 w-full h-[82vh] glass-panel rounded-t-[3.5rem] flex flex-col p-8 shadow-2xl">
             <div class="flex justify-between items-center mb-6 px-2"> <span id="hist-title" class="text-[10px] font-black uppercase opacity-40 italic text-blue-600">Intelligence Result</span>
-                <div class="flex gap-4"> <button onclick="exportHistory()" class="text-slate-400 p-1"><i data-lucide="download" class="w-4 h-4"></i></button> <button onclick="clearHistory()" class="text-red-400 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button> <button onclick="toggleUI(null)" class="text-slate-400 p-2"><i data-lucide="chevron-down" class="w-6 h-6"></i></button> </div>
+                <div class="flex gap-4"> <button onclick="exportHistory()" class="text-slate-400 p-1"><i data-lucide="download" class="w-4 h-4"></i></button> <button onclick="clearHistory()" class="text-red-400 p-1"><i data-lucide="trash-2" class="w-4 h-4"></i></button> <button class="close-ui text-slate-400 p-2"><i data-lucide="chevron-down" class="w-6 h-6"></i></button> </div>
             </div>
             <div id="chat-log" class="flex-1 overflow-y-auto chat-scroll space-y-6 text-sm pr-2 pb-20"></div>
         </div>
@@ -202,10 +263,12 @@
 
     <script>
         const $ = id => document.getElementById(id);
-        const LS = { get: k => JSON.parse(localStorage.getItem('nik_v77_' + k)), set: (k, v) => localStorage.setItem('nik_v77_' + k, JSON.stringify(v)) };
-        const cfg = LS.get('cfg') || { navs: [{ name: 'Github', url: 'https://github.com' }], ai: { url: '', key: '', model: '', l_url: '', l_model: '' }, bg: '', auto: true };
-        let todos = LS.get('todos') || [], nbs = LS.get('nbs') || [], sticks = LS.get('sticks') || [], history = LS.get('history') || [];
-        let isRec = false, rec = null;
+        const LS = { get: k => JSON.parse(localStorage.getItem('nik_v90_' + k)), set: (k, v) => localStorage.setItem('nik_v90_' + k, JSON.stringify(v)) };
+        const cfg = LS.get('cfg') || { navs: [{ name: 'Github', url: 'https://github.com' }], sws: [], ai: { url: '', key: '', model: '', l_url: '', l_model: '' }, bg: '', pl_weather: false };
+        let todos = LS.get('todos') || [], nbs = LS.get('nbs') || [], sticks = LS.get('sticks') || [], history = LS.get('history') || [], curEditNb = -1;
+
+        const MOODS = ['zap', 'brain', 'coffee', 'smile', 'moon', 'flame', 'heart', 'star'];
+        const COLORS = ['#ffffff', '#fef3c7', '#dcfce7', '#dbeafe', '#fce7f3', '#f1f5f9', '#000000'];
 
         (function runClock() {
             const up = () => {
@@ -216,121 +279,121 @@
             setInterval(up, 1000); up();
         })();
 
-        // --- 核心修复：稳定可靠的天气探测 ---
-        async function fetchWeather() {
+        // --- 插件化天气核心 (独立执行，不干扰主逻辑) ---
+        async function fetchWeatherPlugin() {
+            if (!cfg.pl_weather) return;
+            const slot = $('plugin-header-slot');
+            slot.innerHTML = `<span class="text-[9px] opacity-20">LOAD PLUGIN...</span>`;
             try {
-                // 第一步：使用专门的地理定位 API（跨域友好）
-                const geo = await fetch('https://api.bigdatacloud.net/data/reverse-geocode-client').then(r => r.json());
-                const city = (geo.city || geo.locality || "LOCAL").toUpperCase();
-                
-                // 第二步：使用解析出的城市名请求天气
-                const res = await fetch(`https://wttr.in/${city}?format=j1`).then(r => r.json());
-                const temp = res.current_condition[0].temp_C;
-                const cond = res.current_condition[0].weatherDesc[0].value.toUpperCase();
-
-                $('cur-location').textContent = city;
-                $('cur-temp').textContent = temp + "°C";
-                $('cur-weather').textContent = cond;
-            } catch(e) {
-                // 终极回退：文本解析模式
-                try {
-                    const text = await fetch('https://wttr.in/?format=3').then(r => r.text());
-                    if(text.includes(':')) {
-                        const p = text.split(': ');
-                        $('cur-location').textContent = p[0].trim().toUpperCase();
-                        $('cur-temp').textContent = p[1].split(' ')[0];
-                        $('cur-weather').textContent = (p[1].split(' ')[1] || "CLEAR").toUpperCase();
-                    }
-                } catch(e2) {
-                    $('cur-location').textContent = "OFFLINE";
+                const res = await fetch('https://wttr.in/?format=%l|%t|%C');
+                const txt = await res.text();
+                if (txt && txt.includes('|')) {
+                    const [loc, temp, cond] = txt.split('|');
+                    slot.innerHTML = `
+                        <span class="text-blue-600 bg-blue-50 dark:bg-blue-900/20 px-2 py-0.5 rounded">${loc.trim().toUpperCase()||"LOCAL"}</span>
+                        <span>${temp.trim()}</span>
+                        <span>${cond.trim().toUpperCase()}</span>
+                    `;
                 }
-            }
+            } catch (e) { slot.innerHTML = `<span class="opacity-20 uppercase">Local Static</span>`; }
         }
 
+        window.toggleWeatherPlugin = (on) => { cfg.pl_weather = on; LS.set('cfg', cfg); if(on) fetchWeatherPlugin(); else $('plugin-header-slot').innerHTML = ''; };
+
         async function init() {
+            const navIds = ['nav-todo', 'nav-nb', 'nav-sticky', 'nav-pm', 'nav-config'];
+            const panelIds = ['panel-todo', 'panel-nb', 'panel-sticky', 'panel-pm', 'panel-config'];
+            navIds.forEach((id, idx) => { if($(id)) $(id).onclick = () => toggleUI(panelIds[idx]); });
+            document.querySelectorAll('.close-ui').forEach(btn => btn.onclick = () => toggleUI(null));
+            window.onkeydown = (e) => { if (e.key === 'Escape') toggleUI(null); };
+
             try {
                 if (cfg.bg) $('wallpaper-layer').style.backgroundImage = `url('${cfg.bg}')`;
-                if (cfg.auto) { document.body.classList.add('theme-auto'); $('sw-auto').classList.add('active'); }
                 $('cfg-url').value = cfg.ai.url || ''; $('cfg-key').value = cfg.ai.key || ''; $('cfg-model').value = cfg.ai.model || ''; 
                 $('cfg-local-url').value = cfg.ai.l_url || ''; $('cfg-local-model').value = cfg.ai.l_model || '';
-                $('cfg-bg').value = cfg.bg;
-                renderAll(); 
-                fetchWeather(); // 异步加载，不阻塞计时器
+                $('pl-weather-on').checked = cfg.pl_weather || false;
+                renderAll();
+                if(cfg.pl_weather) setTimeout(fetchWeatherPlugin, 500);
                 document.querySelectorAll('.wp-thumb').forEach(el => {
                     el.onclick = () => {
                         const url = el.getAttribute('data-url');
-                        $('cfg-bg').value = url;
                         $('wallpaper-layer').style.backgroundImage = url ? `url('${url}')` : '';
                         cfg.bg = url; LS.set('cfg', cfg);
                     };
                 });
             } catch(e) {}
+            lucide.createIcons();
         }
 
-        $('ai-input').oninput = () => { const q = $('ai-input').value.trim(); $('bing-link').href = q ? `https://www.bing.com/search?q=${encodeURIComponent(q)}` : `https://www.bing.com`; };
+        window.exec = (cmd, val = null) => document.execCommand(cmd, false, val);
+        window.insertTime = () => exec('insertHTML', `<span style="opacity:0.4; font-size:10px">[${new Date().toLocaleString()}]</span> `);
+        window.confirmClearNb = () => { if(confirm('清空编辑器？')) $('nb-editor').innerHTML = ''; };
 
-        function toggleMic() {
-            const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!Speech) return;
-            if (!isRec) {
-                rec = new Speech(); rec.continuous = true; rec.lang = 'zh-CN';
-                rec.onstart = () => { isRec = true; $('ai-box').style.borderColor = "#2563eb"; $('voice-btn').style.color = "#2563eb"; };
-                rec.onresult = (e) => { $('ai-input').value = e.results[e.results.length - 1][0].transcript; $('ai-input').dispatchEvent(new Event('input')); };
-                rec.onend = () => { if(isRec) rec.start(); };
-                rec.start();
-            } else { isRec = false; rec.stop(); $('ai-box').style.borderColor = "rgba(0,0,0,0.1)"; $('voice-btn').style.color = "#94a3b8"; }
+        function renderAll() { renderTodos(); renderStickies(); renderTiles(); renderHistory(); renderNb(); renderApps(); }
+        window.executeLogic = () => { const v = $('ai-input').value.trim(); if(!v) return; history.push({ role: 'user', content: v }); $('ai-input').value = ''; toggleUI('panel-hist'); renderHistory(); history.push({ role: 'assistant', content: "Command received." }); LS.set('history', history); renderHistory(); };
+        window.toggleUI = (id) => { const p = ['panel-todo', 'panel-sticky', 'panel-nb', 'panel-config', 'panel-hist', 'panel-pm']; let open = false; p.forEach(pid => { const t = $(pid); if(!t) return; if(pid === id){ const isH=t.classList.contains('hidden'); t.classList.toggle('hidden',!isH); t.style.display=isH?'flex':'none'; if(isH) open=true; if(pid==='panel-nb') resetNb(); } else { t.classList.add('hidden'); t.style.display='none'; } }); document.body.classList.toggle('panel-active', open); };
+
+        function renderStickies() {
+            $('sticky-grid').innerHTML = sticks.map((s) => `
+                <div class="p-8 rounded-[3.5rem] flex flex-col shadow-2xl border-l-[12px] bg-white dark:bg-slate-900 relative animate-in" style="border-left-color: ${s.color || '#000'}">
+                    <textarea oninput="upStick('${s.id}', this.value)" class="bg-transparent flex-1 text-[16px] font-bold resize-none outline-none dark:text-white min-h-[160px]">${s.content}</textarea>
+                    <div class="mt-4 p-5 bg-black/5 dark:bg-white/5 rounded-[2.5rem] border border-black/5">
+                        <div class="flex flex-wrap gap-2 justify-center mb-4">${MOODS.map(m => `<div class="mood-dot ${s.mood===m?'active':''}" onclick="setMood('${s.id}', '${m}')"><i data-lucide="${m}" class="w-4 h-4"></i></div>`).join('')}</div>
+                        <div class="flex gap-2 justify-center mb-4">${COLORS.map(c => `<div class="color-dot" style="background:${c}" onclick="setStickColor('${s.id}', '${c}')"></div>`).join('')}</div>
+                        <select onchange="linkStickToTodo('${s.id}', this.value)" class="!h-10 !text-[10px] font-black uppercase !bg-white/80 dark:!bg-black/80 mb-4"><option value="">+ 引用日程</option>${todos.map((t, idx) => `<option value="${idx}">${t.text}</option>`).join('')}</select>
+                        <div class="flex justify-between items-center border-t border-black/5 pt-4">
+                            <div class="flex gap-4">
+                                <button onclick="LS.set('sticks',sticks)" class="text-[10px] font-black text-blue-600 uppercase">Save</button>
+                                <button onclick="stickToTask('${s.id}')" class="text-[10px] font-black text-emerald-600 uppercase">To Task</button>
+                            </div>
+                            <button onclick="delSticky('${s.id}')" class="text-[9px] font-black text-red-500 uppercase">Delete</button>
+                        </div>
+                    </div>
+                </div>`).join('');
+            lucide.createIcons();
         }
 
-        function renderAll() { renderTodos(); renderStickies(); renderTiles(); renderHistory(); if($('nb-hist')) renderNb(); }
-
-        window.executeLogic = () => {
-            const v = $('ai-input').value.trim(); if(!v) return;
-            history.push({ role: 'user', content: v }); 
-            $('ai-input').value = ''; toggleUI('panel-hist'); renderHistory();
-            history.push({ role: 'assistant', content: "指令已收到。请确保在 System 中配置了有效的 API 信息。" });
-            LS.set('history', history); renderHistory();
+        window.renderNb = () => {
+            $('nb-hist').innerHTML = nbs.map((n, i) => `
+                <div class="flex justify-between items-center bg-black/5 p-5 rounded-2xl hover:bg-black/10 cursor-pointer transition-all group" onclick="editNb(${i})">
+                    <div class="flex flex-col flex-1 truncate"><span class="text-sm font-bold force-black truncate">${n.content.replace(/<[^>]*>/g, '').split('\n')[0]||"Untitled"}</span><span class="text-[9px] font-black opacity-10 mt-1 uppercase">${n.time}</span></div>
+                    <button onclick="event.stopPropagation(); delNb(${i})" class="text-red-400 opacity-0 group-hover:opacity-100 transition-opacity ml-4"><i data-lucide="trash-2" class="w-4 h-4"></i></button>
+                </div>`).join('');
+            lucide.createIcons();
         };
 
-        window.toggleUI = (id) => {
-            const p = ['panel-todo', 'panel-sticky', 'panel-nb', 'panel-config', 'panel-hist', 'panel-pm'];
-            let open = false;
-            p.forEach(pid => {
-                const t = $(pid); if(!t) return;
-                if(pid === id){ const isH=t.classList.contains('hidden'); t.classList.toggle('hidden',!isH); t.style.display=isH?'flex':'none'; if(isH) open=true; }
-                else { t.classList.add('hidden'); t.style.display='none'; }
-            });
-            document.body.classList.toggle('panel-active', open);
+        window.editNb = i => { const n=nbs[i]; $('nb-editor').innerHTML=n.content; curEditNb=i; $('nb-save-btn').textContent="更新笔记"; $('nb-save-btn').classList.replace('bg-black','bg-blue-600'); };
+        window.saveNb = () => { const v=$('nb-editor').innerHTML; if(!v || v==="<br>") return; if(curEditNb>-1) { nbs[curEditNb].content=v; nbs[curEditNb].time=new Date().toLocaleString(); } else { nbs.unshift({content:v, time:new Date().toLocaleString()}); } resetNb(); LS.set('nbs',nbs); renderNb(); };
+        window.resetNb = () => { curEditNb=-1; $('nb-editor').innerHTML=''; $('nb-save-btn').textContent="同步存档"; $('nb-save-btn').classList.replace('bg-blue-600','bg-black'); };
+        window.delNb = i => { nbs.splice(i,1); if(curEditNb===i) resetNb(); LS.set('nbs',nbs); renderNb(); };
+        window.addSw = () => { const n=$('sw-n').value, u=$('sw-u').value; if(n&&u){ cfg.sws.push({name:n, url:u}); LS.set('cfg',cfg); renderApps(); $('sw-n').value=''; $('sw-u').value=''; } };
+        window.delSw = i => { cfg.sws.splice(i,1); LS.set('cfg',cfg); renderApps(); };
+        window.renderApps = () => { 
+            $('app-dock').innerHTML = cfg.sws.map(s => `<a href="${s.url}" target="_blank" class="h-12 w-12 glass-panel rounded-2xl flex items-center justify-center font-black text-[10px] uppercase hover:scale-110 active:scale-95 transition-all shadow-lg">${s.name.substring(0,2)}</a>`).join(''); 
+            $('sw-list').innerHTML = cfg.sws.map((s,i) => `<div class="flex justify-between items-center bg-white dark:bg-slate-800 p-4 rounded-2xl border shadow-sm mb-2"><span class="text-[10px] font-black uppercase force-black">${s.name}</span><button onclick="delSw(${i})" class="text-red-400"><i data-lucide="x" class="w-4 h-4"></i></button></div>`).join('');
+            lucide.createIcons();
         };
-
-        window.renderTodos = () => { $('todo-list').innerHTML = todos.map((t, i) => `<li class="bg-black/5 p-6 rounded-[2rem] flex items-center gap-5 animate-in"><input type="checkbox" ${t.done?'checked':''} onchange="toggleT(${i}, this.checked)" class="!w-6 !h-6"><span class="flex-1 text-[15px] font-bold ${t.done?'line-through opacity-20':''} force-black">${t.text}</span><button onclick="delT(${i})" class="text-red-400"><i data-lucide="trash-2" class="w-5 h-5"></i></button></li>`).join(''); lucide.createIcons(); };
-        window.renderNb = () => { $('nb-hist').innerHTML = nbs.map((n, i) => `<div class="p-8 bg-black/5 rounded-[2.5rem] shadow-sm mb-4 animate-in force-black font-bold"><p class="text-sm leading-relaxed">${n.content}</p><div class="mt-4 pt-4 border-t border-black/5 flex justify-between items-center text-[10px] opacity-30"><span>${n.time}</span><button onclick="delNb(${i})" class="text-red-500 font-black">删除</button></div></div>`).join(''); };
-        window.renderTiles = () => { $('home-tiles').innerHTML = cfg.navs.map(n => `<a href="${n.url}" target="_blank" class="hover:underline decoration-4 underline-offset-8 transition-all font-black uppercase force-black">${n.name}</a>`).join(''); lucide.createIcons(); };
-        window.saveNb = () => { const v=$('nb-val').value.trim(); if(v){ nbs.unshift({content:v, time:new Date().toLocaleString()}); $('nb-val').value=''; LS.set('nbs',nbs); renderNb(); } };
-        window.delNb = i => { nbs.splice(i,1); LS.set('nbs',nbs); renderNb(); };
-        window.newSticky = () => { const id='s-'+Date.now(); sticks.unshift({id, content:'', color:'#000'}); LS.set('sticks', sticks); renderStickies(); };
-        window.upStick = (id, v) => { const s=sticks.find(n=>n.id===id); if(s){ s.content=v; LS.set('sticks',sticks); } };
+        window.renderTiles = () => { 
+            $('home-tiles').innerHTML = cfg.navs.map(n => `<a href="${n.url}" target="_blank" class="hover:underline decoration-4 underline-offset-8 transition-all font-black uppercase force-black">${n.name}</a>`).join(''); 
+            $('tile-list').innerHTML = cfg.navs.map((n, i) => `<div class="flex justify-between items-center bg-white dark:bg-slate-800 p-4 rounded-2xl border shadow-sm mb-2"><span class="text-[10px] font-black uppercase force-black">${n.name}</span><button onclick="delTile(${i})" class="text-red-400"><i data-lucide="x" class="w-4 h-4"></i></button></div>`).join(''); lucide.createIcons();
+        };
+        window.addTile = () => { const n=$('nt-n').value, u=$('nt-u').value; if(n&&u){ cfg.navs.push({name:n, url:u}); LS.set('cfg',cfg); renderTiles(); $('nt-n').value=''; $('nt-u').value=''; } };
+        window.delTile = i => { cfg.navs.splice(i,1); LS.set('cfg',cfg); renderTiles(); };
+        window.saveSysCfg = () => { cfg.ai.url=$('cfg-url').value; cfg.ai.key=$('cfg-key').value; cfg.ai.model=$('cfg-model').value; cfg.ai.l_url=$('cfg-local-url').value; cfg.ai.l_model=$('cfg-local-model').value; LS.set('cfg',cfg); location.reload(); };
+        window.newSticky = () => { const id='s-'+Date.now(); sticks.unshift({id, content:'', color:'#ffffff', mood:'zap'}); LS.set('sticks', sticks); renderStickies(); };
+        window.upStick = (id, v) => { const s=sticks.find(n=>n.id===id); if(s) s.content=v; LS.set('sticks',sticks); };
+        window.setMood = (id, m) => { const s=sticks.find(n=>n.id===id); if(s){ s.mood=m; LS.set('sticks',sticks); renderStickies(); } };
         window.setStickColor = (id, c) => { const s=sticks.find(n=>n.id===id); if(s){ s.color=c; LS.set('sticks',sticks); renderStickies(); } };
+        window.linkStickToTodo = (id, idx) => { if(!idx) return; const s=sticks.find(n=>n.id===id); if(s){ s.content = `[Ref: ${todos[idx].text}] ` + s.content; LS.set('sticks', sticks); renderStickies(); } };
         window.delSticky = id => { sticks=sticks.filter(n=>n.id!==id); LS.set('sticks',sticks); renderStickies(); };
         window.stickToTask = id => { const s=sticks.find(n=>n.id===id); if(s){ todos.unshift({text:s.content, done:false, alerted:false}); LS.set('todos',todos); renderTodos(); toggleUI('panel-todo'); } };
-        window.linkStickToTodo = (id, idx) => { if(!idx) return; const s=sticks.find(n=>n.id===id); if(s){ s.content = `[Ref: ${todos[idx].text}] ` + s.content; LS.set('sticks', sticks); renderStickies(); } };
+        window.renderTodos = () => { $('todo-list').innerHTML = todos.map((t, i) => `<li class="bg-black/5 p-6 rounded-[2rem] flex items-center gap-5 animate-in"><input type="checkbox" ${t.done?'checked':''} onchange="toggleT(${i}, this.checked)" class="!w-6 !h-6"><span class="flex-1 text-[15px] font-bold ${t.done?'line-through opacity-20':''} force-black">${t.text}</span><button onclick="delT(${i})" class="text-red-400"><i data-lucide="trash-2" class="w-5 h-5"></i></button></li>`).join(''); lucide.createIcons(); };
         window.addTodo = () => { const v=$('todo-in').value.trim(), t=$('todo-tm').value; if(v){ todos.unshift({text:v, time:t, done:false, alerted:false}); $('todo-in').value=''; $('todo-tm').value=''; LS.set('todos',todos); renderTodos(); } };
         window.toggleT = (i,v) => { todos[i].done=v; LS.set('todos',todos); renderTodos(); };
         window.delT = i => { todos.splice(i,1); LS.set('todos',todos); renderTodos(); };
-        window.addTile = () => { const n=$('nt-n').value, u=$('nt-u').value; if(n&&u){ cfg.navs.push({name:n, url:u}); LS.set('cfg',cfg); renderTiles(); $('nt-n').value=''; $('nt-u').value=''; } };
-        window.delTile = i => { cfg.navs.splice(i,1); LS.set('cfg',cfg); renderTiles(); };
-        window.saveSysCfg = () => { cfg.ai.url=$('cfg-url').value; cfg.ai.key=$('cfg-key').value; cfg.ai.model=$('cfg-model').value; cfg.ai.l_url=$('cfg-local-url').value; cfg.ai.l_model=$('cfg-local-model').value; cfg.bg=$('cfg-bg').value; LS.set('cfg',cfg); location.reload(); };
-        function renderStickies() { const c = ['#ffffff', '#fef3c7', '#dcfce7', '#dbeafe', '#fce7f3', '#f1f5f9']; $('sticky-grid').innerHTML = sticks.map((s) => `<div class="p-8 rounded-[3.5rem] flex flex-col shadow-2xl border-l-[12px] bg-white dark:bg-slate-900 relative animate-in" style="border-left-color: ${s.color || '#000'}"><textarea oninput="upStick('${s.id}', this.value)" class="bg-transparent flex-1 text-[16px] font-bold resize-none outline-none dark:text-white min-h-[160px]">${s.content}</textarea><div class="mt-4 flex flex-col gap-4 p-5 bg-black/5 dark:bg-white/5 rounded-[2.5rem] border border-black/5"><div class="flex gap-2.5 justify-center">${c.map(col => `<div class="w-5 h-5 rounded-full cursor-pointer border border-black/10" style="background:${col}" onclick="setStickColor('${s.id}', '${col}')"></div>`).join('')}</div><select onchange="linkStickToTodo('${s.id}', this.value)" class="!h-10 !text-[10px] font-black uppercase !bg-white/80 dark:!bg-black/80"><option value="">+ 引用日程</option>${todos.map((t, idx) => `<option value="${idx}">${t.text}</option>`).join('')}</select><div class="flex justify-between items-center border-t border-black/5 pt-4"><div class="flex gap-4"><button onclick="LS.set('sticks',sticks)" class="text-[10px] font-black text-blue-600 uppercase">Save</button><button onclick="stickToTask('${s.id}')" class="text-[10px] font-black text-emerald-600 uppercase">To Task</button></div><button onclick="delSticky('${s.id}')" class="text-[9px] font-black text-red-500 uppercase">Delete</button></div></div></div>`).join(''); lucide.createIcons(); }
-        function renderHistory() { $('chat-log').innerHTML = history.map((h) => `<div class="animate-in ${h.role==='user'?'text-right pl-12':'pr-12'}"><div class="inline-block p-5 ${h.role==='user'?'chat-user shadow-lg':'chat-ai shadow-sm'}"><p class="leading-relaxed font-bold">${h.content}</p></div></div>`).join('') + (history.length === 0 ? '<p class="text-center italic opacity-20 py-20 force-black">无对话记录</p>' : ''); lucide.createIcons(); }
-        
-        window.onload = () => { 
-            init(); 
-            document.querySelectorAll('.close-ui').forEach(btn => btn.onclick = () => toggleUI(null)); 
-            // 修复：建立物理一致的 ID 映射
-            const navIds = ['nav-todo', 'nav-nb', 'nav-sticky', 'nav-pm', 'nav-config'];
-            const panelIds = ['panel-todo', 'panel-nb', 'panel-sticky', 'panel-pm', 'panel-config'];
-            navIds.forEach((id, idx) => { if($(id)) $(id).onclick = () => toggleUI(panelIds[idx]); });
-            lucide.createIcons();
-        };
+        window.renderHistory = () => { $('chat-log').innerHTML = history.map((h) => `<div class="animate-in ${h.role==='user'?'text-right pl-12':'pr-12'}"><div class="inline-block p-5 ${h.role==='user'?'chat-user shadow-lg':'chat-ai shadow-sm'}"><p class="leading-relaxed font-bold">${h.content}</p></div></div>`).join('') + (history.length === 0 ? '<p class="text-center italic opacity-20 py-20 force-black">无对话记录</p>' : ''); lucide.createIcons(); };
+
+        window.onload = init;
     </script>
 </body>
 </html>
