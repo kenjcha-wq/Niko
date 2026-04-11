@@ -1,3 +1,4 @@
+```html
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
@@ -33,6 +34,11 @@
 
         .brand-logo-text { position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; z-index: 1; pointer-events: none; font-size: 8vw; font-weight: 900; color: rgba(255,255,255,0.02); text-transform: uppercase; letter-spacing: -0.02em; text-align: center; }
 
+        /* 顶部装饰栏样式 */
+        .top-info-bar { position: fixed; top: 0; left: 0; right: 0; padding: 24px; display: flex; justify-content: space-between; align-items: flex-start; z-index: 40; pointer-events: none; }
+        .top-info-text { font-size: 10px; font-weight: 900; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.2em; }
+        .top-sub-text { font-size: 8px; font-weight: 900; color: rgba(255,255,255,0.2); text-transform: uppercase; margin-top: 4px; }
+
         .editor-view:empty:before { content: "在此记录思考..."; color: #94a3b8; pointer-events: none; }
         .editor-view h1 { font-size: 2.2em; font-weight: 900; margin: 0.8em 0 0.4em; color: #1e293b; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; }
         .editor-view table { border-collapse: collapse; width: 100%; margin: 1em 0; border: 1.5px solid #e2e8f0; }
@@ -59,16 +65,52 @@
         .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(60px) saturate(180%); border: 1px solid rgba(255, 255, 255, 0.4); box-shadow: 0 40px 100px rgba(15, 23, 42, 0.3); }
         .tile-widget { flex: 1; min-width: 250px; max-width: 320px; height: 160px; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.08); display: flex; flex-direction: column; padding: 1.5rem; border-radius: 32px; background: rgba(255, 255, 255, 0.04); color: white; }
 
-        .login-input { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); color: #fff; @apply w-full h-10 rounded-xl outline-none focus:bg-white/10 transition-all text-center placeholder-white/20 font-bold text-sm tracking-wider; }
+        .login-input { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.15); color: #fff; @apply w-full h-12 rounded-2xl outline-none focus:bg-white/10 transition-all text-center placeholder-white/20 font-bold text-sm tracking-wider; }
         .glass-input { @apply w-full h-10 px-4 bg-slate-900/5 border border-slate-900/10 rounded-xl outline-none focus:bg-white transition-all text-sm font-black; }
 
         .badge { @apply absolute -top-1 -right-1 bg-red-500 text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center border border-slate-900/50; }
 
         @media (max-width: 768px) {
-            .glass-panel { width: 100vw !important; height: 100vh !important; border-radius: 0 !important; margin: 0 !important; inset: 0 !important; position: fixed !important; }
-            .search-box-panel { width: 300px !important; max-height: 450px !important; position: absolute !important; bottom: 80px !important; right: 10px !important; border-radius: 24px !important; margin: 0 !important; z-index: 100000 !important; box-shadow: 0 20px 50px rgba(0,0,0,0.4) !important; overflow-y: auto !important; }
+            .glass-panel:not(.login-panel) { width: 100vw !important; height: 100vh !important; border-radius: 0 !important; margin: 0 !important; inset: 0 !important; position: fixed !important; }
+            .login-panel { width: 85vw !important; max-width: 320px !important; border-radius: 40px !important; position: relative !important; margin: auto !important; }
+            
+            /* 搜索框移动端置顶，避开底部 */
+            .search-box-panel { 
+                width: 90vw !important;
+                position: fixed !important; 
+                top: 70px !important; /* 留出一点顶部标语空间 */
+                bottom: auto !important;
+                left: 50% !important; 
+                transform: translateX(-50%) !important; 
+                border-radius: 18px !important; 
+                z-index: 1000000 !important;
+                background: rgba(15, 23, 42, 0.9) !important;
+                backdrop-filter: blur(20px) !important;
+                border: 1px solid rgba(255,255,255,0.1) !important;
+                box-shadow: 0 10px 30px rgba(0,0,0,0.5) !important;
+                padding: 8px !important;
+            }
+
             .tile-widget { max-width: 100%; min-width: 100%; height: 130px; }
             .mobile-sidebar { position: fixed !important; inset-y: 0 !important; left: 0 !important; width: 85% !important; z-index: 60000 !important; background: #fff !important; box-shadow: 20px 0 50px rgba(0,0,0,0.1); }
+            .ai-sheet-mobile { height: 50vh !important; top: auto !important; bottom: 0 !important; border-radius: 40px 40px 0 0 !important; z-index: 95000 !important; }
+            .editor-main-mobile-with-ai { padding-bottom: 52vh !important; }
+        }
+
+        @media (min-width: 769px) {
+            .search-box-panel {
+                width: 320px !important;
+                position: fixed !important;
+                bottom: 90px !important;
+                left: 50% !important;
+                transform: translateX(-50%) !important;
+                border-radius: 20px !important;
+                z-index: 1000000 !important;
+                background: rgba(15, 23, 42, 0.9) !important;
+                backdrop-filter: blur(20px) !important;
+                border: 1px solid rgba(255,255,255,0.1) !important;
+                padding: 10px !important;
+            }
         }
 
         .chat-bubble { @apply p-4 rounded-2xl max-w-[85%] text-xs font-bold leading-relaxed mb-4; }
@@ -131,6 +173,7 @@
             const [mobileChatActive, setMobileChatActive] = useState(false);
             const [commUnlocked, setCommUnlocked] = useState(false);
             const [commType, setCommType] = useState('personal');
+            const [activeStickySchedulePicker, setActiveStickySchedulePicker] = useState(null);
 
             const [config, setConfig] = useState(() => JSON.parse(localStorage.getItem('NikWe_Master_Config_V200_Stable') || JSON.stringify({
                 username: "智者", wallpaper: PRESET_WALLS[0],
@@ -152,6 +195,8 @@
             const [mailForm, setMailForm] = useState({ to: "", subject: "", body: "", attachments: [] });
 
             const [referencedDocId, setReferencedDocId] = useState(null);
+            const [selectedRef, setSelectedRef] = useState(null); 
+            const [showRefPicker, setShowRefPicker] = useState(false);
             const [showRefList, setShowRefList] = useState(false);
             const [isListening, setIsListening] = useState(false);
 
@@ -161,7 +206,6 @@
             const dbRef = useRef(null);
             const authRef = useRef(null);
 
-            // 本地搜索索引逻辑
             const localSearchResults = useMemo(() => {
                 if (!searchTerm.trim()) return [];
                 const term = searchTerm.toLowerCase();
@@ -232,13 +276,6 @@
             const saveStickies = (st) => { setStickies(st); localStorage.setItem('NikData_Stickies_V200_Stable', JSON.stringify(st)); showFeedback(); };
             const saveAiHistory = (h) => { setAiHistory(h); localStorage.setItem('NikData_AiHistory_V200', JSON.stringify(h)); };
 
-            useEffect(() => {
-                const list = commType === 'personal' ? contacts : groups;
-                if (list.length > 0 && !list.find(x => x.id === activeTargetId)) {
-                    setActiveTargetId(list[0].id);
-                }
-            }, [commType, contacts, groups]);
-
             const handleLogin = (e) => {
                 e.preventDefault();
                 const em = e.target.email.value; const ky = e.target.key.value;
@@ -285,7 +322,21 @@
                 
                 let finalPrompt = userInput;
                 const autoHint = "\n\n(系统提示：录入日程包含 [PLAN: 内容, 日期, 时间]；便签包含 [STICKY: 内容]；修改文章直接输出HTML。)";
-                if (referencedDocId) {
+                
+                if (selectedRef) {
+                    let refContent = "";
+                    if (selectedRef.type === 'note') {
+                        const target = notes.find(n => n.id === selectedRef.id);
+                        if (target) refContent = `参考文档【${target.title}】：\n${target.content}`;
+                    } else if (selectedRef.type === 'plan') {
+                        const target = schedules.find(s => s.id === selectedRef.id);
+                        if (target) refContent = `参考日程：${target.text} (日期: ${target.date}, 时间: ${target.time})`;
+                    } else if (selectedRef.type === 'sticky') {
+                        const target = stickies.find(s => s.id === selectedRef.id);
+                        if (target) refContent = `参考便签：${target.text}`;
+                    }
+                    finalPrompt = `${refContent}\n\n指令：${userInput}${autoHint}`;
+                } else if (referencedDocId) {
                     const docRef = notes.find(n => n.id === referencedDocId);
                     if (docRef) finalPrompt = `参考文档【${docRef.title}】：\n${docRef.content}\n\n指令：${userInput}${autoHint}`;
                 } else if (context) {
@@ -303,29 +354,11 @@
                     const data = await response.json();
                     if (!response.ok) throw new Error(data.error?.message || "接口响应错误");
                     const aiText = data.choices?.[0]?.message?.content || "异常响应";
-                    
-                    const planMatch = aiText.match(/\[PLAN:\s*(.*?),\s*(.*?),\s*(.*?)\]/i);
-                    if (planMatch) {
-                        const [_, pT, pD, pTm] = planMatch;
-                        saveSchedules([{ id: Date.now(), text: pT, date: pD, time: pTm, done: false }, ...schedules]);
-                    }
-                    const stickyMatch = aiText.match(/\[STICKY:\s*(.*?)\]/i);
-                    if (stickyMatch) {
-                        const [_, sT] = stickyMatch;
-                        saveStickies([{ id: Date.now() + 1, text: sT, mood: 'Focus', onTile: true }, ...stickies]);
-                    }
-
                     saveAiHistory([...nextHistory, { role: 'assistant', text: aiText, time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) }]);
+                    setSelectedRef(null);
                 } catch (e) {
                     saveAiHistory([...nextHistory, { role: 'assistant', text: `连接失败: ${e.message}`, time: newMessage.time }]);
                 }
-            };
-
-            const speak = (text) => {
-                const cleanText = text.replace(/\[PLAN:.*?\]/ig, "").replace(/\[STICKY:.*?\]/ig, "").replace(/<[^>]*>?/gm, '');
-                const utterance = new SpeechSynthesisUtterance(cleanText);
-                utterance.lang = 'zh-CN';
-                window.speechSynthesis.speak(utterance);
             };
 
             const startVoiceInput = () => {
@@ -361,16 +394,34 @@
                 if (q) { setIsAiOpen(true); callAiApi(q, currentDoc.content); }
             };
 
+            const handleMailFile = (e) => {
+                const f = e.target.files[0]; if(!f) return;
+                const r = new FileReader(); r.onload = (v) => setMailForm({...mailForm, attachments: [...mailForm.attachments, {name: f.name, type: f.type, data: v.target.result}]}); r.readAsDataURL(f);
+            }
+
+            const handleSendEmail = async () => {
+                if(!mailForm.to || !mailForm.subject) return;
+                try {
+                    const appId = typeof __app_id !== 'undefined' ? __app_id : 'nikwe-default';
+                    await FB.addDoc(FB.collection(dbRef.current, 'artifacts', appId, 'public', 'data', 'emails'), {
+                        ...mailForm, from: config.username, timestamp: Date.now(), date: new Date().toLocaleString()
+                    });
+                    setMailCompose(false);
+                    setMailForm({to:"", subject:"", body:"", attachments:[]});
+                    showFeedback("邮件已发送至公用节点");
+                } catch(e) { showFeedback("发送失败"); }
+            }
+
             if (!isLoggedIn) return (
                 <div className="fixed inset-0 bg-[#0f172a] flex flex-col items-center justify-center p-6 z-[100000]">
                     <div id="wallpaper-layer" style={{backgroundImage: `url(${PRESET_WALLS[0]})`}}></div>
                     <div className="text-4xl text-white tracking-tighter uppercase font-black mb-1 z-10 text-center">NikWe|智者，人生</div>
                     <div className="text-[8px] uppercase text-yellow-500/40 tracking-[0.6em] mb-10 z-10 font-black">Authorized Only</div>
-                    <div className="glass-panel w-full max-w-[280px] p-8 rounded-[40px] text-center relative z-10 font-black" style={{background:'rgba(15,23,42,0.9)', borderColor:'rgba(255,215,0,0.1)'}}>
-                        <form onSubmit={handleLogin} className="space-y-4">
+                    <div className="glass-panel login-panel p-10 text-center z-10 font-black flex flex-col items-center justify-center" style={{background:'rgba(15,23,42,0.9)', borderColor:'rgba(255,215,0,0.1)'}}>
+                        <form onSubmit={handleLogin} className="w-full space-y-5">
                             <input name="email" required className="login-input" placeholder="EMAIL" type="email" />
                             <input name="key" required className="login-input" placeholder="KEY" type="password" />
-                            <button type="submit" className="w-32 h-10 mx-auto bg-yellow-500 text-black rounded-xl font-bold uppercase shadow-lg active:scale-95 transition-all text-[10px] tracking-widest flex items-center justify-center">Sign In</button>
+                            <button type="submit" className="w-full h-14 bg-yellow-500 text-black rounded-3xl font-bold uppercase shadow-2xl active:scale-95 transition-all text-sm tracking-[0.2em]">Sign In</button>
                         </form>
                     </div>
                 </div>
@@ -381,86 +432,80 @@
                     <div id="wallpaper-layer" style={{backgroundImage: `url(${config.wallpaper})`}}></div>
                     <div className="brand-logo-text">NikWe|智者，人生</div>
 
+                    {/* 顶部实时信息装饰栏 */}
+                    <div className="top-info-bar">
+                        <div>
+                            <div className="top-info-text">{location}</div>
+                            <div className="top-sub-text">{weather}</div>
+                        </div>
+                        <div className="text-right">
+                            <div className="top-info-text tracking-[0.3em]">NikWe | 智者，人生</div>
+                            <div className="top-sub-text opacity-50 italic">Wisdom of Life</div>
+                        </div>
+                    </div>
+
                     {toast && (
                         <div className="fixed top-8 left-1/2 -translate-x-1/2 z-[100000] bg-white/90 backdrop-blur-xl px-6 py-2 rounded-full border border-slate-900/5 shadow-2xl animate-in slide-in-from-top-4 duration-300">
                             <span className="text-[10px] font-black uppercase tracking-widest text-slate-800">{toast}</span>
                         </div>
                     )}
 
-                    {view === 'desktop' && (
-                        <header className="fixed top-0 w-full p-4 md:p-10 flex justify-between items-start z-[100] no-print font-black">
-                            <div className="flex flex-col gap-1 bg-white/10 backdrop-blur-2xl px-5 py-2.5 rounded-2xl border border-white/10 shadow-sm text-white">
-                                <div className="flex items-center gap-2 text-xs md:text-sm"><div className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></div><span>{location}</span></div>
-                                <div className="text-[9px] opacity-60 uppercase tracking-wider">{weather}</div>
-                            </div>
-                            <div className="text-right bg-white/10 backdrop-blur-2xl px-6 py-2.5 rounded-2xl border border-white/10 text-white">
-                                <div className="text-xs md:text-sm font-bold tracking-widest uppercase">{config.username}，人生</div>
-                            </div>
-                        </header>
-                    )}
-
-                    <main className="flex-1 relative z-20 overflow-y-auto custom-scrollbar pt-24 pb-32">
+                    <main className={`flex-1 relative z-20 overflow-y-auto custom-scrollbar pt-24 pb-32`}>
                         {view === 'desktop' && (
-                            <div className="w-full max-w-6xl mx-auto flex flex-col items-center justify-center min-h-full px-6 font-black animate-in fade-in duration-500">
+                            <div className="w-full max-w-6xl mx-auto flex flex-col items-center justify-center min-h-full px-6 animate-in fade-in duration-500">
                                 <div className="text-center mb-10 md:mb-16">
                                     <div className="clock-display font-thin text-[20vw] md:text-[8.5rem] tracking-tighter leading-none text-white drop-shadow-xl">{time}</div>
                                     <div className="date-display text-[10px] md:text-[13px] text-white/50 tracking-[0.4em] uppercase mt-3">{date}</div>
                                 </div>
-                                <div className="w-full flex flex-wrap justify-center gap-4 md:gap-8 font-black">
-                                    <div onClick={()=>setView('schedule')} className="tile-widget"><div className="flex justify-between items-start mb-2 uppercase opacity-20 text-[9px]">Plans<Icon name="calendar" size={10}/></div><div className="space-y-1 font-black">{upcomingSchedules.map(t=>(<div key={t.id} className="truncate text-[11px]">• {t.text}</div>))}</div></div>
-                                    <div onClick={()=>setView('sticky')} className="tile-widget"><div className="flex justify-between items-start mb-2 uppercase opacity-20 text-[9px]">Stickies<Icon name="pin" size={10}/></div><div className="space-y-1 text-[10px] italic opacity-60 font-black">{stickies.filter(s => s.onTile).slice(0,3).map(s=>(<div key={s.id} className="truncate">{s.text}</div>))}</div></div>
-                                    <div onClick={()=>setView('note')} className="tile-widget"><div className="flex justify-between items-start mb-2 uppercase opacity-20 text-[9px]">Docs<Icon name="book" size={10}/></div><div className="space-y-1 font-black">{notes.slice(0,3).map(n=>(<div key={n.id} className="truncate text-xs font-black">{n.title}</div>))}</div></div>
+                                <div className="w-full flex flex-wrap justify-center gap-4 md:gap-8">
+                                    <div onClick={()=>setView('schedule')} className="tile-widget"><div className="flex justify-between items-start mb-2 uppercase opacity-20 text-[9px]">Plans<Icon name="calendar" size={10}/></div><div className="space-y-1">{upcomingSchedules.map(t=>(<div key={t.id} className="truncate text-[11px]">• {t.text}</div>))}</div></div>
+                                    <div onClick={()=>setView('sticky')} className="tile-widget"><div className="flex justify-between items-start mb-2 uppercase opacity-20 text-[9px]">Stickies<Icon name="pin" size={10}/></div><div className="space-y-1 text-[10px] italic opacity-60">{stickies.filter(s => s.onTile).slice(0,3).map(s=>(<div key={s.id} className="truncate">{s.text}</div>))}</div></div>
+                                    <div onClick={()=>setView('note')} className="tile-widget"><div className="flex justify-between items-start mb-2 uppercase opacity-20 text-[9px]">Docs<Icon name="book" size={10}/></div><div className="space-y-1">{notes.slice(0,3).map(n=>(<div key={n.id} className="truncate text-xs">{n.title}</div>))}</div></div>
                                 </div>
                             </div>
                         )}
 
                         {/* Note View */}
                         {view === 'note' && (
-                            <div className="fixed inset-0 glass-panel z-[1500] flex flex-col overflow-hidden animate-in fade-in font-black">
+                            <div className="fixed inset-0 glass-panel z-[1500] flex flex-col overflow-hidden animate-in fade-in">
                                 <header className="h-14 border-b border-slate-900/5 flex items-center justify-between px-6 bg-white shrink-0">
                                     <div className="flex items-center gap-4"><button onClick={()=>setShowNoteSidebar(!showNoteSidebar)} className="w-8 h-8 rounded-full hover:bg-slate-900/5 flex items-center justify-center transition-all font-black"><Icon name="menu" size={16}/></button><div className="text-[11px] uppercase italic text-slate-800">Workstation</div></div>
                                     <button onClick={()=>setView('desktop')} className="w-8 h-8 rounded-full bg-slate-900/5 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all font-black"><Icon name="close" size={16}/></button>
                                 </header>
-                                <div className="flex flex-1 overflow-hidden relative font-black">
+                                <div className="flex flex-1 overflow-hidden relative">
                                     {showNoteSidebar && (
-                                        <aside className="mobile-sidebar w-full md:w-64 border-r border-slate-900/5 bg-white/10 flex flex-col p-4 shrink-0 overflow-y-auto font-black fixed md:relative z-50 h-full bg-white animate-in slide-in-from-left duration-300">
-                                            <button onClick={()=>{const nid=Date.now(); setNotes([{id:nid, title:'新文档', content:'', pinned:false}, ...notes]); setActiveNoteId(nid);}} className="w-full mb-6 p-3 bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase font-black font-black">New Entry</button>
+                                        <aside className="mobile-sidebar w-full md:w-64 border-r border-slate-900/5 bg-white/10 flex flex-col p-4 shrink-0 overflow-y-auto fixed md:relative z-50 h-full bg-white animate-in slide-in-from-left duration-300">
+                                            <button onClick={()=>{const nid=Date.now(); setNotes([{id:nid, title:'新文档', content:'', pinned:false}, ...notes]); setActiveNoteId(nid);}} className="w-full mb-6 p-3 bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase">New Entry</button>
                                             <div className="space-y-2">{notes.map(n => (<div key={n.id} onClick={()=>setActiveNoteId(n.id)} className={`p-3 rounded-xl cursor-pointer text-[12px] font-black transition-all ${activeNoteId===n.id ? 'bg-slate-800 text-white shadow-lg' : 'text-slate-800/30'}`}>{n.title}</div>))}</div>
                                         </aside>
                                     )}
-                                    <main className="flex-1 flex flex-col overflow-hidden bg-white/40">
-                                        <div className="p-2 border-b border-slate-900/5 flex gap-1.5 flex-nowrap bg-white shrink-0 items-center overflow-x-auto tool-bar-scroll z-[100] h-[120px] font-black">
+                                    <main className={`flex-1 flex flex-col overflow-hidden bg-white/40 ${(isAiOpen && window.innerWidth < 768) ? 'editor-main-mobile-with-ai' : ''}`}>
+                                        <div className="p-2 border-b border-slate-900/5 flex gap-1.5 flex-nowrap bg-white shrink-0 items-center overflow-x-auto tool-bar-scroll z-[100]">
+                                            <select className="h-8 border-0 rounded-lg text-[10px] font-black px-2 bg-slate-50 outline-none" onChange={(e)=>exec(e, 'fontSize', e.target.value)}><option value="3">Size</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option></select>
                                             <select className="h-8 border-0 rounded-lg text-[10px] font-black px-2 bg-slate-50 outline-none" onChange={(e)=>exec(e, 'fontName', e.target.value)}>{FONTS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}</select>
-                                            <button onMouseDown={(e)=>exec(e, 'bold')} className="tool-btn font-black text-sm font-black font-black">B</button>
+                                            <button onMouseDown={(e)=>exec(e, 'bold')} className="tool-btn text-sm font-black">B</button>
                                             <button onMouseDown={(e)=>exec(e, 'italic')} className="tool-btn italic">I</button>
-                                            <button onMouseDown={(e)=>exec(e, 'underline')} className="tool-btn underline font-black font-black font-black">U</button>
-                                            <button onMouseDown={(e)=>exec(e, 'strikeThrough')} className="tool-btn line-through font-black font-black font-black">ABC</button>
-                                            <button onMouseDown={(e)=>exec(e, 'formatBlock', 'H1')} className="tool-btn font-black font-black font-black font-black">H1</button>
-                                            <button onMouseDown={(e)=>exec(e, 'formatBlock', 'H2')} className="tool-btn font-black font-black font-black font-black">H2</button>
-                                            <button onMouseDown={(e)=>exec(e, 'subscript')} className="tool-btn text-[8px] font-black font-black">X₂</button>
-                                            <button onMouseDown={(e)=>exec(e, 'superscript')} className="tool-btn text-[8px] font-black font-black">X²</button>
-                                            <div className="flex gap-1 items-center bg-white px-2 h-8 border border-slate-900/5 rounded-lg font-black"><input type="color" onInput={(e)=>exec(e, 'foreColor', e.target.value)} className="w-4 h-4" /><input type="color" onInput={(e)=>exec(e, 'hiliteColor', e.target.value)} className="w-4 h-4" /></div>
-                                            <button onMouseDown={(e)=>exec(e, 'justifyLeft')} className="tool-btn font-black font-black"><Icon name="alignLeft"/></button>
-                                            <button onMouseDown={(e)=>exec(e, 'justifyCenter')} className="tool-btn font-black font-black"><Icon name="alignCenter"/></button>
-                                            <button onMouseDown={(e)=>exec(e, 'justifyRight')} className="tool-btn font-black font-black"><Icon name="alignRight"/></button>
-                                            <button onMouseDown={(e)=>exec(e, 'justifyFull')} className="tool-btn font-black font-black"><Icon name="alignFull"/></button>
-                                            <button onMouseDown={(e)=>exec(e, 'insertHTML', '<table style="width:100%;border:1px solid #ddd"><tr><td>Cell</td><td>Cell</td></tr></table>')} className="tool-btn font-black font-black"><Icon name="table"/></button>
-                                            <button onMouseDown={(e)=>exec(e, 'indent')} className="tool-btn font-black font-black font-black"><Icon name="indent"/></button>
-                                            <button onMouseDown={(e)=>exec(e, 'outdent')} className="tool-btn scale-x-[-1] font-black font-black font-black"><Icon name="indent"/></button>
-                                            <button onMouseDown={(e)=>exec(e, 'insertUnorderedList')} className="tool-btn font-black font-black font-black"><Icon name="list"/></button>
-                                            <button onMouseDown={(e)=>exec(e, 'insertOrderedList')} className="tool-btn font-black text-[9px] font-black font-black">1.</button>
-                                            <button onMouseDown={(e)=>exec(e, 'insertHorizontalRule')} className="tool-btn font-black font-black font-black font-black">HR</button>
-                                            <button onMouseDown={(e)=>exec(e, 'formatBlock', 'BLOCKQUOTE')} className="tool-btn font-black font-black font-black"><Icon name="quote"/></button>
-                                            <label className="tool-btn cursor-pointer font-black font-black font-black"><Icon name="image" size={14}/><input type="file" hidden accept="image/*" onChange={(e)=>{const f=e.target.files[0]; const r=new FileReader(); r.onload=(v)=>document.execCommand('insertImage',false,v.target.result); r.readAsDataURL(f);}}/></label>
-                                            <button onMouseDown={(e)=>exec(e, 'undo')} className="tool-btn text-blue-600 font-black font-black font-black">UNDO</button>
-                                            <button onMouseDown={(e)=>exec(e, 'redo')} className="tool-btn text-blue-600 font-black font-black font-black">REDO</button>
-                                            <button onMouseDown={(e)=>exec(e, 'removeFormat')} className="tool-btn text-red-500 font-black font-black font-black font-black">CLR</button>
-                                            <button onClick={callNotebookAi} className="tool-btn !bg-slate-800 !text-white !w-14 gap-1 animate-pulse font-black font-black font-black"><Icon name="sparkles" size={12}/>@AI</button>
+                                            <button onMouseDown={(e)=>exec(e, 'underline')} className="tool-btn underline">U</button>
+                                            <button onMouseDown={(e)=>exec(e, 'strikeThrough')} className="tool-btn line-through">S</button>
+                                            <button onMouseDown={(e)=>exec(e, 'formatBlock', 'H1')} className="tool-btn font-black">H1</button>
+                                            <button onMouseDown={(e)=>exec(e, 'formatBlock', 'H2')} className="tool-btn font-black">H2</button>
+                                            <button onMouseDown={(e)=>exec(e, 'formatBlock', 'BLOCKQUOTE')} className="tool-btn">"</button>
+                                            <div className="flex gap-1 items-center bg-slate-50 px-2 h-8 rounded-lg"><input type="color" onInput={(e)=>exec(e, 'foreColor', e.target.value)} className="w-4 h-4" /><input type="color" onInput={(e)=>exec(e, 'hiliteColor', e.target.value)} className="w-4 h-4" /></div>
+                                            <button onMouseDown={(e)=>exec(e, 'justifyLeft')} className="tool-btn"><Icon name="alignLeft"/></button>
+                                            <button onMouseDown={(e)=>exec(e, 'justifyCenter')} className="tool-btn"><Icon name="alignCenter"/></button>
+                                            <button onMouseDown={(e)=>exec(e, 'justifyFull')} className="tool-btn"><Icon name="alignFull"/></button>
+                                            <button onMouseDown={(e)=>exec(e, 'insertHorizontalRule')} className="tool-btn">-</button>
+                                            <button onMouseDown={(e)=>exec(e, 'insertHTML', '<table style="width:100%;border:1px solid #ddd"><tr><td>Cell</td><td>Cell</td></tr></table>')} className="tool-btn"><Icon name="table"/></button>
+                                            <button onMouseDown={(e)=>exec(e, 'insertUnorderedList')} className="tool-btn"><Icon name="list"/></button>
+                                            <label className="tool-btn cursor-pointer"><Icon name="image" size={14}/><input type="file" hidden accept="image/*" onChange={(e)=>{const f=e.target.files[0]; const r=new FileReader(); r.onload=(v)=>document.execCommand('insertImage',false,v.target.result); r.readAsDataURL(f);}}/></label>
+                                            <button onMouseDown={(e)=>exec(e, 'undo')} className="tool-btn text-blue-600">UNDO</button>
+                                            <button onMouseDown={(e)=>exec(e, 'removeFormat')} className="tool-btn text-red-500">CLR</button>
+                                            <button onClick={callNotebookAi} className="tool-btn !bg-slate-800 !text-white !w-14 gap-1 animate-pulse"><Icon name="sparkles" size={12}/>@AI</button>
                                         </div>
-                                        <div className="flex-1 overflow-y-auto p-6 md:p-24 custom-scrollbar font-black text-slate-800 pb-40 font-black">
+                                        <div className="flex-1 overflow-y-auto p-6 md:p-24 custom-scrollbar text-slate-800 pb-40">
                                             <div className="max-w-3xl mx-auto">
-                                                <input className="w-full text-2xl md:text-4xl font-black border-0 outline-none mb-10 text-slate-800 bg-transparent font-black" value={notes.find(n=>n.id===activeNoteId)?.title} onChange={e => setNotes(notes.map(n => n.id === activeNoteId ? {...n, title:e.target.value} : n))} />
-                                                <div ref={editorRef} onInput={handleEditorInput} contentEditable className="w-full min-h-[400px] outline-none text-slate-800 leading-relaxed text-sm md:text-base editor-view" dangerouslySetInnerHTML={{ __html: notes.find(n=>n.id===activeNoteId)?.content }}></div>
+                                                <input className="w-full text-2xl md:text-4xl font-black border-0 outline-none mb-10 text-slate-800 bg-transparent" value={notes.find(n=>n.id===activeNoteId)?.title} onChange={e => setNotes(notes.map(n => n.id === activeNoteId ? {...n, title:e.target.value} : n))} />
+                                                <div ref={editorRef} onInput={handleEditorInput} contentEditable className="w-full min-h-[500px] outline-none text-slate-800 leading-relaxed text-sm md:text-base editor-view" dangerouslySetInnerHTML={{ __html: notes.find(n=>n.id===activeNoteId)?.content }}></div>
                                             </div>
                                         </div>
                                     </main>
@@ -470,25 +515,25 @@
 
                         {/* Schedules View */}
                         {view === 'schedule' && (
-                            <div className="fixed inset-0 glass-panel z-[1500] flex flex-col overflow-hidden animate-in fade-in font-black">
+                            <div className="fixed inset-0 glass-panel z-[1500] flex flex-col overflow-hidden animate-in fade-in">
                                 <header className="h-14 border-b border-slate-900/5 flex items-center justify-between px-6 bg-white shrink-0">
                                     <div className="flex items-center gap-3"><Icon name="calendar" size={18} /><span>Schedules Hub</span></div>
                                     <button onClick={()=>setView('desktop')} className="w-8 h-8 rounded-full bg-slate-900/5 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"><Icon name="close" size={16}/></button>
                                 </header>
                                 <main className="flex-1 p-6 md:p-10 overflow-y-auto bg-white/20 pb-40">
                                     <div className="max-w-2xl mx-auto space-y-6">
-                                        <div className="flex flex-col gap-3 font-black">
+                                        <div className="flex flex-col gap-3">
                                             <input id="new-task-input" className="glass-input font-black" placeholder="任务内容..." />
-                                            <div className="flex gap-2 font-black">
-                                                <input id="new-task-date" type="date" className="glass-input flex-1 h-10 px-4" />
-                                                <input id="new-task-time" type="time" className="glass-input flex-1 h-10 px-4" />
+                                            <div className="flex gap-2">
+                                                <input id="new-task-date" type="date" className="glass-input flex-1 h-10 px-4 font-black" />
+                                                <input id="new-task-time" type="time" className="glass-input flex-1 h-10 px-4 font-black" />
                                                 <button onClick={()=>{const i=document.getElementById('new-task-input'), d=document.getElementById('new-task-date'), t=document.getElementById('new-task-time'); if(i.value.trim()){saveSchedules([{id:Date.now(), text:i.value, date:d.value, time:t.value, done:false},...schedules]); i.value=''; d.value=''; t.value=''}}} className="w-24 bg-slate-800 text-white rounded-xl font-bold text-[10px]">ADD</button>
                                             </div>
                                         </div>
                                         <div className="space-y-3">{schedules.map(s => (
                                             <div key={s.id} className="flex items-center gap-4 p-4 rounded-2xl bg-white border shadow-sm">
                                                 <button onClick={()=>saveSchedules(schedules.map(x=>x.id===s.id?{...x,done:!x.done}:x))} className={`w-6 h-6 rounded-lg border-2 ${s.done?'bg-slate-800 border-slate-800 text-white':'border-slate-900/10'}`}>{s.done && <Icon name="check" size={12}/>}</button>
-                                                <div className="flex-1 font-black"><div className={`text-sm ${s.done?'line-through opacity-40':''}`}>{s.text}</div><div className="text-[9px] opacity-30 mt-1 uppercase">{s.date || 'TBD'} | {s.time || '--:--'}</div></div>
+                                                <div className="flex-1"><div className={`text-sm ${s.done?'line-through opacity-40':''}`}>{s.text}</div><div className="text-[9px] opacity-30 mt-1 uppercase">{s.date || 'TBD'} | {s.time || '--:--'}</div></div>
                                                 <button onClick={()=>saveSchedules(schedules.filter(x=>x.id!==s.id))} className="text-red-500"><Icon name="trash" size={14}/></button>
                                             </div>
                                         ))}</div>
@@ -499,55 +544,67 @@
 
                         {/* Stickies View */}
                         {view === 'sticky' && (
-                            <div className="fixed inset-0 glass-panel z-[1500] flex flex-col overflow-hidden animate-in fade-in font-black">
+                            <div className="fixed inset-0 glass-panel z-[1500] flex flex-col overflow-hidden animate-in fade-in">
                                 <header className="h-14 border-b border-slate-900/5 flex items-center justify-between px-6 bg-white shrink-0">
                                     <div className="flex items-center gap-3"><Icon name="pin" size={18} /><span>Stickies Library</span></div>
-                                    <button onClick={()=>setView('desktop')} className="w-8 h-8 rounded-full bg-slate-900/5 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all font-black"><Icon name="close" size={16}/></button>
+                                    <button onClick={()=>setView('desktop')} className="w-8 h-8 rounded-full bg-slate-900/5 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"><Icon name="close" size={16}/></button>
                                 </header>
                                 <main className="flex-1 p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 overflow-y-auto bg-white/20 pb-40">
                                     <div onClick={()=>saveStickies([{id:Date.now(), text:'', mood:'Focus', onTile: true}, ...stickies])} className="aspect-square rounded-[32px] border-4 border-dashed border-slate-900/5 flex flex-col items-center justify-center cursor-pointer hover:bg-white/40 transition-all text-slate-800"><Icon name="plus" size={32} className="opacity-10 mb-4" /><span className="text-[10px] font-black uppercase opacity-20">New Signal</span></div>
-                                    {stickies.map(s => (<div key={s.id} className="aspect-square p-6 rounded-[32px] flex flex-col shadow-sm relative transition-all bg-yellow-50/80 font-black">
-                                        <div className="flex justify-between mb-4 font-black">
-                                            <div className="flex gap-2">
-                                                <select value={s.mood} onChange={(e)=>saveStickies(stickies.map(x=>x.id===s.id?{...x,mood:e.target.value}:x))} className="bg-slate-900/5 rounded-full px-3 py-1 text-[9px] font-black outline-none">{MOODS.map(m => <option key={m.icon} value={m.icon}>{m.icon}</option>)}</select>
-                                                <button onClick={()=>saveStickies(stickies.map(x=>x.id===s.id?{...x,onTile:!x.onTile}:x))} className={`w-6 h-6 rounded-full flex items-center justify-center transition-all ${s.onTile ? 'bg-slate-800 text-white shadow-lg' : 'bg-slate-900/5 text-slate-400'}`}><Icon name="pin" size={10}/></button>
+                                    {stickies.map(s => (
+                                        <div key={s.id} className="aspect-square p-6 rounded-[32px] flex flex-col shadow-sm relative transition-all bg-yellow-50/80">
+                                            <div className="flex justify-between mb-4">
+                                                <div className="flex gap-2">
+                                                    <select value={s.mood} onChange={(e)=>saveStickies(stickies.map(x=>x.id===s.id?{...x,mood:e.target.value}:x))} className="bg-slate-900/5 rounded-full px-3 py-1 text-[9px] font-black outline-none">{MOODS.map(m => <option key={m.icon} value={m.icon}>{m.icon}</option>)}</select>
+                                                    <button onClick={()=>saveStickies(stickies.map(x=>x.id===s.id?{...x,onTile:!x.onTile}:x))} className={`w-6 h-6 rounded-full flex items-center justify-center transition-all ${s.onTile ? 'bg-slate-800 text-white shadow-lg' : 'bg-slate-900/5 text-slate-400'}`}><Icon name="pin" size={10}/></button>
+                                                    <div className="relative">
+                                                        <button onClick={()=>setActiveStickySchedulePicker(activeStickySchedulePicker === s.id ? null : s.id)} className={`w-6 h-6 rounded-full flex items-center justify-center transition-all bg-slate-900/5 text-slate-800 hover:bg-slate-800 hover:text-white`}><Icon name="calendar" size={10}/></button>
+                                                        {activeStickySchedulePicker === s.id && (
+                                                            <div className="absolute top-8 left-0 w-48 max-h-40 overflow-y-auto bg-white border border-slate-900/10 shadow-2xl rounded-xl z-[500] p-2 animate-in fade-in">
+                                                                {schedules.map(sch => (
+                                                                    <div key={sch.id} onClick={()=>{saveStickies(stickies.map(x=>x.id===s.id?{...x, text: (x.text + '\n' + sch.text).trim()}:x)); setActiveStickySchedulePicker(null);}} className="p-2 hover:bg-slate-50 rounded-lg cursor-pointer text-[10px] font-bold truncate">📅 {sch.text}</div>
+                                                                ))}
+                                                            </div>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <button onClick={()=>saveStickies(stickies.filter(x=>x.id!==s.id))} className="opacity-10 hover:text-red-500 font-black"><Icon name="trash" size={12}/></button>
                                             </div>
-                                            <button onClick={()=>saveStickies(stickies.filter(x=>x.id!==s.id))} className="opacity-10 hover:text-red-500 font-black"><Icon name="trash" size={12}/></button>
+                                            <textarea value={s.text} onChange={(e)=>saveStickies(stickies.map(x=>x.id===s.id?{...x,text:e.target.value}:x))} className="flex-1 bg-transparent border-0 outline-none resize-none text-xs font-bold leading-relaxed font-black" placeholder="..." />
                                         </div>
-                                        <textarea value={s.text} onChange={(e)=>saveStickies(stickies.map(x=>x.id===s.id?{...x,text:e.target.value}:x))} className="flex-1 bg-transparent border-0 outline-none resize-none text-xs font-bold leading-relaxed font-black" placeholder="..." />
-                                    </div>))}
+                                    ))}
                                 </main>
                             </div>
                         )}
 
                         {/* Comm View */}
                         {view === 'comm' && (
-                            <div className="fixed inset-0 glass-panel z-[1500] flex flex-col overflow-hidden animate-in fade-in font-black">
+                            <div className="fixed inset-0 glass-panel z-[1500] flex flex-col overflow-hidden animate-in fade-in">
                                 <header className="h-14 border-b border-slate-900/5 flex items-center justify-between px-6 bg-white shrink-0 relative">
                                     <div className="flex items-center gap-4">{mobileChatActive && <button onClick={()=>setMobileChatActive(false)} className="md:hidden font-black"><Icon name="back" size={18}/></button>}<div className="text-xs uppercase tracking-widest font-black">Signal Node</div></div>
-                                    <div className="flex items-center gap-4 font-black font-black font-black"><button onClick={clearChat} className="text-red-500 font-black"><Icon name="trash" size={16}/></button><button onClick={()=>setView('desktop')} className="w-8 h-8 rounded-full bg-slate-900/5 flex items-center justify-center transition-all font-black"><Icon name="close" size={16}/></button></div>
+                                    <div className="flex items-center gap-4"><button onClick={clearChat} className="text-red-500"><Icon name="trash" size={16}/></button><button onClick={()=>setView('desktop')} className="w-8 h-8 rounded-full bg-slate-900/5 flex items-center justify-center transition-all"><Icon name="close" size={16}/></button></div>
                                 </header>
-                                <div className="flex flex-1 overflow-hidden relative font-black font-black font-black">
+                                <div className="flex flex-1 overflow-hidden relative">
                                     {!commUnlocked ? (
-                                        <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-xl flex items-center justify-center p-6 font-black font-black font-black">
+                                        <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-xl flex items-center justify-center p-6">
                                             <div className="w-full max-w-xs text-center space-y-6">
                                                 <Icon name="lock" size={48} className="mx-auto opacity-20" />
-                                                <input id="comm-key" type="password" className="glass-input text-center" placeholder="COMM KEY" onKeyDown={e=>{if(e.key==='Enter') setCommUnlocked(true)}} />
+                                                <input id="comm-key" type="password" className="glass-input text-center font-black" placeholder="COMM KEY" onKeyDown={e=>{if(e.key==='Enter') setCommUnlocked(true)}} />
                                                 <button onClick={()=>setCommUnlocked(true)} className="w-full py-4 bg-slate-800 text-white rounded-2xl font-black text-[10px] uppercase shadow-xl">Access</button>
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="flex flex-1 overflow-hidden font-black">
-                                            <aside className={`${mobileChatActive ? 'hidden' : 'flex'} w-full md:w-72 border-r border-slate-900/5 bg-white/20 flex flex-col p-4 shrink-0 overflow-y-auto font-black`}>
-                                                <div className="flex gap-2 mb-6 font-black font-black"><div onClick={()=>setCommType('personal')} className={`flex-1 text-center py-2 text-[10px] uppercase cursor-pointer rounded-xl ${commType==='personal'?'bg-slate-800 text-white font-black':'bg-slate-900/5 text-slate-800'}`}>Personal</div><div onClick={()=>setCommType('group')} className={`flex-1 text-center py-2 text-[10px] uppercase cursor-pointer rounded-xl ${commType==='group'?'bg-slate-800 text-white font-black':'bg-slate-900/5 text-slate-800'}`}>Groups</div></div>
-                                                {(commType === 'personal' ? contacts : groups).map(item => (<div key={item.id} onClick={()=>{setActiveTargetId(item.id); setMobileChatActive(true);}} className={`p-4 mb-2 rounded-2xl cursor-pointer transition-all ${activeTargetId===item.id?'bg-slate-800 text-white shadow-lg font-black font-black':'hover:bg-white/40 text-slate-800 font-black'}`}><div className="flex items-center gap-3 font-black font-black"><div className="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center text-[10px] font-black uppercase">{item.avatar}</div><div className="font-black text-xs">{item.name}</div></div></div>))}
+                                        <div className="flex flex-1 overflow-hidden">
+                                            <aside className={`${mobileChatActive ? 'hidden' : 'flex'} w-full md:w-72 border-r border-slate-900/5 bg-white/20 flex flex-col p-4 shrink-0 overflow-y-auto`}>
+                                                <div className="flex gap-2 mb-6"><div onClick={()=>setCommType('personal')} className={`flex-1 text-center py-2 text-[10px] uppercase cursor-pointer rounded-xl font-black ${commType==='personal'?'bg-slate-800 text-white':'bg-slate-900/5 text-slate-800'}`}>Personal</div><div onClick={()=>setCommType('group')} className={`flex-1 text-center py-2 text-[10px] uppercase cursor-pointer rounded-xl font-black ${commType==='group'?'bg-slate-800 text-white':'bg-slate-900/5 text-slate-800'}`}>Groups</div></div>
+                                                {(commType === 'personal' ? contacts : groups).map(item => (<div key={item.id} onClick={()=>{setActiveTargetId(item.id); setMobileChatActive(true);}} className={`p-4 mb-2 rounded-2xl cursor-pointer transition-all ${activeTargetId===item.id?'bg-slate-800 text-white shadow-lg':'hover:bg-white/40 text-slate-800'}`}><div className="flex items-center gap-3 font-black"><div className="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center text-[10px] uppercase font-black">{item.avatar}</div><div className="text-xs font-black">{item.name}</div></div></div>))}
                                             </aside>
-                                            <main className={`${!mobileChatActive ? 'hidden' : 'flex'} flex-1 md:flex flex-col bg-slate-50/50 overflow-hidden font-black`}>
-                                                <div className="flex-1 overflow-y-auto p-6 md:p-10 custom-scrollbar space-y-4 font-black">
-                                                    {(commType==='personal'?contacts:groups).find(x=>x.id===activeTargetId)?.msgs.map(m => (<div key={m.id} className={`chat-bubble font-black ${m.role==='user'?'chat-user shadow-lg font-black':'chat-target shadow-sm'}`}>{m.text}<div className="text-[8px] mt-2 opacity-30 uppercase">{m.time}</div></div>))}
+                                            <main className={`${!mobileChatActive ? 'hidden' : 'flex'} flex-1 md:flex flex-col bg-slate-50/50 overflow-hidden`}>
+                                                <div className="flex-1 overflow-y-auto p-6 md:p-10 custom-scrollbar space-y-4">
+                                                    {(commType==='personal'?contacts:groups).find(x=>x.id===activeTargetId)?.msgs.map(m => (<div key={m.id} className={`chat-bubble font-black ${m.role==='user'?'chat-user shadow-lg':'chat-target shadow-sm'}`}>{m.text}<div className="text-[8px] mt-2 opacity-30 uppercase">{m.time}</div></div>))}
                                                 </div>
-                                                <div className="p-4 border-t bg-white/80 backdrop-blur-xl flex gap-3 pb-10 md:pb-4 font-black font-black font-black">
-                                                    <input id="human-msg-input" className="flex-1 bg-slate-100 p-4 rounded-2xl outline-none text-xs font-bold font-black" placeholder="信号内容..." onKeyDown={e=>e.key==='Enter' && handleSendMsg()} /><button onClick={handleSendMsg} className="bg-slate-800 text-white p-4 rounded-2xl active:scale-95 transition-all font-black font-black"><Icon name="send" size={18}/></button>
+                                                <div className="p-4 border-t bg-white/80 backdrop-blur-xl flex gap-3 pb-10 md:pb-4 font-black">
+                                                    <input id="human-msg-input" className="flex-1 bg-slate-100 p-4 rounded-2xl outline-none text-xs font-bold font-black" placeholder="信号内容..." onKeyDown={e=>e.key==='Enter' && handleSendMsg()} /><button onClick={handleSendMsg} className="bg-slate-800 text-white p-4 rounded-2xl active:scale-95 transition-all"><Icon name="send" size={18}/></button>
                                                 </div>
                                             </main>
                                         </div>
@@ -558,163 +615,167 @@
 
                         {/* Lab Hub View */}
                         {view === 'lab' && (
-                            <div className="fixed inset-0 glass-panel z-[1500] flex flex-col overflow-hidden md:m-auto md:w-[96vw] md:h-[90vh] md:rounded-[35px] font-black text-slate-800 font-black">
+                            <div className="fixed inset-0 glass-panel z-[1500] flex flex-col overflow-hidden md:m-auto md:w-[96vw] md:h-[90vh] md:rounded-[35px] font-black text-slate-800">
                                 <header className="h-14 border-b border-slate-900/5 flex items-center justify-between px-6 bg-white shrink-0 font-black">
-                                    <div className="flex items-center gap-4 font-black"><button onClick={()=>setShowLabSidebar(!showLabSidebar)} className="w-8 h-8 rounded-full hover:bg-slate-900/5 flex items-center justify-center font-black"><Icon name="menu" size={16}/></button><h2 className="text-sm uppercase font-black font-black">Lab Hub</h2></div>
-                                    <button onClick={()=>setView('desktop')} className="w-8 h-8 rounded-full bg-slate-900/5 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all font-black font-black"><Icon name="close" size={16}/></button>
+                                    <div className="flex items-center gap-4"><button onClick={()=>setShowLabSidebar(!showLabSidebar)} className="w-8 h-8 rounded-full hover:bg-slate-900/5 flex items-center justify-center font-black"><Icon name="menu" size={16}/></button><h2 className="text-sm uppercase font-black">Lab Hub</h2></div>
+                                    <button onClick={()=>setView('desktop')} className="w-8 h-8 rounded-full bg-slate-900/5 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"><Icon name="close" size={16}/></button>
                                 </header>
-                                <div className="flex flex-1 overflow-hidden font-black font-black">
+                                <div className="flex flex-1 overflow-hidden font-black">
                                     {showLabSidebar && (
-                                        <aside className="mobile-sidebar w-64 md:w-80 border-r border-slate-900/5 bg-white/10 flex flex-col p-6 shrink-0 overflow-y-auto custom-scrollbar font-black">
-                                            <div onClick={()=>setActivePlugin({name:'Nik 互通', type:'mail'})} className={`p-4 mb-3 rounded-2xl bg-white border cursor-pointer font-black uppercase transition-all ${activePlugin.type==='mail'?'bg-slate-800 text-white shadow-lg':'hover:bg-slate-50'}`}>Nik 互通</div>
-                                            <div onClick={()=>{setActivePlugin({name:'协作白板', url:'https://www.excalidraw.com/', type:'plugin'}); if(window.innerWidth<768)setShowLabSidebar(false);}} className={`p-4 mb-3 rounded-2xl bg-white border cursor-pointer font-black uppercase transition-all ${activePlugin.name==='协作白板'?'bg-slate-800 text-white shadow-lg':'hover:bg-slate-50'}`}>协作白板</div>
-                                            <div className="mt-4 text-[10px] opacity-30 uppercase mb-3 font-black">Custom Plugins</div>
+                                        <aside className="mobile-sidebar w-64 md:w-80 border-r border-slate-900/5 bg-white/10 flex flex-col p-6 shrink-0 overflow-y-auto custom-scrollbar">
+                                            <div onClick={()=>setActivePlugin({name:'Nik 互通', type:'mail'})} className={`p-4 mb-3 rounded-2xl bg-white border cursor-pointer uppercase transition-all font-black ${activePlugin.type==='mail'?'bg-slate-800 text-white shadow-lg':'hover:bg-slate-50'}`}>Nik 互通</div>
+                                            <div onClick={()=>{setActivePlugin({name:'协作白板', url:'https://www.excalidraw.com/', type:'plugin'}); if(window.innerWidth<768)setShowLabSidebar(false);}} className={`p-4 mb-3 rounded-2xl bg-white border cursor-pointer uppercase transition-all font-black ${activePlugin.name==='协作白板'?'bg-slate-800 text-white shadow-lg':'hover:bg-slate-50'}`}>协作白板</div>
                                             {config.plugins.map((p, idx) => (
-                                                <div key={idx} onClick={()=>setActivePlugin(p)} className={`group p-4 mb-3 rounded-2xl bg-white border flex items-center gap-3 font-black cursor-pointer transition-all ${activePlugin.name===p.name?'bg-slate-800 text-white shadow-lg':'hover:bg-slate-50'}`}>
-                                                    <div className="flex-1 truncate font-black uppercase text-xs font-black">{p.name}</div>
-                                                    <button onClick={(e)=>{e.stopPropagation(); saveConfig({...config, plugins: config.plugins.filter((_,i)=>i!==idx)});}} className="text-red-400 font-black font-black font-black"><Icon name="trash" size={14}/></button>
+                                                <div key={idx} onClick={()=>setActivePlugin(p)} className={`group p-4 mb-3 rounded-2xl bg-white border flex items-center gap-3 cursor-pointer transition-all ${activePlugin.name===p.name?'bg-slate-800 text-white shadow-lg font-black':'hover:bg-slate-50'}`}>
+                                                    <div className="flex-1 truncate uppercase text-xs font-black">{p.name}</div>
+                                                    <button onClick={(e)=>{e.stopPropagation(); saveConfig({...config, plugins: config.plugins.filter((_,i)=>i!==idx)});}} className="text-red-400 font-black"><Icon name="trash" size={14}/></button>
                                                 </div>
                                             ))}
-                                            <div className="mt-auto border-t border-slate-900/5 pt-6 space-y-3 pb-40 font-black">
-                                                <input className="glass-input mb-1 font-black" placeholder="NAME" id="lab-n" />
-                                                <input className="glass-input mb-1 font-black" placeholder="URL" id="lab-u" />
-                                                <button onClick={()=>{const n=document.getElementById('lab-n').value, u=document.getElementById('lab-u').value; if(n&&u) saveConfig({...config, plugins:[...config.plugins, {name:n, url:u, type:'plugin'}]}); document.getElementById('lab-n').value=''; document.getElementById('lab-u').value='';}} className="w-full py-2 bg-slate-800 text-white rounded-xl text-[9px] font-black uppercase active:scale-95 transition-all font-black">REGISTER</button>
+                                            <div className="mt-auto border-t border-slate-900/5 pt-6 space-y-3 pb-40">
+                                                <input className="glass-input mb-1 font-black" placeholder="NAME" id="lab-n" /><input className="glass-input mb-1 font-black" placeholder="URL" id="lab-u" />
+                                                <button onClick={()=>{const n=document.getElementById('lab-n').value, u=document.getElementById('lab-u').value; if(n&&u) saveConfig({...config, plugins:[...config.plugins, {name:n, url:u, type:'plugin'}]}); document.getElementById('lab-n').value=''; document.getElementById('lab-u').value='';}} className="w-full py-2 bg-slate-800 text-white rounded-xl text-[9px] font-black uppercase active:scale-95 transition-all">REGISTER</button>
                                             </div>
                                         </aside>
                                     )}
-                                    <main className="flex-1 bg-slate-100 relative flex flex-col font-black">
+                                    <main className="flex-1 bg-slate-100 relative flex flex-col">
                                         {activePlugin.type === 'mail' ? (
-                                            <div className="w-full h-full p-6 md:p-10 overflow-y-auto bg-white relative pb-40 font-black">
-                                                <div className="max-w-4xl mx-auto space-y-8 font-black">
-                                                    <div className="flex justify-between items-end border-b border-slate-900/5 pb-6 font-black font-black">
+                                            <div className="w-full h-full p-6 md:p-10 overflow-y-auto bg-white relative pb-40">
+                                                <div className="max-w-4xl mx-auto space-y-8">
+                                                    <div className="flex justify-between items-end border-b border-slate-900/5 pb-6">
                                                         <h3 className="text-3xl font-black uppercase flex items-center gap-3 font-black"><Icon name="mail" size={24}/>Real Intercom</h3>
-                                                        <button onClick={()=>setMailCompose(true)} className="text-[10px] font-black bg-slate-800 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 shadow-lg font-black">撰写新件</button>
+                                                        <button onClick={()=>setMailCompose(true)} className="text-[10px] font-black bg-slate-800 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 shadow-lg">撰写新件</button>
                                                     </div>
                                                     {mailCompose && (
                                                         <div className="p-6 bg-slate-50 rounded-[32px] border border-slate-900/5 animate-in slide-in-from-top-4 duration-300 space-y-4 font-black">
-                                                            <div className="flex gap-4 font-black"><input className="glass-input flex-1 font-black" placeholder="收件 Identity" value={mailForm.to} onChange={e=>setMailForm({...mailForm, to:e.target.value})} /><input className="glass-input flex-1 font-black" placeholder="主题" value={mailForm.subject} onChange={e=>setMailForm({...mailForm, subject:e.target.value})} /></div>
+                                                            <div className="flex gap-4"><input className="glass-input flex-1 font-black" placeholder="收件 Identity" value={mailForm.to} onChange={e=>setMailForm({...mailForm, to:e.target.value})} /><input className="glass-input flex-1 font-black" placeholder="主题" value={mailForm.subject} onChange={e=>setMailForm({...mailForm, subject:e.target.value})} /></div>
                                                             <textarea className="w-full p-4 bg-white border border-slate-900/5 rounded-2xl h-32 outline-none text-sm font-black resize-none font-black" placeholder="内容..." value={mailForm.body} onChange={e=>setMailForm({...mailForm, body:e.target.value})}></textarea>
                                                             <div className="flex justify-between items-center font-black">
-                                                                <div className="flex gap-2 font-black">
-                                                                    <label className="w-10 h-10 rounded-xl bg-white border border-slate-900/5 flex items-center justify-center cursor-pointer transition-all text-slate-400 font-black"><Icon name="image" size={18}/><input type="file" hidden accept="image/*" onChange={handleMailFile}/></label>
-                                                                    <div className="flex gap-2 font-black">{mailForm.attachments.map((at,idx)=><div key={idx} className="h-10 px-3 bg-white border border-slate-900/5 rounded-xl flex items-center gap-2 text-[8px] font-black font-black font-black font-black">{at.name}</div>)}</div>
-                                                                </div>
-                                                                <div className="flex gap-2 font-black"><button onClick={()=>setMailCompose(false)} className="px-6 py-2.5 rounded-xl text-[10px] font-black border border-slate-900/5 font-black">取消</button><button onClick={handleSendEmail} className="px-8 py-2.5 rounded-xl text-[10px] font-black bg-slate-800 text-white shadow-lg font-black font-black">发送</button></div>
+                                                                <div className="flex gap-2"><label className="w-10 h-10 rounded-xl bg-white border border-slate-900/5 flex items-center justify-center cursor-pointer transition-all text-slate-400 font-black"><Icon name="image" size={18}/><input type="file" hidden accept="image/*" onChange={handleMailFile}/></label>
+                                                                <div className="flex gap-2">{mailForm.attachments.map((at,idx)=><div key={idx} className="h-10 px-3 bg-white border border-slate-900/5 rounded-xl flex items-center gap-2 text-[8px] font-black">{at.name}</div>)}</div></div>
+                                                                <div className="flex gap-2"><button onClick={()=>setMailCompose(false)} className="px-6 py-2.5 rounded-xl text-[10px] font-black border border-slate-900/5">取消</button><button onClick={handleSendEmail} className="px-8 py-2.5 rounded-xl text-[10px] font-black bg-slate-800 text-white shadow-lg">发送</button></div>
                                                             </div>
                                                         </div>
                                                     )}
                                                     {nikEmails.map((e, i) => (
-                                                        <div key={e.id || i} className="group p-6 hover:bg-slate-50 rounded-3xl transition-all border border-transparent hover:border-slate-900/5 font-black font-black">
-                                                            <div className="flex justify-between items-start mb-2 font-black font-black">
-                                                                <div className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-2 font-black font-black font-black">From: <span className="text-slate-800 font-black">{e.from}</span> / To: <span className="text-slate-500 font-black">{e.to}</span></div>
-                                                                <div className="text-[9px] font-black text-slate-300 uppercase font-black font-black">{e.date}</div>
-                                                            </div>
-                                                            <div className="text-xl font-black uppercase mb-3 font-black font-black">{e.subject}</div>
-                                                            <div className="text-sm leading-relaxed text-slate-600 whitespace-pre-wrap font-black font-black font-black">{e.body}</div>
-                                                            {e.attachments?.map((at, idx) => (<div key={idx} className="mt-4 font-black font-black">{at.type.includes('image') && <img src={at.data} className="w-32 h-32 object-cover rounded-lg font-black font-black font-black" />}</div>))}
+                                                        <div key={e.id || i} className="group p-6 hover:bg-slate-50 rounded-3xl transition-all border border-transparent hover:border-slate-900/5 font-black">
+                                                            <div className="flex justify-between items-start mb-2"><div className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-2">From: <span className="text-slate-800">{e.from}</span> / To: <span className="text-slate-500">{e.to}</span></div><div className="text-[9px] font-black text-slate-300 uppercase">{e.date}</div></div>
+                                                            <div className="text-xl font-black uppercase mb-3">{e.subject}</div><div className="text-sm leading-relaxed text-slate-600 whitespace-pre-wrap">{e.body}</div>
                                                         </div>
                                                     ))}
                                                 </div>
                                             </div>
-                                        ) : (activePlugin.url && <iframe src={activePlugin.url} className="w-full h-full border-0 rounded-b-[35px] font-black font-black font-black"></iframe>)}
+                                        ) : (activePlugin.url && <iframe src={activePlugin.url} className="w-full h-full border-0 rounded-b-[35px]"></iframe>)}
                                     </main>
                                 </div>
                             </div>
                         )}
 
-                        {/* View Settings Keep */}
+                        {/* Settings View */}
                         {view === 'settings' && (
-                            <div className="fixed inset-0 md:m-auto glass-panel z-[5000] flex flex-col overflow-hidden shadow-2xl md:w-[90vw] md:max-w-[750px] md:h-[80vh] md:rounded-[35px] font-black text-slate-800 font-black font-black font-black font-black">
-                                <div className="p-8 border-b border-slate-900/5 flex justify-between items-center bg-white shrink-0 font-black font-black font-black"><span className="text-xs uppercase tracking-widest font-black font-black font-black">Configuration Hub</span><div onClick={()=>setView('desktop')} className="cursor-pointer text-slate-800/30 hover:text-red-500 font-black font-black font-black font-black font-black"><Icon name="close" size={20} /></div></div>
-                                <div className="flex-1 overflow-y-auto p-8 md:p-10 space-y-12 custom-scrollbar font-black font-black font-black font-black">
-                                    <section className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-6 items-center font-black font-black font-black"><label className="text-[10px] uppercase opacity-40 font-black tracking-widest font-black font-black">Identity</label><input className="glass-input font-black font-black font-black" value={config.username} onChange={e=>saveConfig({...config, username:e.target.value})} /></section>
-                                    <section className="font-black font-black font-black font-black font-black"><label className="text-[10px] font-black uppercase opacity-40 mb-6 block font-black font-black">Environment</label><div className="grid grid-cols-5 gap-4 font-black font-black font-black">{PRESET_WALLS.map(w => (<div key={w} onClick={()=>saveConfig({...config, wallpaper:w})} className={`aspect-video rounded-xl border-2 transition-all cursor-pointer bg-cover bg-center ${config.wallpaper===w?'border-slate-800 scale-95 shadow-xl font-black font-black':'border-transparent opacity-60'}`} style={{backgroundImage:`url(${w})`}}></div>))}<label className="aspect-video rounded-xl border-2 border-dashed border-slate-900/10 flex items-center justify-center cursor-pointer hover:bg-slate-900/5 transition-all text-slate-400 font-black font-black font-black font-black font-black font-black"><Icon name="upload" size={20}/><input type="file" hidden accept="image/*" onChange={handleWallUpload} /></label></div></section>
-                                    <section className="space-y-6 font-black font-black font-black font-black font-black font-black font-black"><label className="text-[10px] font-black uppercase opacity-40 font-black font-black">Network & API</label><div className="grid grid-cols-1 gap-5 font-black font-black font-black">{['aiBaseUrl', 'aiKey', 'aiModel', 'localBaseUrl', 'localModel', 'mailApi'].map(k => (
-                                        <div key={k} className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-4 items-center font-black font-black font-black font-black"><span className="text-[10px] opacity-40 uppercase font-black tracking-tighter truncate font-black">{k}</span><input className="glass-input font-black !bg-slate-900/10 !border-slate-900/10 font-black font-black font-black" value={config[k]} onChange={e=>saveConfig({...config, [k]:e.target.value})} /></div>
+                            <div className="fixed inset-0 md:m-auto glass-panel z-[5000] flex flex-col overflow-hidden shadow-2xl md:w-[90vw] md:max-w-[750px] md:h-[80vh] md:rounded-[35px] font-black text-slate-800">
+                                <div className="p-8 border-b border-slate-900/5 flex justify-between items-center bg-white shrink-0"><span className="text-xs uppercase tracking-widest font-black">Configuration Hub</span><div onClick={()=>setView('desktop')} className="cursor-pointer text-slate-800/30 hover:text-red-500 font-black"><Icon name="close" size={20} /></div></div>
+                                <div className="flex-1 overflow-y-auto p-8 md:p-10 space-y-12 custom-scrollbar font-black">
+                                    <section className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-6 items-center"><label className="text-[10px] uppercase opacity-40 font-black tracking-widest">Identity</label><input className="glass-input font-black" value={config.username} onChange={e=>saveConfig({...config, username:e.target.value})} /></section>
+                                    <section><label className="text-[10px] font-black uppercase opacity-40 mb-6 block font-black">Environment</label><div className="grid grid-cols-5 gap-4 font-black">{PRESET_WALLS.map(w => (<div key={w} onClick={()=>saveConfig({...config, wallpaper:w})} className={`aspect-video rounded-xl border-2 transition-all cursor-pointer bg-cover bg-center ${config.wallpaper===w?'border-slate-800 scale-95 shadow-xl font-black':'border-transparent opacity-60'}`} style={{backgroundImage:`url(${w})`}}></div>))}<label className="aspect-video rounded-xl border-2 border-dashed border-slate-900/10 flex items-center justify-center cursor-pointer hover:bg-slate-900/5 transition-all text-slate-400 font-black font-black"><Icon name="upload" size={20}/><input type="file" hidden accept="image/*" onChange={handleWallUpload} /></label></div></section>
+                                    <section className="space-y-6 font-black"><label className="text-[10px] font-black uppercase opacity-40">Network & API</label><div className="grid grid-cols-1 gap-5">{['aiBaseUrl', 'aiKey', 'aiModel', 'localBaseUrl', 'localModel', 'mailApi'].map(k => (
+                                        <div key={k} className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-4 items-center"><span className="text-[10px] opacity-40 uppercase font-black tracking-tighter truncate font-black">{k}</span><input className="glass-input font-black !bg-slate-900/10 !border-slate-900/10 font-black" value={config[k]} onChange={e=>saveConfig({...config, [k]:e.target.value})} /></div>
                                     ))}</div></section>
-                                </div>
-                            </div>
-                        )}
-
-                        {/* AI Copilot Panel */}
-                        {isAiOpen && (
-                            <div className={`ai-panel fixed z-[85000] inset-0 md:inset-auto md:top-10 md:bottom-10 md:right-10 md:w-[420px] md:height-auto md:rounded-[35px] transition-all duration-500 bg-white shadow-2xl overflow-hidden flex flex-col font-black`}>
-                                <div className="p-6 border-b border-slate-900/5 flex justify-between items-center bg-white shrink-0 font-black text-slate-800 uppercase text-xs font-black"><div>Nik Copilot</div><button onClick={()=>setIsAiOpen(false)} className="w-8 h-8 rounded-full bg-slate-900/5 flex items-center justify-center text-slate-800/30 hover:text-red-500 transition-all font-black font-black"><Icon name="close" size={18}/></button></div>
-                                <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar bg-slate-50 font-black font-black">
-                                    {aiHistory.map((h, i) => (
-                                        <div key={i} className={`flex flex-col ${h.role === 'user' ? 'items-end' : 'items-start'}`}>
-                                            <div className={`p-4 rounded-2xl max-w-[90%] text-xs font-bold font-black ${h.role === 'user' ? 'bg-slate-800 text-white shadow-lg' : 'bg-white border border-slate-900/5 text-slate-800 shadow-sm'}`}>
-                                                {h.text}
-                                                <div className="mt-3 flex gap-4 font-black">
-                                                    {h.role === 'assistant' && view === 'note' && (h.text.includes('<table') || h.text.length > 50) && (
-                                                        <button onClick={() => {
-                                                            const clean = h.text.replace(/\[PLAN:.*?\]/ig, "").replace(/\[STICKY:.*?\]/ig, "");
-                                                            if (editorRef.current) { editorRef.current.innerHTML += `<div class="ai-suggested">${clean}</div>`; handleEditorInput(); showFeedback("已填充文档"); }
-                                                        }} className="text-[8px] underline opacity-40 hover:opacity-100 transition-opacity uppercase font-black">插入文档</button>
-                                                    )}
-                                                    {h.role === 'assistant' && (
-                                                        <button onClick={() => speak(h.text)} className="opacity-30 hover:opacity-100 transition-opacity font-black"><Icon name="volume2" size={12}/></button>
-                                                    )}
-                                                </div>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                                <div className="p-4 border-t bg-white flex flex-col gap-2 font-black">
-                                    {referencedDocId && <div className="flex items-center justify-between px-3 py-1.5 bg-slate-100 rounded-xl text-[9px] font-black text-slate-500 uppercase font-black"><span>Referencing: {notes.find(n=>n.id===referencedDocId)?.title}</span><button onClick={()=>setReferencedDocId(null)}><Icon name="close" size={10}/></button></div>}
-                                    <div className="flex gap-2 relative font-black">
-                                        <button onClick={()=>setShowRefList(!showRefList)} className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-all font-black ${referencedDocId ? 'bg-slate-800 text-white' : 'bg-white border-slate-900/10 text-slate-400 font-black'}`} title="引用文章"><Icon name="paperclip" size={16}/></button>
-                                        {showRefList && (
-                                            <div className="absolute bottom-12 left-0 w-64 bg-white border border-slate-900/5 shadow-2xl rounded-2xl z-[100] p-2 animate-in fade-in slide-in-from-bottom-2 font-black">
-                                                <div className="text-[8px] uppercase text-slate-400 px-3 py-1 mb-1">Select Context Doc</div>
-                                                {notes.map(n=>(<div key={n.id} onClick={()=>{setReferencedDocId(n.id); setShowRefList(false)}} className="px-3 py-2 hover:bg-slate-50 rounded-lg cursor-pointer text-[10px] font-bold truncate font-black">{n.title}</div>))}
-                                            </div>
-                                        )}
-                                        <input id="ai-input" className="flex-1 bg-slate-100 p-4 rounded-2xl outline-none text-xs font-bold font-black" placeholder="指令..." onKeyDown={e=>{if(e.key==='Enter'){callAiApi(e.target.value); e.target.value=''}}} />
-                                        <button onClick={startVoiceInput} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all font-black ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-slate-100 text-slate-400'}`}><Icon name="mic" size={16}/></button>
-                                        <button onClick={()=>{const i=document.getElementById('ai-input'); if(i){callAiApi(i.value); i.value=''}}} className="bg-slate-800 text-white p-4 rounded-2xl shadow-lg active:scale-95 font-black"><Icon name="send" size={18}/></button>
-                                    </div>
                                 </div>
                             </div>
                         )}
                     </main>
 
+                    {/* AI Copilot Panel */}
+                    {isAiOpen && (
+                        <div className={`ai-panel fixed z-[85000] inset-0 md:inset-auto md:top-10 md:bottom-10 md:right-10 md:w-[420px] md:height-auto md:rounded-[35px] transition-all duration-500 bg-white shadow-2xl overflow-hidden flex flex-col font-black ${window.innerWidth < 768 ? 'ai-sheet-mobile' : ''}`}>
+                            <div className="p-6 border-b border-slate-900/5 flex justify-between items-center bg-white shrink-0 font-black text-slate-800 uppercase text-xs"><div>Nik Copilot</div><button onClick={()=>setIsAiOpen(false)} className="w-8 h-8 rounded-full bg-slate-900/5 flex items-center justify-center text-slate-800/30 hover:text-red-500 transition-all"><Icon name="close" size={18}/></button></div>
+                            <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar bg-slate-50 font-black">
+                                {aiHistory.map((h, i) => (
+                                    <div key={i} className={`flex flex-col ${h.role === 'user' ? 'items-end' : 'items-start'}`}>
+                                        <div className={`p-4 rounded-2xl max-w-[90%] text-xs font-bold ${h.role === 'user' ? 'bg-slate-800 text-white shadow-lg' : 'bg-white border border-slate-900/5 text-slate-800 shadow-sm'}`}>
+                                            {h.text}
+                                            {h.role === 'assistant' && (<div className="mt-3 flex gap-4 font-black"><button onClick={() => {const utterance = new SpeechSynthesisUtterance(h.text); utterance.lang='zh-CN'; window.speechSynthesis.speak(utterance);}} className="opacity-30 hover:opacity-100 transition-opacity font-black"><Icon name="volume2" size={12}/></button></div>)}
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                            <div className="p-4 border-t bg-white flex flex-col gap-2 font-black relative">
+                                {selectedRef && (
+                                    <div className="flex items-center gap-2 bg-slate-800 text-white px-3 py-1.5 rounded-xl text-[9px] animate-in slide-in-from-bottom-2">
+                                        <span className="opacity-50 uppercase tracking-tighter">{selectedRef.type}</span>
+                                        <span className="font-black truncate max-w-[150px]">{selectedRef.label}</span>
+                                        <button onClick={()=>setSelectedRef(null)} className="ml-auto opacity-50 hover:opacity-100"><Icon name="close" size={10}/></button>
+                                    </div>
+                                )}
+                                
+                                {showRefPicker && (
+                                    <div className="absolute bottom-[100%] left-4 right-4 bg-white border border-slate-900/5 rounded-[24px] shadow-2xl p-4 max-h-[300px] overflow-y-auto custom-scrollbar mb-2 animate-in fade-in slide-in-from-bottom-4 z-[90000]">
+                                        <div className="text-[10px] uppercase opacity-20 mb-3 font-black">引用内容</div>
+                                        <div className="space-y-4">
+                                            <section>
+                                                <div className="text-[8px] uppercase font-black text-slate-400 mb-2">文档 Docs</div>
+                                                <div className="grid grid-cols-1 gap-1">{notes.map(n => <div key={n.id} onClick={()=>{setSelectedRef({type:'note', id:n.id, label:n.title}); setShowRefPicker(false);}} className="p-2 hover:bg-slate-50 rounded-lg cursor-pointer text-[10px] font-bold truncate">📄 {n.title}</div>)}</div>
+                                            </section>
+                                            <section>
+                                                <div className="text-[8px] uppercase font-black text-slate-400 mb-2">日程 Plans</div>
+                                                <div className="grid grid-cols-1 gap-1">{schedules.map(s => <div key={s.id} onClick={()=>{setSelectedRef({type:'plan', id:s.id, label:s.text}); setShowRefPicker(false);}} className="p-2 hover:bg-slate-50 rounded-lg cursor-pointer text-[10px] font-bold truncate">📅 {s.text}</div>)}</div>
+                                            </section>
+                                            <section>
+                                                <div className="text-[8px] uppercase font-black text-slate-400 mb-2">便签 Stickies</div>
+                                                <div className="grid grid-cols-1 gap-1">{stickies.map(s => <div key={s.id} onClick={()=>{setSelectedRef({type:'sticky', id:s.id, label:s.text}); setShowRefPicker(false);}} className="p-2 hover:bg-slate-50 rounded-lg cursor-pointer text-[10px] font-bold truncate">📌 {s.text}</div>)}</div>
+                                            </section>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="flex gap-2">
+                                    <button onClick={()=>setShowRefPicker(!showRefPicker)} className={`w-12 rounded-2xl flex items-center justify-center transition-all ${showRefPicker ? 'bg-slate-800 text-white' : 'bg-slate-100 text-slate-400'}`}><Icon name="plus" size={18}/></button>
+                                    <div className="flex-1 relative">
+                                        <input id="ai-input" className="w-full bg-slate-100 p-4 pr-12 rounded-2xl outline-none text-xs font-bold font-black" placeholder="指令..." onKeyDown={e=>{if(e.key==='Enter'){callAiApi(e.target.value); e.target.value=''}}} />
+                                        <button onClick={startVoiceInput} className={`absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-xl flex items-center justify-center transition-all ${isListening ? 'bg-red-500 text-white animate-pulse' : 'text-slate-300 hover:text-slate-800'}`}><Icon name="mic" size={16}/></button>
+                                    </div>
+                                    <button onClick={()=>{const i=document.getElementById('ai-input'); if(i){callAiApi(i.value); i.value=''}}} className="bg-slate-800 text-white p-4 rounded-2xl shadow-lg active:scale-95"><Icon name="send" size={18}/></button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
                     {/* AI Floating Ball */}
-                    <div className="fixed right-6 bottom-24 md:right-10 md:bottom-32 w-14 h-14 bg-slate-800 border border-white/20 rounded-full flex items-center justify-center cursor-pointer z-[80000] shadow-2xl active:scale-90 transition-transform no-print font-black" onClick={()=>setIsAiOpen(!isAiOpen)}><div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse font-black font-black"></div></div>
+                    <div className="fixed right-6 bottom-24 md:right-10 md:bottom-32 w-14 h-14 bg-slate-800 border border-white/20 rounded-full flex items-center justify-center cursor-pointer z-[80000] shadow-2xl active:scale-90 transition-transform no-print" onClick={()=>setIsAiOpen(!isAiOpen)}><div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div></div>
 
                     {/* Dock and Search */}
-                    <div className="fixed bottom-0 w-full flex justify-center gap-2 md:gap-10 px-4 md:px-8 pb-8 pt-4 no-print z-[200] font-black">
-                        <div className="flex items-center justify-center gap-2 md:gap-6 bg-transparent font-black relative">
-                            <div onClick={()=>setView('comm')} className="float-dock-btn font-black"><Icon name="bird" size={20} />{totalUnread > 0 && <span className="badge font-black">{totalUnread}</span>}</div>
-                            <div onClick={()=>setView('note')} className="float-dock-btn font-black"><Icon name="book" size={20} /></div>
-                            <div onClick={()=>setView('schedule')} className="float-dock-btn font-black"><Icon name="calendar" size={20} /></div>
-                            <div onClick={()=>setView('sticky')} className="float-dock-btn font-black"><Icon name="pin" size={20} /></div>
-                            <div onClick={()=>setView('lab')} className="float-dock-btn font-black"><Icon name="lab" size={20} /></div>
-                            <div onClick={()=>setView('settings')} className="float-dock-btn font-black"><Icon name="engine" size={20} /></div>
+                    <div className="fixed bottom-0 w-full flex justify-center gap-2 md:gap-10 px-4 md:px-8 pb-8 pt-4 no-print z-[200]">
+                        <div className="flex items-center justify-center gap-2 md:gap-6 bg-transparent relative font-black">
+                            <div onClick={()=>setView('comm')} className="float-dock-btn"><Icon name="bird" size={20} />{totalUnread > 0 && <span className="badge">{totalUnread}</span>}</div>
+                            <div onClick={()=>setView('note')} className="float-dock-btn"><Icon name="book" size={20} /></div>
+                            <div onClick={()=>setView('schedule')} className="float-dock-btn"><Icon name="calendar" size={20} /></div>
+                            <div onClick={()=>setView('sticky')} className="float-dock-btn"><Icon name="pin" size={20} /></div>
+                            <div onClick={()=>setView('lab')} className="float-dock-btn"><Icon name="lab" size={20} /></div>
+                            <div onClick={()=>setView('settings')} className="float-dock-btn"><Icon name="engine" size={20} /></div>
                             <div className="relative font-black">
                                 {isSearchOpen && (
-                                    <div className="search-box-panel absolute bottom-16 right-0 w-[300px] glass-panel p-4 rounded-3xl shadow-2xl animate-in slide-in-from-bottom-4 duration-300 flex flex-col gap-3 font-black font-black">
-                                        <div className="flex gap-2 font-black font-black">
-                                            <input autoFocus className="flex-1 bg-slate-900/5 border-0 rounded-xl px-4 text-xs font-black outline-none h-10" placeholder="检索或回车Bing..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} onKeyDown={e=>{if(e.key==='Enter') handleGlobalSearch(searchTerm)}} />
-                                            <button onClick={()=>setIsSearchOpen(false)} className="w-10 h-10 rounded-xl bg-slate-800 text-white flex items-center justify-center transition-all font-black font-black"><Icon name="close" size={14}/></button>
+                                    <div className="search-box-panel flex flex-col gap-2 animate-in fade-in slide-in-from-top-4 duration-300">
+                                        <div className="flex items-center gap-2 bg-white/10 p-1.5 rounded-xl border border-white/10">
+                                            <input autoFocus className="flex-1 bg-transparent border-0 px-2 text-xs text-white font-black outline-none h-8 placeholder-white/30" placeholder="检索或回车Bing..." value={searchTerm} onChange={e=>setSearchTerm(e.target.value)} onKeyDown={e=>{if(e.key==='Enter') handleGlobalSearch(searchTerm)}} />
+                                            <button onClick={()=>handleGlobalSearch(searchTerm)} className="w-8 h-8 rounded-lg bg-white/20 text-white flex items-center justify-center hover:bg-white/40 transition-all"><Icon name="external" size={14}/></button>
+                                            <button onClick={()=>setIsSearchOpen(false)} className="w-8 h-8 rounded-lg text-white/40 flex items-center justify-center hover:bg-red-500/20 transition-all"><Icon name="close" size={14}/></button>
                                         </div>
                                         {localSearchResults.length > 0 && (
-                                            <div className="max-h-40 overflow-y-auto custom-scrollbar flex flex-col gap-1 border-t border-slate-900/5 pt-2 font-black font-black">
-                                                <div className="text-[8px] uppercase text-slate-300 px-2 mb-1">Local Results</div>
+                                            <div className="bg-slate-900/90 backdrop-blur-2xl border border-white/10 rounded-xl overflow-hidden max-h-40 overflow-y-auto custom-scrollbar shadow-2xl">
                                                 {localSearchResults.map((res, i) => (
-                                                    <div key={i} onClick={()=>{res.action(); setIsSearchOpen(false); setSearchTerm("");}} className="p-2 hover:bg-slate-100 rounded-lg cursor-pointer flex justify-between items-center transition-colors">
-                                                        <span className="text-[10px] font-black truncate max-w-[180px]">{res.label}</span>
-                                                        <span className="text-[7px] font-black text-slate-300 bg-slate-100 px-1.5 py-0.5 rounded uppercase">{res.type}</span>
+                                                    <div key={i} onClick={()=>{res.action(); setIsSearchOpen(false); setSearchTerm("");}} className="p-2.5 hover:bg-white/10 flex justify-between items-center cursor-pointer border-b border-white/5 last:border-0 transition-colors">
+                                                        <div className="flex items-center gap-2">
+                                                            <Icon name={res.type === 'DOC' ? 'book' : 'sparkles'} size={10} className="text-white/20"/>
+                                                            <span className="text-[10px] text-white/70 font-black truncate max-w-[140px]">{res.label}</span>
+                                                        </div>
+                                                        <span className="text-[7px] text-white/30 font-black uppercase px-1.5 py-0.5 border border-white/5 rounded-md">{res.type}</span>
                                                     </div>
                                                 ))}
                                             </div>
                                         )}
-                                        <button onClick={()=>handleGlobalSearch(searchTerm)} className="w-full h-8 bg-slate-100 hover:bg-slate-200 text-slate-500 rounded-lg text-[9px] font-black uppercase transition-all flex items-center justify-center gap-2 font-black">
-                                            <Icon name="external" size={10}/> Bing Search
-                                        </button>
                                     </div>
                                 )}
-                                <div onClick={()=>setIsSearchOpen(!isSearchOpen)} className={`float-dock-btn font-black ${isSearchOpen?'bg-slate-800 text-white':''}`}><Icon name="eye" size={20} /></div>
+                                <div onClick={()=>setIsSearchOpen(!isSearchOpen)} className={`float-dock-btn ${isSearchOpen?'bg-slate-800 text-white':''}`}><Icon name="eye" size={20} /></div>
                             </div>
                         </div>
                     </div>
@@ -727,3 +788,5 @@
     </script>
 </body>
 </html>
+
+```
