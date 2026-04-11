@@ -10,7 +10,7 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     
-    <!-- Firebase SDK 引入 - 优化连接策略 -->
+    <!-- Firebase SDK 引入 -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { initializeFirestore, collection, addDoc, onSnapshot, query, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
@@ -67,14 +67,14 @@
         @media (max-width: 768px) {
             .glass-panel { width: 100vw !important; height: 100vh !important; border-radius: 0 !important; margin: 0 !important; inset: 0 !important; position: fixed !important; }
             .tile-widget { max-width: 100%; min-width: 100%; height: 130px; }
-            .dock-container { bottom: 25px !important; width: 95% !important; }
-            .tool-bar-scroll { flex-wrap: nowrap !important; justify-content: flex-start !important; overflow-x: auto !important; padding: 10px !important; height: 120px !important; }
             .mobile-sidebar { position: fixed !important; inset-y: 0 !important; left: 0 !important; width: 85% !important; z-index: 60000 !important; background: #fff !important; box-shadow: 20px 0 50px rgba(0,0,0,0.1); }
         }
 
         .chat-bubble { @apply p-4 rounded-2xl max-w-[85%] text-xs font-bold leading-relaxed mb-4; }
         .chat-user { @apply self-end bg-slate-800 text-white ml-auto; }
         .chat-target { @apply self-start bg-white border border-slate-900/5 text-slate-800; }
+        
+        .toast-active { transform: translateY(0); opacity: 1; transition: all 0.3s ease; }
     </style>
 </head>
 <body>
@@ -102,7 +102,11 @@
             quote: "M3 21c3 0 7-1 7-8V5H3v8h4c0 5-4 6-4 6", calendar: "M19 4H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z M16 2v4 M8 2v4 M3 10h18",
             indent: "M10 12h10M10 18h10M10 6h10M3 12l4 4M3 12l4-4", list: "M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01",
             check: "M20 6L9 17l-5-5", upload: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12", alignLeft: "M17 10H3M21 6H3M17 14H3M21 18H3", alignCenter: "M18 10H6M21 6H3M18 14H6M21 18H3", alignRight: "M21 10H7M21 6H3M21 14H7M21 18H3", alignFull: "M21 10H3M21 6H3M21 14H3M21 18H3",
-            mail: "M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z M22 6l-10 7L2 6", pen: "M12 20h9 M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"
+            mail: "M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z M22 6l-10 7L2 6", pen: "M12 20h9 M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z",
+            sparkles: "M12 3v3m0 12v3m9-9h-3M6 12H3m15.364-6.364l-2.121 2.121M7.757 16.243l-2.121 2.121m12.728 0l-2.121-2.121M7.757 7.757L5.636 5.636",
+            paperclip: "M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48",
+            volume2: "M11 5L6 9H2v6h4l5 4V5z M19.07 4.93a10 10 0 0 1 0 14.14 M15.54 8.46a5 5 0 0 1 0 7.07",
+            mic: "M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z M19 10v1a7 7 0 0 1-14 0v-1 M12 18v4 M8 22h8"
         };
 
         const Icon = ({ name, size = 14, className = "" }) => (
@@ -136,43 +140,41 @@
             const [notes, setNotes] = useState(() => JSON.parse(localStorage.getItem('NikData_Notes_V200_Stable') || '[{"id":1,"title":"智者指南","content":"","pinned":true}]'));
             const [activeNoteId, setActiveNoteId] = useState(notes[0]?.id || 1);
             const [schedules, setSchedules] = useState(() => JSON.parse(localStorage.getItem('NikData_Schedules_V200_Stable') || '[]'));
-            const [stickies, setStickies] = useState(() => JSON.parse(localStorage.getItem('NikData_Stickies_V200_Stable') || '[{"id":1,"text":"记录瞬间灵感...","mood":"Focus","linkedTaskId":null,"onTile":true}]'));
+            const [stickies, setStickies] = useState(() => JSON.parse(localStorage.getItem('NikData_Stickies_V200_Stable') || '[{"id":1,"text":"记录瞬间灵感...","mood":"Focus","onTile":true}]'));
             const [contacts, setContacts] = useState(() => JSON.parse(localStorage.getItem('NikData_Contacts_V200_Stable') || JSON.stringify([{ id: 'p1', name: "老张", avatar: "Z", msgs: [], unread: 0 }])));
             const [groups, setGroups] = useState(() => JSON.parse(localStorage.getItem('NikData_Groups_V200_Stable') || JSON.stringify([{ id: 'g1', name: "决策群", avatar: "H", msgs: [] }])));
             const [activeTargetId, setActiveTargetId] = useState('p1');
             const [nikEmails, setNikEmails] = useState([]);
             const [aiHistory, setAiHistory] = useState([]);
-            
             const [mailCompose, setMailCompose] = useState(false);
             const [mailForm, setMailForm] = useState({ to: "", subject: "", body: "", attachments: [] });
 
+            const [referencedDocId, setReferencedDocId] = useState(null);
+            const [showRefList, setShowRefList] = useState(false);
+            const [isListening, setIsListening] = useState(false);
+
             const editorRef = useRef(null);
             const totalUnread = useMemo(() => contacts.reduce((a,b)=>a+(b.unread||0), 0), [contacts]);
-
-            // Firebase 认证与互通
             const [user, setUser] = useState(null);
             const dbRef = useRef(null);
             const authRef = useRef(null);
 
+            // Firebase 初始化
             useEffect(() => {
-                const initFirebase = async () => {
+                const initFB = async () => {
                     try {
                         const cfg = JSON.parse(__firebase_config);
                         const app = FB.initializeApp(cfg);
-                        // 终极修复：同时开启长轮询并禁用 Fetch Streams，解决 10s 后端无响应问题
-                        dbRef.current = FB.initializeFirestore(app, { 
-                            experimentalForceLongPolling: true,
-                            useFetchStreams: false 
-                        });
+                        dbRef.current = FB.initializeFirestore(app, { experimentalForceLongPolling: true, useFetchStreams: false });
                         const auth = FB.getAuth(app);
                         authRef.current = auth;
                         if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
                             await FB.signInWithCustomToken(auth, __initial_auth_token);
                         } else { await FB.signInAnonymously(auth); }
                         FB.onAuthStateChanged(auth, (u) => setUser(u));
-                    } catch (err) { console.error("Firebase Init Error:", err); }
+                    } catch (err) { console.error("FB Init Fail", err); }
                 };
-                initFirebase();
+                initFB();
             }, []);
 
             useEffect(() => {
@@ -180,20 +182,19 @@
                 const appId = typeof __app_id !== 'undefined' ? __app_id : 'nikwe-default';
                 const q = FB.collection(dbRef.current, 'artifacts', appId, 'public', 'data', 'emails');
                 const unsubscribe = FB.onSnapshot(q, (snapshot) => {
-                    const allMails = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
-                    setNikEmails(allMails.filter(m => m.to === config.username || m.from === config.username).sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0)));
-                }, (err) => {
-                    console.log("Waiting for cloud data connection...");
+                    const all = snapshot.docs.map(doc => ({id: doc.id, ...doc.data()}));
+                    setNikEmails(all.filter(m => m.to === config.username || m.from === config.username).sort((a,b) => (b.timestamp || 0) - (a.timestamp || 0)));
                 });
                 return () => unsubscribe();
             }, [user, config.username]);
 
-            // 真实定位与天气逻辑
+            // 定位与时间 (修正为更精准的国内接口)
             useEffect(() => {
-                const fetchLocation = async () => {
+                const fetchL = async () => {
                     try {
                         const r = await fetch('https://ipapi.co/json/');
                         const d = await r.json();
+                        // 如果 IP 地理位置确实返回了兰州相关的行政区划或经纬度，这里应该能显示兰州
                         if(d.city) {
                             setLocation(d.city.toUpperCase());
                             const wr = await fetch(`https://wttr.in/${d.city}?format=%C+%t`);
@@ -202,7 +203,7 @@
                         }
                     } catch (e) { setLocation("NIK NODE"); }
                 };
-                fetchLocation();
+                fetchL();
                 const timer = setInterval(() => {
                     const now = new Date(); setTime(now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false })); setDate(now.toLocaleDateString('zh-CN', { month: 'long', day: 'numeric' }) + ' ' + now.toLocaleDateString('en-US', { weekday: 'long' }).toUpperCase());
                 }, 1000);
@@ -230,26 +231,91 @@
                 const r = new FileReader(); r.onload = (v) => saveConfig({...config, wallpaper: v.target.result}); r.readAsDataURL(f);
             };
 
+            const clearChat = () => {
+                if (!confirm("物理销毁记录？")) return;
+                if (commType === 'personal') setContacts(contacts.map(c => c.id === activeTargetId ? {...c, msgs: []} : c));
+                else setGroups(groups.map(g => g.id === activeTargetId ? {...g, msgs: []} : g));
+                showFeedback("记录已清空");
+            };
+
             const handleSendMsg = () => {
                 const i = document.getElementById('human-msg-input'); if(!i || !i.value.trim()) return;
                 const m = { id: Date.now(), role: 'user', text: i.value, time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) };
                 if (commType === 'personal') setContacts(contacts.map(c => c.id === activeTargetId ? {...c, msgs: [...c.msgs, m]} : c));
                 else setGroups(groups.map(g => g.id === activeTargetId ? {...g, msgs: [...g.msgs, m]} : g));
-                i.value = ''; showFeedback("消息已发出");
+                i.value = '';
+                showFeedback("信号已发出");
             };
 
-            const clearChat = () => { if (confirm("物理销毁记录？")) { if (commType === 'personal') setContacts(contacts.map(c => c.id === activeTargetId ? {...c, msgs: []} : c)); else setGroups(groups.map(g => g.id === activeTargetId ? {...g, msgs: []} : g)); } };
-
-            const callAiApi = async (userInput) => {
+            const callAiApi = async (userInput, context = "") => {
                 if (!userInput.trim()) return;
                 const newMessage = { role: 'user', text: userInput, time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) };
                 setAiHistory(prev => [...prev, newMessage]);
-                if (!config.aiKey) { setAiHistory(prev => [...prev, { role: 'assistant', text: "请在设置中配置 API KEY。", time: newMessage.time }]); return; }
+                if (!config.aiKey) { setAiHistory(prev => [...prev, { role: 'assistant', text: "请在设置中配置 AI KEY。", time: newMessage.time }]); return; }
+                
+                let finalPrompt = userInput;
+                const autoHint = "\n\n(系统辅助指令：如果我要求设定计划，请在回复中包含 [PLAN: 任务内容, YYYY-MM-DD, HH:mm] 标记；要求记便签，请包含 [STICKY: 内容] 标记；如果你生成了表格或文章建议，请直接以 HTML 格式输出。)";
+                
+                if (referencedDocId) {
+                    const docRef = notes.find(n => n.id === referencedDocId);
+                    if (docRef) finalPrompt = `参考文档【${docRef.title}】：\n${docRef.content}\n\n指令：${userInput}${autoHint}`;
+                } else if (context) {
+                    finalPrompt = `针对当前文章内容：\n${context}\n\n指令：${userInput}${autoHint}`;
+                } else {
+                    finalPrompt = userInput + autoHint;
+                }
+
                 try {
-                    const response = await fetch(config.aiBaseUrl, { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${config.aiKey}` }, body: JSON.stringify({ model: config.aiModel, messages: [{ role: 'user', content: userInput }] }) });
+                    const response = await fetch(config.aiBaseUrl, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${config.aiKey}` },
+                        body: JSON.stringify({ model: config.aiModel, messages: [{ role: 'user', content: finalPrompt }] })
+                    });
                     const data = await response.json();
-                    setAiHistory(prev => [...prev, { role: 'assistant', text: data.choices?.[0]?.message?.content || "API 响应异常", time: newMessage.time }]);
-                } catch (e) { setAiHistory(prev => [...prev, { role: 'assistant', text: "连接失败，请检查配置。", time: newMessage.time }]); }
+                    const aiText = data.choices?.[0]?.message?.content || "API 响应异常";
+                    
+                    const planMatch = aiText.match(/\[PLAN:\s*(.*?),\s*(.*?),\s*(.*?)\]/i);
+                    if (planMatch) {
+                        const [_, pT, pD, pTm] = planMatch;
+                        saveSchedules([{ id: Date.now(), text: pT, date: pD, time: pTm, done: false }, ...schedules]);
+                        showFeedback("AI 已录入日程");
+                    }
+                    const stickyMatch = aiText.match(/\[STICKY:\s*(.*?)\]/i);
+                    if (stickyMatch) {
+                        const [_, sT] = stickyMatch;
+                        saveStickies([{ id: Date.now() + 1, text: sT, mood: 'Focus', onTile: true }, ...stickies]);
+                        showFeedback("AI 已记录便签");
+                    }
+
+                    setAiHistory(prev => [...prev, { role: 'assistant', text: aiText, time: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}) }]);
+                    setReferencedDocId(null);
+                } catch (e) {
+                    setAiHistory(prev => [...prev, { role: 'assistant', text: "连接失败，请检查配置。", time: newMessage.time }]);
+                }
+            };
+
+            // 语音互动：朗读
+            const speak = (text) => {
+                const cleanText = text.replace(/\[PLAN:.*?\]/ig, "").replace(/\[STICKY:.*?\]/ig, "").replace(/<[^>]*>?/gm, '');
+                const utterance = new SpeechSynthesisUtterance(cleanText);
+                utterance.lang = 'zh-CN';
+                window.speechSynthesis.speak(utterance);
+            };
+
+            // 语音互动：识别
+            const startVoiceInput = () => {
+                const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+                if (!SpeechRecognition) { showFeedback("浏览器不支持语音识别"); return; }
+                const recognition = new SpeechRecognition();
+                recognition.lang = 'zh-CN';
+                recognition.onstart = () => setIsListening(true);
+                recognition.onend = () => setIsListening(false);
+                recognition.onresult = (e) => {
+                    const t = e.results[0][0].transcript;
+                    const input = document.getElementById('ai-input');
+                    if (input) input.value = t;
+                };
+                recognition.start();
             };
 
             const handleSendEmail = async () => {
@@ -258,7 +324,7 @@
                 const newMail = { ...mailForm, from: config.username, date: new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}), timestamp: Date.now() };
                 try {
                     await FB.addDoc(FB.collection(dbRef.current, 'artifacts', appId, 'public', 'data', 'emails'), newMail);
-                    setMailForm({ to: "", subject: "", body: "", attachments: [] }); setMailCompose(false); showFeedback("信号已真实送出");
+                    setMailForm({ to: "", subject: "", body: "", attachments: [] }); setMailCompose(false); showFeedback("信号已送出");
                 } catch (e) { showFeedback("发送失败"); }
             };
 
@@ -270,6 +336,13 @@
             const exec = (e, cmd, val = null) => { e.preventDefault(); document.execCommand(cmd, false, val); handleEditorInput(); };
             const handleEditorInput = () => { if (editorRef.current) saveNotes(notes.map(n => n.id === activeNoteId ? {...n, content:editorRef.current.innerHTML} : n)); };
 
+            const callNotebookAi = () => {
+                const currentDoc = notes.find(n => n.id === activeNoteId);
+                if (!currentDoc) return;
+                const q = prompt("@AI 修改意见或填表建议:");
+                if (q) { setIsAiOpen(true); callAiApi(q, currentDoc.content); }
+            };
+
             if (!isLoggedIn) return (
                 <div className="fixed inset-0 bg-[#0f172a] flex flex-col items-center justify-center p-6 z-[100000]">
                     <div id="wallpaper-layer" style={{backgroundImage: `url(${PRESET_WALLS[0]})`}}></div>
@@ -279,7 +352,7 @@
                         <form onSubmit={handleLogin} className="space-y-4">
                             <input name="email" required className="login-input" placeholder="EMAIL" type="email" />
                             <input name="key" required className="login-input" placeholder="KEY" type="password" />
-                            <button type="submit" className="w-32 h-10 mx-auto bg-yellow-500 text-black rounded-xl font-bold uppercase shadow-lg active:scale-95 transition-all text-[10px] tracking-widest flex items-center justify-center">Sign In</button>
+                            <button type="submit" className="w-32 h-10 mx-auto bg-yellow-500 text-black rounded-xl font-bold uppercase active:scale-95 transition-all text-[10px] tracking-widest flex items-center justify-center">Sign In</button>
                         </form>
                     </div>
                 </div>
@@ -316,78 +389,29 @@
                                     <div className="date-display text-[10px] md:text-[13px] text-white/50 tracking-[0.4em] uppercase font-black mt-3">{date}</div>
                                 </div>
                                 <div className="w-full flex flex-wrap justify-center gap-4 md:gap-8 font-black">
-                                    <div onClick={()=>setView('schedule')} className="tile-widget"><div className="flex justify-between items-start mb-2 uppercase opacity-20 text-[9px]">Upcoming Plans<Icon name="calendar" size={10}/></div><div className="space-y-1 font-black">{upcomingSchedules.map(t=>(<div key={t.id} className="truncate text-[11px] font-black">• {t.text}</div>))}</div></div>
-                                    <div onClick={()=>setView('sticky')} className="tile-widget"><div className="flex justify-between items-start mb-2 uppercase opacity-20 text-[9px]">Pinned Stickies<Icon name="pin" size={10}/></div><div className="space-y-1 font-black text-[10px] italic opacity-60 font-black">{stickies.filter(s => s.onTile).slice(0,3).map(s=>(<div key={s.id} className="truncate">{s.text}</div>))}</div></div>
+                                    <div onClick={()=>setView('schedule')} className="tile-widget"><div className="flex justify-between items-start mb-2 uppercase opacity-20 text-[9px]">Plans<Icon name="calendar" size={10}/></div><div className="space-y-1 font-black">{upcomingSchedules.map(t=>(<div key={t.id} className="truncate text-[11px] font-black">• {t.text}</div>))}</div></div>
+                                    <div onClick={()=>setView('sticky')} className="tile-widget"><div className="flex justify-between items-start mb-2 uppercase opacity-20 text-[9px]">Stickies<Icon name="pin" size={10}/></div><div className="space-y-1 font-black text-[10px] italic opacity-60 font-black">{stickies.filter(s => s.onTile).slice(0,3).map(s=>(<div key={s.id} className="truncate">{s.text}</div>))}</div></div>
                                     <div onClick={()=>setView('note')} className="tile-widget"><div className="flex justify-between items-start mb-2 uppercase opacity-20 text-[9px]">Docs<Icon name="book" size={10}/></div><div className="space-y-1 font-black">{notes.slice(0,3).map(n=>(<div key={n.id} className="truncate text-xs font-black">{n.title}</div>))}</div></div>
                                 </div>
                             </div>
                         )}
 
-                        {view === 'schedule' && (
-                            <div className="fixed inset-0 glass-panel z-[1500] flex flex-col overflow-hidden animate-in fade-in">
-                                <header className="h-14 border-b border-slate-900/5 flex items-center justify-between px-6 bg-white shrink-0 font-black">
-                                    <div className="flex items-center gap-3"><Icon name="calendar" size={18} /><span>Schedules Hub</span></div>
-                                    <button onClick={()=>setView('desktop')} className="w-8 h-8 rounded-full bg-slate-900/5 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all font-black"><Icon name="close" size={16}/></button>
-                                </header>
-                                <main className="flex-1 p-6 md:p-10 overflow-y-auto bg-white/20 font-black pb-40">
-                                    <div className="max-w-2xl mx-auto space-y-6">
-                                        <div className="flex flex-col gap-3 font-black">
-                                            <input id="new-task-input" className="glass-input font-black" placeholder="任务内容..." />
-                                            <div className="flex gap-2">
-                                                <input id="new-task-date" type="date" className="glass-input flex-1 h-10 px-4 font-black" />
-                                                <input id="new-task-time" type="time" className="glass-input flex-1 h-10 px-4 font-black" />
-                                                <button onClick={()=>{const i=document.getElementById('new-task-input'), d=document.getElementById('new-task-date'), t=document.getElementById('new-task-time'); if(i.value.trim()){saveSchedules([{id:Date.now(), text:i.value, date:d.value, time:t.value, done:false},...schedules]); i.value=''; d.value=''; t.value=''}}} className="w-24 bg-slate-800 text-white rounded-xl font-bold text-[10px]">ADD</button>
-                                            </div>
-                                        </div>
-                                        <div className="space-y-3 font-black">{schedules.map(s => (
-                                            <div key={s.id} className="flex items-center gap-4 p-4 rounded-2xl bg-white border shadow-sm font-black">
-                                                <button onClick={()=>saveSchedules(schedules.map(x=>x.id===s.id?{...x,done:!x.done}:x))} className={`w-6 h-6 rounded-lg border-2 ${s.done?'bg-slate-800 border-slate-800 text-white':'border-slate-900/10'}`}>{s.done && <Icon name="check" size={12}/>}</button>
-                                                <div className="flex-1 font-black"><div className={`text-sm ${s.done?'line-through opacity-40':''}`}>{s.text}</div><div className="text-[9px] opacity-30 mt-1 uppercase">{s.date || 'TBD'} | {s.time || '--:--'}</div></div>
-                                                <button onClick={()=>saveSchedules(schedules.filter(x=>x.id!==s.id))} className="text-red-500 font-black"><Icon name="trash" size={14}/></button>
-                                            </div>
-                                        ))}</div>
-                                    </div>
-                                </main>
-                            </div>
-                        )}
-
-                        {view === 'sticky' && (
-                            <div className="fixed inset-0 glass-panel z-[1500] flex flex-col overflow-hidden animate-in fade-in">
-                                <header className="h-14 border-b border-slate-900/5 flex items-center justify-between px-6 bg-white shrink-0 font-black">
-                                    <div className="flex items-center gap-3"><Icon name="pin" size={18} /><span>Stickies Library</span></div>
-                                    <button onClick={()=>setView('desktop')} className="w-8 h-8 rounded-full bg-slate-900/5 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all font-black"><Icon name="close" size={16}/></button>
-                                </header>
-                                <main className="flex-1 p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 overflow-y-auto bg-white/20 font-black pb-40">
-                                    <div onClick={()=>saveStickies([{id:Date.now(), text:'', mood:'Focus', linkedTaskId:null, onTile: true}, ...stickies])} className="aspect-square rounded-[32px] border-4 border-dashed border-slate-900/5 flex flex-col items-center justify-center cursor-pointer hover:bg-white/40 transition-all font-black text-slate-800"><Icon name="plus" size={32} className="opacity-10 mb-4" /><span className="text-[10px] font-black uppercase opacity-20">New Signal</span></div>
-                                    {stickies.map(s => (<div key={s.id} className="aspect-square p-6 rounded-[32px] flex flex-col shadow-sm relative transition-all bg-yellow-50/80 font-black">
-                                        <div className="flex justify-between mb-4 font-black">
-                                            <div className="flex gap-2">
-                                                <select value={s.mood} onChange={(e)=>saveStickies(stickies.map(x=>x.id===s.id?{...x,mood:e.target.value}:x))} className="bg-slate-900/5 rounded-full px-3 py-1 text-[9px] font-black outline-none">{MOODS.map(m => <option key={m.icon} value={m.icon}>{m.icon}</option>)}</select>
-                                                <button onClick={()=>saveStickies(stickies.map(x=>x.id===s.id?{...x,onTile:!x.onTile}:x))} className={`w-6 h-6 rounded-full flex items-center justify-center transition-all ${s.onTile ? 'bg-slate-800 text-white shadow-lg' : 'bg-slate-900/5 text-slate-400'}`}><Icon name="pin" size={10}/></button>
-                                            </div>
-                                            <button onClick={()=>saveStickies(stickies.filter(x=>x.id!==s.id))} className="opacity-10 hover:text-red-500 font-black"><Icon name="trash" size={12}/></button>
-                                        </div>
-                                        <textarea value={s.text} onChange={(e)=>saveStickies(stickies.map(x=>x.id===s.id?{...x,text:e.target.value}:x))} className="flex-1 bg-transparent border-0 outline-none resize-none text-xs font-bold leading-relaxed font-black" placeholder="..." />
-                                    </div>))}
-                                </main>
-                            </div>
-                        )}
-
+                        {/* Note View */}
                         {view === 'note' && (
-                            <div className="fixed inset-0 glass-panel z-[1500] flex flex-col overflow-hidden animate-in fade-in">
-                                <header className="h-14 border-b border-slate-900/5 flex items-center justify-between px-6 bg-white shrink-0 font-black">
-                                    <div className="flex items-center gap-4"><button onClick={()=>setShowNoteSidebar(!showNoteSidebar)} className="w-8 h-8 rounded-full hover:bg-slate-900/5 flex items-center justify-center transition-all font-black"><Icon name="menu" size={16}/></button><div className="text-[11px] uppercase italic text-slate-800 font-black">Workstation</div></div>
-                                    <button onClick={()=>setView('desktop')} className="w-8 h-8 rounded-full bg-slate-900/5 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all font-black"><Icon name="close" size={16}/></button>
+                            <div className="fixed inset-0 glass-panel z-[1500] flex flex-col overflow-hidden animate-in fade-in font-black">
+                                <header className="h-14 border-b border-slate-900/5 flex items-center justify-between px-6 bg-white shrink-0">
+                                    <div className="flex items-center gap-4"><button onClick={()=>setShowNoteSidebar(!showNoteSidebar)} className="w-8 h-8 rounded-full hover:bg-slate-900/5 flex items-center justify-center transition-all"><Icon name="menu" size={16}/></button><div className="text-[11px] uppercase italic text-slate-800">Workstation</div></div>
+                                    <button onClick={()=>setView('desktop')} className="w-8 h-8 rounded-full bg-slate-900/5 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"><Icon name="close" size={16}/></button>
                                 </header>
-                                <div className="flex flex-1 overflow-hidden relative font-black">
+                                <div className="flex flex-1 overflow-hidden relative">
                                     {showNoteSidebar && (
                                         <aside className="mobile-sidebar w-full md:w-64 border-r border-slate-900/5 bg-white/10 flex flex-col p-4 shrink-0 overflow-y-auto font-black fixed md:relative z-50 h-full bg-white animate-in slide-in-from-left duration-300">
                                             <button onClick={()=>{const nid=Date.now(); setNotes([{id:nid, title:'新文档', content:'', pinned:false}, ...notes]); setActiveNoteId(nid);}} className="w-full mb-6 p-3 bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase">New Entry</button>
-                                            <div className="space-y-2 font-black">{notes.map(n => (<div key={n.id} onClick={()=>setActiveNoteId(n.id)} className={`p-3 rounded-xl cursor-pointer text-[12px] font-black ${activeNoteId===n.id ? 'bg-slate-800 text-white shadow-lg' : 'text-slate-800/30'}`}>{n.title}</div>))}</div>
+                                            <div className="space-y-2">{notes.map(n => (<div key={n.id} onClick={()=>setActiveNoteId(n.id)} className={`p-3 rounded-xl cursor-pointer text-[12px] font-black transition-all ${activeNoteId===n.id ? 'bg-slate-800 text-white shadow-lg' : 'text-slate-800/30'}`}>{n.title}</div>))}</div>
                                         </aside>
                                     )}
-                                    <main className="flex-1 flex flex-col overflow-hidden bg-white/40">
-                                        <div className="p-2 border-b border-slate-900/5 flex gap-1.5 flex-nowrap bg-white shrink-0 items-center overflow-x-auto tool-bar-scroll z-[100] h-[120px] font-black">
+                                    <main className="flex-1 flex flex-col overflow-hidden bg-white/40 font-black">
+                                        <div className="p-2 border-b border-slate-900/5 flex gap-1.5 flex-nowrap bg-white shrink-0 items-center overflow-x-auto tool-bar-scroll z-[100] h-[120px]">
                                             <select className="h-8 border-0 rounded-lg text-[10px] font-black px-2 bg-slate-50 outline-none" onChange={(e)=>exec(e, 'fontName', e.target.value)}>{FONTS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}</select>
                                             <button onMouseDown={(e)=>exec(e, 'bold')} className="tool-btn font-black text-sm">B</button>
                                             <button onMouseDown={(e)=>exec(e, 'italic')} className="tool-btn italic">I</button>
@@ -397,7 +421,7 @@
                                             <button onMouseDown={(e)=>exec(e, 'formatBlock', 'H2')} className="tool-btn">H2</button>
                                             <button onMouseDown={(e)=>exec(e, 'subscript')} className="tool-btn text-[8px]">X₂</button>
                                             <button onMouseDown={(e)=>exec(e, 'superscript')} className="tool-btn text-[8px]">X²</button>
-                                            <div className="flex gap-1 items-center bg-white px-2 h-8 border border-slate-900/5 rounded-lg"><input type="color" onInput={(e)=>exec(e, 'foreColor', e.target.value)} title="色" className="w-4 h-4" /><input type="color" onInput={(e)=>exec(e, 'hiliteColor', e.target.value)} title="底" className="w-4 h-4" /></div>
+                                            <div className="flex gap-1 items-center bg-white px-2 h-8 border border-slate-900/5 rounded-lg"><input type="color" onInput={(e)=>exec(e, 'foreColor', e.target.value)} className="w-4 h-4" /><input type="color" onInput={(e)=>exec(e, 'hiliteColor', e.target.value)} className="w-4 h-4" /></div>
                                             <button onMouseDown={(e)=>exec(e, 'justifyLeft')} className="tool-btn"><Icon name="alignLeft"/></button>
                                             <button onMouseDown={(e)=>exec(e, 'justifyCenter')} className="tool-btn"><Icon name="alignCenter"/></button>
                                             <button onMouseDown={(e)=>exec(e, 'justifyRight')} className="tool-btn"><Icon name="alignRight"/></button>
@@ -414,9 +438,10 @@
                                             <button onMouseDown={(e)=>exec(e, 'undo')} className="tool-btn text-blue-600">UNDO</button>
                                             <button onMouseDown={(e)=>exec(e, 'redo')} className="tool-btn text-blue-600">REDO</button>
                                             <button onMouseDown={(e)=>exec(e, 'removeFormat')} className="tool-btn text-red-500">CLR</button>
+                                            <button onClick={callNotebookAi} className="tool-btn !bg-slate-800 !text-white !w-14 gap-1 animate-pulse"><Icon name="sparkles" size={12}/>@AI</button>
                                         </div>
                                         <div className="flex-1 overflow-y-auto p-6 md:p-24 custom-scrollbar font-black text-slate-800 pb-40">
-                                            <div className="max-w-3xl mx-auto font-black">
+                                            <div className="max-w-3xl mx-auto">
                                                 <input className="w-full text-2xl md:text-4xl font-black border-0 outline-none mb-10 text-slate-800 bg-transparent" value={notes.find(n=>n.id===activeNoteId)?.title} onChange={e => setNotes(notes.map(n => n.id === activeNoteId ? {...n, title:e.target.value} : n))} />
                                                 <div ref={editorRef} onInput={handleEditorInput} contentEditable className="w-full min-h-[400px] outline-none text-slate-800 leading-relaxed text-sm md:text-base editor-view font-black" dangerouslySetInnerHTML={{ __html: notes.find(n=>n.id===activeNoteId)?.content }}></div>
                                             </div>
@@ -426,30 +451,83 @@
                             </div>
                         )}
 
-                        {view === 'comm' && (
-                            <div className="fixed inset-0 glass-panel z-[1500] flex flex-col overflow-hidden animate-in fade-in">
-                                <header className="h-14 border-b border-slate-900/5 flex items-center justify-between px-6 bg-white shrink-0 font-black relative">
-                                    <div className="flex items-center gap-4">{mobileChatActive && <button onClick={()=>setMobileChatActive(false)} className="md:hidden font-black"><Icon name="back" size={18}/></button>}<div className="text-xs uppercase tracking-widest font-black">Signal Node</div></div>
-                                    <div className="flex items-center gap-4 font-black"><button onClick={clearChat} className="text-red-500 font-black"><Icon name="trash" size={16}/></button><button onClick={()=>setView('desktop')} className="w-8 h-8 rounded-full bg-slate-900/5 flex items-center justify-center transition-all font-black"><Icon name="close" size={16}/></button></div>
+                        {/* Schedules View */}
+                        {view === 'schedule' && (
+                            <div className="fixed inset-0 glass-panel z-[1500] flex flex-col overflow-hidden animate-in fade-in font-black">
+                                <header className="h-14 border-b border-slate-900/5 flex items-center justify-between px-6 bg-white shrink-0">
+                                    <div className="flex items-center gap-3"><Icon name="calendar" size={18} /><span>Schedules Hub</span></div>
+                                    <button onClick={()=>setView('desktop')} className="w-8 h-8 rounded-full bg-slate-900/5 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"><Icon name="close" size={16}/></button>
                                 </header>
-                                <div className="flex flex-1 overflow-hidden relative">
+                                <main className="flex-1 p-6 md:p-10 overflow-y-auto bg-white/20 pb-40 font-black">
+                                    <div className="max-w-2xl mx-auto space-y-6">
+                                        <div className="flex flex-col gap-3 font-black">
+                                            <input id="new-task-input" className="glass-input font-black" placeholder="任务内容..." />
+                                            <div className="flex gap-2">
+                                                <input id="new-task-date" type="date" className="glass-input flex-1 h-10 px-4 font-black" />
+                                                <input id="new-task-time" type="time" className="glass-input flex-1 h-10 px-4 font-black" />
+                                                <button onClick={()=>{const i=document.getElementById('new-task-input'), d=document.getElementById('new-task-date'), t=document.getElementById('new-task-time'); if(i.value.trim()){saveSchedules([{id:Date.now(), text:i.value, date:d.value, time:t.value, done:false},...schedules]); i.value=''; d.value=''; t.value=''}}} className="w-24 bg-slate-800 text-white rounded-xl font-bold text-[10px]">ADD</button>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-3 font-black">{schedules.map(s => (
+                                            <div key={s.id} className="flex items-center gap-4 p-4 rounded-2xl bg-white border shadow-sm">
+                                                <button onClick={()=>saveSchedules(schedules.map(x=>x.id===s.id?{...x,done:!x.done}:x))} className={`w-6 h-6 rounded-lg border-2 ${s.done?'bg-slate-800 border-slate-800 text-white':'border-slate-900/10'}`}>{s.done && <Icon name="check" size={12}/>}</button>
+                                                <div className="flex-1 font-black"><div className={`text-sm ${s.done?'line-through opacity-40':''}`}>{s.text}</div><div className="text-[9px] opacity-30 mt-1 uppercase">{s.date || 'TBD'} | {s.time || '--:--'}</div></div>
+                                                <button onClick={()=>saveSchedules(schedules.filter(x=>x.id!==s.id))} className="text-red-500"><Icon name="trash" size={14}/></button>
+                                            </div>
+                                        ))}</div>
+                                    </div>
+                                </main>
+                            </div>
+                        )}
+
+                        {/* Stickies View */}
+                        {view === 'sticky' && (
+                            <div className="fixed inset-0 glass-panel z-[1500] flex flex-col overflow-hidden animate-in fade-in font-black">
+                                <header className="h-14 border-b border-slate-900/5 flex items-center justify-between px-6 bg-white shrink-0">
+                                    <div className="flex items-center gap-3"><Icon name="pin" size={18} /><span>Stickies Library</span></div>
+                                    <button onClick={()=>setView('desktop')} className="w-8 h-8 rounded-full bg-slate-900/5 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all"><Icon name="close" size={16}/></button>
+                                </header>
+                                <main className="flex-1 p-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 overflow-y-auto bg-white/20 pb-40 font-black">
+                                    <div onClick={()=>saveStickies([{id:Date.now(), text:'', mood:'Focus', onTile: true}, ...stickies])} className="aspect-square rounded-[32px] border-4 border-dashed border-slate-900/5 flex flex-col items-center justify-center cursor-pointer hover:bg-white/40 transition-all text-slate-800"><Icon name="plus" size={32} className="opacity-10 mb-4" /><span className="text-[10px] font-black uppercase opacity-20">New Signal</span></div>
+                                    {stickies.map(s => (<div key={s.id} className="aspect-square p-6 rounded-[32px] flex flex-col shadow-sm relative transition-all bg-yellow-50/80 font-black">
+                                        <div className="flex justify-between mb-4 font-black">
+                                            <div className="flex gap-2 font-black">
+                                                <select value={s.mood} onChange={(e)=>saveStickies(stickies.map(x=>x.id===s.id?{...x,mood:e.target.value}:x))} className="bg-slate-900/5 rounded-full px-3 py-1 text-[9px] font-black outline-none">{MOODS.map(m => <option key={m.icon} value={m.icon}>{m.icon}</option>)}</select>
+                                                <button onClick={()=>saveStickies(stickies.map(x=>x.id===s.id?{...x,onTile:!x.onTile}:x))} className={`w-6 h-6 rounded-full flex items-center justify-center transition-all ${s.onTile ? 'bg-slate-800 text-white shadow-lg' : 'bg-slate-900/5 text-slate-400'}`}><Icon name="pin" size={10}/></button>
+                                            </div>
+                                            <button onClick={()=>saveStickies(stickies.filter(x=>x.id!==s.id))} className="opacity-10 hover:text-red-500 font-black"><Icon name="trash" size={12}/></button>
+                                        </div>
+                                        <textarea value={s.text} onChange={(e)=>saveStickies(stickies.map(x=>x.id===s.id?{...x,text:e.target.value}:x))} className="flex-1 bg-transparent border-0 outline-none resize-none text-xs font-bold leading-relaxed font-black" placeholder="..." />
+                                    </div>))}
+                                </main>
+                            </div>
+                        )}
+
+                        {/* Comm View */}
+                        {view === 'comm' && (
+                            <div className="fixed inset-0 glass-panel z-[1500] flex flex-col overflow-hidden animate-in fade-in font-black">
+                                <header className="h-14 border-b border-slate-900/5 flex items-center justify-between px-6 bg-white shrink-0 relative">
+                                    <div className="flex items-center gap-4 font-black">{mobileChatActive && <button onClick={()=>setMobileChatActive(false)} className="md:hidden font-black"><Icon name="back" size={18}/></button>}<div className="text-xs uppercase tracking-widest font-black">Signal Node</div></div>
+                                    <div className="flex items-center gap-4 font-black font-black"><button onClick={clearChat} className="text-red-500 font-black"><Icon name="trash" size={16}/></button><button onClick={()=>setView('desktop')} className="w-8 h-8 rounded-full bg-slate-900/5 flex items-center justify-center transition-all font-black"><Icon name="close" size={16}/></button></div>
+                                </header>
+                                <div className="flex flex-1 overflow-hidden relative font-black">
                                     {!commUnlocked ? (
-                                        <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-xl flex items-center justify-center p-6 font-black">
-                                            <div className="w-full max-w-xs text-center space-y-6">
+                                        <div className="absolute inset-0 z-50 bg-white/80 backdrop-blur-xl flex items-center justify-center p-6 font-black font-black">
+                                            <div className="w-full max-w-xs text-center space-y-6 font-black font-black">
                                                 <Icon name="lock" size={48} className="mx-auto opacity-20" />
-                                                <input id="comm-key" type="password" className="glass-input text-center" placeholder="COMM KEY" onKeyDown={e=>{if(e.key==='Enter') setCommUnlocked(true)}} />
-                                                <button onClick={()=>setCommUnlocked(true)} className="w-full py-4 bg-slate-800 text-white rounded-2xl font-black text-[10px] uppercase shadow-xl">Access</button>
+                                                <input id="comm-key" type="password" className="glass-input text-center font-black" placeholder="COMM KEY" onKeyDown={e=>{if(e.key==='Enter') setCommUnlocked(true)}} />
+                                                <button onClick={()=>setCommUnlocked(true)} className="w-full py-4 bg-slate-800 text-white rounded-2xl font-black text-[10px] uppercase shadow-xl font-black">Access</button>
                                             </div>
                                         </div>
                                     ) : (
-                                        <div className="flex flex-1 overflow-hidden font-black">
+                                        <div className="flex flex-1 overflow-hidden font-black font-black">
                                             <aside className={`${mobileChatActive ? 'hidden' : 'flex'} w-full md:w-72 border-r border-slate-900/5 bg-white/20 flex flex-col p-4 shrink-0 overflow-y-auto font-black`}>
-                                                <div className="flex gap-2 mb-6 font-black"><div onClick={()=>setCommType('personal')} className={`flex-1 text-center py-2 text-[10px] uppercase cursor-pointer rounded-xl ${commType==='personal'?'bg-slate-800 text-white':'bg-slate-900/5 text-slate-800'}`}>Personal</div><div onClick={()=>setCommType('group')} className={`flex-1 text-center py-2 text-[10px] uppercase cursor-pointer rounded-xl ${commType==='group'?'bg-slate-800 text-white':'bg-slate-900/5 text-slate-800'}`}>Groups</div></div>
-                                                {(commType === 'personal' ? contacts : groups).map(item => (<div key={item.id} onClick={()=>{setActiveTargetId(item.id); setMobileChatActive(true);}} className={`p-4 mb-2 rounded-2xl cursor-pointer transition-all ${activeTargetId===item.id?'bg-slate-800 text-white shadow-lg font-black':'hover:bg-white/40 text-slate-800 font-black'}`}><div className="flex items-center gap-3 font-black"><div className="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center text-[10px] font-black uppercase">{item.avatar}</div><div className="font-black text-xs">{item.name}</div></div></div>))}
+                                                <div className="flex gap-2 mb-6 font-black"><div onClick={()=>setCommType('personal')} className={`flex-1 text-center py-2 text-[10px] uppercase cursor-pointer rounded-xl font-black ${commType==='personal'?'bg-slate-800 text-white':'bg-slate-900/5 text-slate-800'}`}>Personal</div><div onClick={()=>setCommType('group')} className={`flex-1 text-center py-2 text-[10px] uppercase cursor-pointer rounded-xl font-black ${commType==='group'?'bg-slate-800 text-white':'bg-slate-900/5 text-slate-800'}`}>Groups</div></div>
+                                                {(commType === 'personal' ? contacts : groups).map(item => (<div key={item.id} onClick={()=>{setActiveTargetId(item.id); setMobileChatActive(true);}} className={`p-4 mb-2 rounded-2xl cursor-pointer transition-all font-black ${activeTargetId===item.id?'bg-slate-800 text-white shadow-lg':'hover:bg-white/40 text-slate-800'}`}><div className="flex items-center gap-3 font-black"><div className="w-8 h-8 rounded-full bg-slate-800 text-white flex items-center justify-center text-[10px] font-black uppercase font-black">{item.avatar}</div><div className="font-black text-xs font-black">{item.name}</div></div></div>))}
                                             </aside>
                                             <main className={`${!mobileChatActive ? 'hidden' : 'flex'} flex-1 md:flex flex-col bg-slate-50/50 overflow-hidden font-black`}>
                                                 <div className="flex-1 overflow-y-auto p-6 md:p-10 custom-scrollbar space-y-4 font-black">
-                                                    {(commType==='personal'?contacts:groups).find(x=>x.id===activeTargetId)?.msgs.map(m => (<div key={m.id} className={`chat-bubble ${m.role==='user'?'chat-user shadow-lg':'chat-target shadow-sm'}`}>{m.text}<div className="text-[8px] mt-2 opacity-30 uppercase font-black">{m.time}</div></div>))}
+                                                    {(commType==='personal'?contacts:groups).find(x=>x.id===activeTargetId)?.msgs.map(m => (<div key={m.id} className={`chat-bubble font-black ${m.role==='user'?'chat-user shadow-lg':'chat-target shadow-sm'}`}>{m.text}<div className="text-[8px] mt-2 opacity-30 uppercase font-black font-black">{m.time}</div></div>))}
                                                 </div>
                                                 <div className="p-4 border-t bg-white/80 backdrop-blur-xl flex gap-3 pb-10 md:pb-4 font-black">
                                                     <input id="human-msg-input" className="flex-1 bg-slate-100 p-4 rounded-2xl outline-none text-xs font-bold font-black" placeholder="加密协作信号..." onKeyDown={e=>e.key==='Enter' && handleSendMsg()} /><button onClick={handleSendMsg} className="bg-slate-800 text-white p-4 rounded-2xl active:scale-95 transition-all font-black"><Icon name="send" size={18}/></button>
@@ -461,146 +539,145 @@
                             </div>
                         )}
 
+                        {/* Settings View */}
+                        {view === 'settings' && (
+                            <div className="fixed inset-0 md:m-auto glass-panel z-[5000] flex flex-col overflow-hidden shadow-2xl md:w-[90vw] md:max-w-[750px] md:h-[80vh] md:rounded-[35px] font-black text-slate-800">
+                                <div className="p-8 border-b border-slate-900/5 flex justify-between items-center bg-white shrink-0 font-black font-black"><span className="text-xs uppercase tracking-widest font-black">Configuration Hub</span><div onClick={()=>setView('desktop')} className="cursor-pointer text-slate-800/30 hover:text-red-500 font-black"><Icon name="close" size={20} /></div></div>
+                                <div className="flex-1 overflow-y-auto p-8 md:p-10 space-y-12 custom-scrollbar font-black font-black">
+                                    <section className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-6 items-center font-black"><label className="text-[10px] uppercase opacity-40 font-black tracking-widest">Identity</label><input className="glass-input font-black" value={config.username} onChange={e=>saveConfig({...config, username:e.target.value})} /></section>
+                                    <section className="font-black"><label className="text-[10px] font-black uppercase opacity-40 mb-6 block font-black">Environment</label><div className="grid grid-cols-5 gap-4 font-black font-black">{PRESET_WALLS.map(w => (<div key={w} onClick={()=>saveConfig({...config, wallpaper:w})} className={`aspect-video rounded-xl border-2 transition-all cursor-pointer bg-cover bg-center ${config.wallpaper===w?'border-slate-800 scale-95 shadow-xl':'border-transparent opacity-60'}`} style={{backgroundImage:`url(${w})`}}></div>))}<label className="aspect-video rounded-xl border-2 border-dashed border-slate-900/10 flex items-center justify-center cursor-pointer hover:bg-slate-900/5 transition-all text-slate-400 font-black"><Icon name="upload" size={20}/><input type="file" hidden accept="image/*" onChange={handleWallUpload} /></label></div></section>
+                                    <section className="space-y-6 font-black font-black"><label className="text-[10px] font-black uppercase opacity-40 font-black">Network & API</label><div className="grid grid-cols-1 gap-5 font-black">{['aiBaseUrl', 'aiKey', 'aiModel', 'localBaseUrl', 'localModel', 'mailApi'].map(k => (
+                                        <div key={k} className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-4 items-center font-black font-black"><span className="text-[10px] opacity-40 uppercase font-black tracking-tighter truncate font-black">{k}</span><input className="glass-input font-black !bg-slate-900/10 !border-slate-900/10 font-black" value={config[k]} onChange={e=>saveConfig({...config, [k]:e.target.value})} /></div>
+                                    ))}</div></section>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Lab Hub View */}
                         {view === 'lab' && (
                             <div className="fixed inset-0 glass-panel z-[1500] flex flex-col overflow-hidden md:m-auto md:w-[96vw] md:h-[90vh] md:rounded-[35px] font-black text-slate-800">
                                 <header className="h-14 border-b border-slate-900/5 flex items-center justify-between px-6 bg-white shrink-0 font-black">
-                                    <div className="flex items-center gap-4"><button onClick={()=>setShowLabSidebar(!showLabSidebar)} className="w-8 h-8 rounded-full hover:bg-slate-900/5 flex items-center justify-center font-black"><Icon name="menu" size={16}/></button><h2 className="text-sm uppercase font-black">Lab Hub</h2></div>
+                                    <div className="flex items-center gap-4 font-black"><button onClick={()=>setShowLabSidebar(!showLabSidebar)} className="w-8 h-8 rounded-full hover:bg-slate-900/5 flex items-center justify-center font-black"><Icon name="menu" size={16}/></button><h2 className="text-sm uppercase font-black">Lab Hub</h2></div>
                                     <button onClick={()=>setView('desktop')} className="w-8 h-8 rounded-full bg-slate-900/5 flex items-center justify-center hover:bg-red-500 hover:text-white transition-all font-black"><Icon name="close" size={16}/></button>
                                 </header>
                                 <div className="flex flex-1 overflow-hidden font-black">
                                     {showLabSidebar && (
                                         <aside className="mobile-sidebar w-64 md:w-80 border-r border-slate-900/5 bg-white/10 flex flex-col p-6 shrink-0 overflow-y-auto custom-scrollbar font-black">
-                                            <div className="flex justify-between items-center mb-6 font-black"><span className="text-[10px] opacity-30 uppercase font-black">Inter-Communication</span></div>
                                             <div onClick={()=>setActivePlugin({name:'Nik 互通', type:'mail'})} className={`p-4 mb-3 rounded-2xl bg-white border cursor-pointer font-black uppercase transition-all ${activePlugin.type==='mail'?'bg-slate-800 text-white shadow-lg':'hover:bg-slate-50'}`}>Nik 互通</div>
                                             <div onClick={()=>{setActivePlugin({name:'协作白板', url:'https://www.excalidraw.com/', type:'plugin'}); if(window.innerWidth<768)setShowLabSidebar(false);}} className={`p-4 mb-3 rounded-2xl bg-white border cursor-pointer font-black uppercase transition-all ${activePlugin.name==='协作白板'?'bg-slate-800 text-white shadow-lg':'hover:bg-slate-50'}`}>协作白板</div>
-                                            
                                             <div className="mt-4 text-[10px] opacity-30 uppercase mb-3 font-black">Custom Plugins</div>
                                             {config.plugins.map((p, idx) => (
                                                 <div key={idx} onClick={()=>setActivePlugin(p)} className={`group p-4 mb-3 rounded-2xl bg-white border flex items-center gap-3 font-black cursor-pointer transition-all ${activePlugin.name===p.name?'bg-slate-800 text-white shadow-lg':'hover:bg-slate-50'}`}>
-                                                    <div className="flex-1 truncate font-black uppercase text-xs">{p.name}</div>
-                                                    <button onClick={(e)=>{e.stopPropagation(); saveConfig({...config, plugins: config.plugins.filter((_,i)=>i!==idx)}); if(activePlugin.name===p.name) setActivePlugin({name:'Nik 互通', type:'mail'});}} className="text-red-400 hover:text-red-600 transition-all font-black"><Icon name="trash" size={14}/></button>
+                                                    <div className="flex-1 truncate font-black uppercase text-xs font-black font-black">{p.name}</div>
+                                                    <button onClick={(e)=>{e.stopPropagation(); saveConfig({...config, plugins: config.plugins.filter((_,i)=>i!==idx)});}} className="text-red-400 font-black"><Icon name="trash" size={14}/></button>
                                                 </div>
                                             ))}
-                                            <div className="mt-auto border-t border-slate-900/5 pt-6 space-y-3 pb-40">
+                                            <div className="mt-auto border-t border-slate-900/5 pt-6 space-y-3 pb-40 font-black">
                                                 <input className="glass-input mb-1 font-black" placeholder="NAME" id="lab-n" />
                                                 <input className="glass-input mb-1 font-black" placeholder="URL" id="lab-u" />
-                                                <button onClick={()=>{const n=document.getElementById('lab-n').value, u=document.getElementById('lab-u').value; if(n&&u) saveConfig({...config, plugins:[...config.plugins, {name:n, url:u, type:'plugin'}]}); document.getElementById('lab-n').value=''; document.getElementById('lab-u').value='';}} className="w-full py-2 bg-slate-800 text-white rounded-xl text-[9px] font-black uppercase active:scale-95 transition-all">REGISTER</button>
+                                                <button onClick={()=>{const n=document.getElementById('lab-n').value, u=document.getElementById('lab-u').value; if(n&&u) saveConfig({...config, plugins:[...config.plugins, {name:n, url:u, type:'plugin'}]}); document.getElementById('lab-n').value=''; document.getElementById('lab-u').value='';}} className="w-full py-2 bg-slate-800 text-white rounded-xl text-[9px] font-black uppercase active:scale-95 transition-all font-black">REGISTER</button>
                                             </div>
                                         </aside>
                                     )}
-                                    <main className="flex-1 bg-slate-100 relative font-black flex flex-col">
+                                    <main className="flex-1 bg-slate-100 relative flex flex-col font-black">
                                         {activePlugin.type === 'mail' ? (
-                                            <div className="w-full h-full p-6 md:p-10 overflow-y-auto bg-white font-black pb-40 relative">
+                                            <div className="w-full h-full p-6 md:p-10 overflow-y-auto bg-white relative pb-40 font-black">
                                                 <div className="max-w-4xl mx-auto space-y-8 font-black">
-                                                    <div className="flex justify-between items-end border-b border-slate-900/5 pb-6">
-                                                        <h3 className="text-3xl font-black uppercase flex items-center gap-3"><Icon name="mail" size={24}/>Real Intercom</h3>
-                                                        <button onClick={()=>setMailCompose(true)} className="text-[10px] font-black bg-slate-800 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 shadow-lg hover:shadow-xl active:scale-95 transition-all">撰写新件</button>
+                                                    <div className="flex justify-between items-end border-b border-slate-900/5 pb-6 font-black">
+                                                        <h3 className="text-3xl font-black uppercase flex items-center gap-3 font-black"><Icon name="mail" size={24}/>Real Intercom</h3>
+                                                        <button onClick={()=>setMailCompose(true)} className="text-[10px] font-black bg-slate-800 text-white px-5 py-2.5 rounded-xl flex items-center gap-2 shadow-lg">撰写新件</button>
                                                     </div>
                                                     {mailCompose && (
                                                         <div className="p-6 bg-slate-50 rounded-[32px] border border-slate-900/5 animate-in slide-in-from-top-4 duration-300 space-y-4 font-black">
-                                                            <div className="flex gap-4"><input className="glass-input flex-1" placeholder="收件 Identity (对方设置的名字)" value={mailForm.to} onChange={e=>setMailForm({...mailForm, to:e.target.value})} /><input className="glass-input flex-1" placeholder="主题" value={mailForm.subject} onChange={e=>setMailForm({...mailForm, subject:e.target.value})} /></div>
-                                                            <textarea className="w-full p-4 bg-white border border-slate-900/5 rounded-2xl h-32 outline-none text-sm font-black resize-none" placeholder="输入真实投递内容..." value={mailForm.body} onChange={e=>setMailForm({...mailForm, body:e.target.value})}></textarea>
+                                                            <div className="flex gap-4 font-black"><input className="glass-input flex-1 font-black" placeholder="收件 Identity" value={mailForm.to} onChange={e=>setMailForm({...mailForm, to:e.target.value})} /><input className="glass-input flex-1 font-black" placeholder="主题" value={mailForm.subject} onChange={e=>setMailForm({...mailForm, subject:e.target.value})} /></div>
+                                                            <textarea className="w-full p-4 bg-white border border-slate-900/5 rounded-2xl h-32 outline-none text-sm font-black resize-none" placeholder="内容..." value={mailForm.body} onChange={e=>setMailForm({...mailForm, body:e.target.value})}></textarea>
                                                             <div className="flex justify-between items-center font-black">
-                                                                <div className="flex gap-2">
-                                                                    <label className="w-10 h-10 rounded-xl bg-white border border-slate-900/5 flex items-center justify-center cursor-pointer text-slate-400 hover:text-slate-800 transition-all"><Icon name="image" size={18}/><input type="file" hidden accept="image/*" onChange={handleMailFile}/></label>
-                                                                    <div className="flex gap-2">{mailForm.attachments.map((at,idx)=><div key={idx} className="h-10 px-3 bg-white border border-slate-900/5 rounded-xl flex items-center gap-2 text-[8px] font-black truncate max-w-[100px]">{at.name}</div>)}</div>
+                                                                <div className="flex gap-2 font-black">
+                                                                    <label className="w-10 h-10 rounded-xl bg-white border border-slate-900/5 flex items-center justify-center cursor-pointer transition-all"><Icon name="image" size={18}/><input type="file" hidden accept="image/*" onChange={handleMailFile}/></label>
+                                                                    <div className="flex gap-2 font-black font-black">{mailForm.attachments.map((at,idx)=><div key={idx} className="h-10 px-3 bg-white border border-slate-900/5 rounded-xl flex items-center gap-2 text-[8px] font-black">{at.name}</div>)}</div>
                                                                 </div>
-                                                                <div className="flex gap-2"><button onClick={()=>setMailCompose(false)} className="px-6 py-2.5 rounded-xl text-[10px] font-black border border-slate-900/5">取消</button><button onClick={handleSendEmail} className="px-8 py-2.5 rounded-xl text-[10px] font-black bg-slate-800 text-white shadow-lg">真实投递</button></div>
+                                                                <div className="flex gap-2 font-black font-black font-black"><button onClick={()=>setMailCompose(false)} className="px-6 py-2.5 rounded-xl text-[10px] font-black border border-slate-900/5">取消</button><button onClick={handleSendEmail} className="px-8 py-2.5 rounded-xl text-[10px] font-black bg-slate-800 text-white shadow-lg">发送</button></div>
                                                             </div>
                                                         </div>
                                                     )}
                                                     {nikEmails.map((e, i) => (
                                                         <div key={e.id || i} className="group p-6 hover:bg-slate-50 rounded-3xl transition-all border border-transparent hover:border-slate-900/5 font-black">
-                                                            <div className="flex justify-between items-start mb-2">
-                                                                <div className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-2">From: <span className="text-slate-800">{e.from}</span> <span className="text-slate-200">/</span> To: <span className="text-slate-500">{e.to}</span></div>
-                                                                <div className="text-[9px] font-black text-slate-300 uppercase">{e.date}</div>
+                                                            <div className="flex justify-between items-start mb-2 font-black font-black">
+                                                                <div className="text-[10px] font-black uppercase text-slate-400 flex items-center gap-2 font-black font-black">From: <span className="text-slate-800 font-black">{e.from}</span> / To: <span className="text-slate-500 font-black font-black">{e.to}</span></div>
+                                                                <div className="text-[9px] font-black text-slate-300 uppercase font-black">{e.date}</div>
                                                             </div>
-                                                            <div className="text-xl font-black uppercase tracking-tighter mb-3">{e.subject}</div>
+                                                            <div className="text-xl font-black uppercase mb-3 font-black font-black font-black">{e.subject}</div>
                                                             <div className="text-sm leading-relaxed text-slate-600 whitespace-pre-wrap font-black">{e.body}</div>
-                                                            {e.attachments && e.attachments.length > 0 && (
-                                                                <div className="mt-4 flex flex-wrap gap-2">
-                                                                    {e.attachments.map((at, idx) => (
-                                                                        <div key={idx} className="p-2 bg-white rounded-xl border border-slate-900/5 shadow-sm">
-                                                                            {at.type.includes('image') ? <img src={at.data} className="w-32 h-32 object-cover rounded-lg" /> : <div className="text-[8px] font-black">{at.name}</div>}
-                                                                        </div>
-                                                                    ))}
-                                                                </div>
-                                                            )}
+                                                            {e.attachments?.map((at, idx) => (<div key={idx} className="mt-4 font-black">{at.type.includes('image') && <img src={at.data} className="w-32 h-32 object-cover rounded-lg" />}</div>))}
                                                         </div>
                                                     ))}
                                                 </div>
                                             </div>
-                                        ) : (activePlugin.url && <iframe src={activePlugin.url} className="w-full h-full border-0 rounded-b-[35px]"></iframe>)}
+                                        ) : (activePlugin.url && <iframe src={activePlugin.url} className="w-full h-full border-0 rounded-b-[35px] font-black font-black"></iframe>)}
                                     </main>
-                                </div>
-                            </div>
-                        )}
-
-                        {view === 'settings' && (
-                            <div className="fixed inset-0 md:m-auto glass-panel z-[5000] flex flex-col overflow-hidden shadow-2xl md:w-[90vw] md:max-w-[750px] md:h-[80vh] md:rounded-[35px] font-black text-slate-800">
-                                <div className="p-8 border-b border-slate-900/5 flex justify-between items-center bg-white shrink-0 font-black"><span className="text-xs uppercase tracking-widest font-black">Configuration Hub</span><div onClick={()=>setView('desktop')} className="cursor-pointer text-slate-800/30 hover:text-red-500 transition-colors font-black"><Icon name="close" size={20} /></div></div>
-                                <div className="flex-1 overflow-y-auto p-8 md:p-10 space-y-12 custom-scrollbar font-black">
-                                    <section className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-6 items-center">
-                                        <label className="text-[10px] uppercase opacity-40 font-black tracking-widest">Identity</label>
-                                        <input className="glass-input font-black" value={config.username} onChange={e=>saveConfig({...config, username:e.target.value})} placeholder="Set your public identity..." />
-                                    </section>
-                                    
-                                    <section>
-                                        <label className="text-[10px] font-black uppercase opacity-40 tracking-widest block mb-6">Environment</label>
-                                        <div className="grid grid-cols-5 gap-4">
-                                            {PRESET_WALLS.map(w => (
-                                                <div key={w} onClick={()=>saveConfig({...config, wallpaper:w})} className={`aspect-video rounded-xl border-2 transition-all cursor-pointer bg-cover bg-center ${config.wallpaper===w?'border-slate-800 scale-95 shadow-xl':'border-transparent opacity-60 hover:opacity-100'}`} style={{backgroundImage:`url(${w})`}}></div>
-                                            ))}
-                                            <label className="aspect-video rounded-xl border-2 border-dashed border-slate-900/10 flex items-center justify-center cursor-pointer hover:bg-slate-900/5 transition-all text-slate-400">
-                                                <Icon name="upload" size={20}/>
-                                                <input type="file" hidden accept="image/*" onChange={handleWallUpload} />
-                                            </label>
-                                        </div>
-                                    </section>
-
-                                    <section className="space-y-6">
-                                        <label className="text-[10px] font-black uppercase opacity-40 tracking-widest block">Network & API Services</label>
-                                        <div className="grid grid-cols-1 gap-5">
-                                            {['aiBaseUrl', 'aiKey', 'aiModel', 'localBaseUrl', 'localModel', 'mailApi'].map(k => (
-                                                <div key={k} className="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-4 items-center">
-                                                    <span className="text-[10px] opacity-40 uppercase font-black tracking-tighter truncate">{k}</span>
-                                                    <input className="glass-input font-black !bg-slate-900/10 !border-slate-900/10" value={config[k]} onChange={e=>saveConfig({...config, [k]:e.target.value})} placeholder={`Input ${k}...`} />
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </section>
                                 </div>
                             </div>
                         )}
                     </main>
 
+                    {/* AI 面板适配 (增加语言互动) */}
                     <div className="fixed right-6 bottom-24 md:right-10 md:bottom-32 w-14 h-14 bg-slate-800 border border-white/20 rounded-full flex items-center justify-center cursor-pointer z-[80000] shadow-2xl active:scale-90 transition-transform no-print font-black" onClick={()=>setIsAiOpen(!isAiOpen)}><div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse font-black"></div></div>
                     {isAiOpen && (
                         <div className={`ai-panel fixed z-[85000] inset-0 md:inset-auto md:top-10 md:bottom-10 md:right-10 md:w-[420px] md:height-auto md:rounded-[35px] transition-all duration-500 bg-white shadow-2xl overflow-hidden flex flex-col font-black`}>
-                            <div className="p-6 border-b border-slate-900/5 flex justify-between items-center bg-white shrink-0 font-black text-slate-800 uppercase text-xs"><div>Nik Copilot</div><button onClick={()=>setIsAiOpen(false)} className="w-8 h-8 rounded-full bg-slate-900/5 flex items-center justify-center text-slate-800/30 hover:text-red-500 transition-all font-black"><Icon name="close" size={18}/></button></div>
+                            <div className="p-6 border-b border-slate-900/5 flex justify-between items-center bg-white shrink-0 font-black text-slate-800 uppercase text-xs"><div>Nik Copilot</div><button onClick={()=>setIsAiOpen(false)} className="w-8 h-8 rounded-full bg-slate-900/5 flex items-center justify-center text-slate-800/30 hover:text-red-500 transition-all font-black font-black"><Icon name="close" size={18}/></button></div>
                             <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar bg-slate-50 font-black">
-                                {aiHistory.map((h, i) => (<div key={i} className={`flex flex-col ${h.role === 'user' ? 'items-end' : 'items-start'}`}><div className={`p-4 rounded-2xl max-w-[90%] text-xs font-bold font-black ${h.role === 'user' ? 'bg-slate-800 text-white shadow-lg' : 'bg-white border border-slate-900/5 text-slate-800 shadow-sm'}`}>{h.text}</div></div>))}
+                                {aiHistory.map((h, i) => (
+                                    <div key={i} className={`flex flex-col ${h.role === 'user' ? 'items-end' : 'items-start'}`}>
+                                        <div className={`p-4 rounded-2xl max-w-[90%] text-xs font-bold ${h.role === 'user' ? 'bg-slate-800 text-white shadow-lg' : 'bg-white border border-slate-900/5 text-slate-800 shadow-sm'}`}>
+                                            {h.text}
+                                            <div className="mt-3 flex gap-4">
+                                                {h.role === 'assistant' && view === 'note' && (h.text.includes('<table') || h.text.length > 50) && (
+                                                    <button onClick={() => {
+                                                        const clean = h.text.replace(/\[PLAN:.*?\]/ig, "").replace(/\[STICKY:.*?\]/ig, "");
+                                                        if (editorRef.current) { editorRef.current.innerHTML += `<div class="ai-suggested">${clean}</div>`; handleEditorInput(); showFeedback("已填充文档"); }
+                                                    }} className="text-[8px] underline opacity-40 hover:opacity-100 transition-opacity uppercase font-black">插入文档</button>
+                                                )}
+                                                {h.role === 'assistant' && (
+                                                    <button onClick={() => speak(h.text)} className="opacity-30 hover:opacity-100 transition-opacity"><Icon name="volume2" size={12}/></button>
+                                                )}
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))}
                             </div>
-                            <div className="p-4 border-t bg-white pb-10 flex gap-3 font-black">
-                                <input id="ai-input" className="flex-1 bg-slate-100 p-4 rounded-2xl outline-none text-xs font-bold font-black" placeholder="指令..." onKeyDown={e=>{if(e.key==='Enter'){callAiApi(e.target.value); e.target.value=''}}} /><button onClick={()=>{const i=document.getElementById('ai-input'); if(i){callAiApi(i.value); i.value=''}}} className="bg-slate-800 text-white p-4 rounded-2xl shadow-lg active:scale-95 font-black"><Icon name="send" size={18}/></button>
+                            <div className="p-4 border-t bg-white flex flex-col gap-2 font-black">
+                                {referencedDocId && <div className="flex items-center justify-between px-3 py-1.5 bg-slate-100 rounded-xl text-[9px] font-black text-slate-500 uppercase"><span>Referencing: {notes.find(n=>n.id===referencedDocId)?.title}</span><button onClick={()=>setReferencedDocId(null)}><Icon name="close" size={10}/></button></div>}
+                                <div className="flex gap-2 relative font-black">
+                                    <button onClick={()=>setShowRefList(!showRefList)} className={`w-10 h-10 rounded-xl border flex items-center justify-center transition-all ${referencedDocId ? 'bg-slate-800 text-white' : 'bg-white border-slate-900/10 text-slate-400'}`} title="引用文章"><Icon name="paperclip" size={16}/></button>
+                                    {showRefList && (
+                                        <div className="absolute bottom-12 left-0 w-64 bg-white border border-slate-900/5 shadow-2xl rounded-2xl z-[100] p-2 animate-in fade-in slide-in-from-bottom-2 font-black font-black">
+                                            <div className="text-[8px] uppercase text-slate-400 px-3 py-1 mb-1">Select Doc as Context</div>
+                                            {notes.map(n=>(<div key={n.id} onClick={()=>{setReferencedDocId(n.id); setShowRefList(false)}} className="px-3 py-2 hover:bg-slate-50 rounded-lg cursor-pointer text-[10px] font-bold truncate font-black">{n.title}</div>))}
+                                        </div>
+                                    )}
+                                    <input id="ai-input" className="flex-1 bg-slate-100 p-4 rounded-2xl outline-none text-xs font-bold font-black" placeholder="指令..." onKeyDown={e=>{if(e.key==='Enter'){callAiApi(e.target.value); e.target.value=''}}} />
+                                    <button onClick={startVoiceInput} className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isListening ? 'bg-red-500 text-white animate-pulse' : 'bg-slate-100 text-slate-400'}`}><Icon name="mic" size={16}/></button>
+                                    <button onClick={()=>{const i=document.getElementById('ai-input'); if(i){callAiApi(i.value); i.value=''}}} className="bg-slate-800 text-white p-4 rounded-2xl shadow-lg active:scale-95 font-black font-black"><Icon name="send" size={18}/></button>
+                                </div>
                             </div>
                         </div>
                     )}
 
+                    {/* Dock */}
                     <div className="fixed bottom-0 w-full flex justify-center gap-2 md:gap-10 px-4 md:px-8 pb-8 pt-4 no-print z-[200] font-black">
-                        <div className="flex items-center justify-center gap-2 md:gap-6 bg-transparent font-black relative">
+                        <div className="flex items-center justify-center gap-2 md:gap-6 bg-transparent font-black relative font-black font-black">
                             <div onClick={()=>setView('comm')} className="float-dock-btn"><Icon name="bird" size={20} />{totalUnread > 0 && <span className="badge">{totalUnread}</span>}</div>
                             <div onClick={()=>setView('note')} className="float-dock-btn"><Icon name="book" size={20} /></div>
                             <div onClick={()=>setView('schedule')} className="float-dock-btn"><Icon name="calendar" size={20} /></div>
                             <div onClick={()=>setView('sticky')} className="float-dock-btn"><Icon name="pin" size={20} /></div>
                             <div onClick={()=>setView('lab')} className="float-dock-btn"><Icon name="lab" size={20} /></div>
                             <div onClick={()=>setView('settings')} className="float-dock-btn"><Icon name="engine" size={20} /></div>
-                            <div className="relative">
+                            <div className="relative font-black font-black font-black font-black font-black">
                                 {isSearchOpen && (
                                     <div className="absolute bottom-16 right-0 w-[260px] md:w-[320px] glass-panel p-4 rounded-3xl animate-in slide-in-from-bottom-4 duration-300 font-black">
-                                        <div className="flex gap-2">
-                                            <input autoFocus className="flex-1 bg-slate-900/5 border-0 rounded-xl px-4 text-xs font-black outline-none h-10" placeholder="全局索引指令..." onKeyDown={e=>{if(e.key==='Enter'){showFeedback("索引中..."); setIsSearchOpen(false)}}} />
-                                            <button onClick={()=>setIsSearchOpen(false)} className="w-10 h-10 rounded-xl bg-slate-800 text-white flex items-center justify-center active:scale-95 transition-all font-black"><Icon name="close" size={14}/></button>
+                                        <div className="flex gap-2 font-black font-black font-black">
+                                            <input autoFocus className="flex-1 bg-slate-900/5 border-0 rounded-xl px-4 text-xs font-black outline-none h-10 font-black" placeholder="全局索引指令..." onKeyDown={e=>{if(e.key==='Enter'){showFeedback("索引中..."); setIsSearchOpen(false)}}} />
+                                            <button onClick={()=>setIsSearchOpen(false)} className="w-10 h-10 rounded-xl bg-slate-800 text-white flex items-center justify-center active:scale-95 transition-all font-black font-black font-black font-black"><Icon name="close" size={14}/></button>
                                         </div>
                                     </div>
                                 )}
