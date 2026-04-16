@@ -10,25 +10,25 @@
     <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    
+
     <!-- Firebase SDK -->
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { initializeFirestore, collection, addDoc, onSnapshot, query, doc, setDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        
-        window.FB = { 
-            initializeApp, initializeFirestore, collection, addDoc, onSnapshot, 
-            query, doc, setDoc, getAuth, signInAnonymously, 
-            signInWithCustomToken, onAuthStateChanged 
+
+        window.FB = {
+            initializeApp, initializeFirestore, collection, addDoc, onSnapshot,
+            query, doc, setDoc, getAuth, signInAnonymously,
+            signInWithCustomToken, onAuthStateChanged
         };
     </script>
 
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@100;300;400;900&family=Noto+Sans+SC:wght@100;400;900&family=Noto+Serif+SC:wght@400;900&family=Zhi+Mang+Xing&family=Ma+Shan+Zheng&family=Long+Cang&family=JetBrains+Mono&display=swap');
-        
+
         body, html { margin: 0; padding: 0; height: 100vh; height: 100dvh; width: 100%; background: #0f172a; font-family: 'Inter', 'Noto Sans SC', sans-serif; color: #334155; -webkit-tap-highlight-color: transparent; overflow: hidden; position: fixed; }
-        
+
         #wallpaper-layer { position: fixed; inset: 0; background-size: cover; background-position: center; z-index: 0; transition: background-image 1s ease-in-out; }
         #wallpaper-layer::after { content: ""; position: absolute; inset: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(25px); }
 
@@ -36,7 +36,7 @@
 
         .top-info-bar { position: fixed; top: 40px; left: 0; right: 0; padding: 12px 24px; display: flex; justify-content: space-between; align-items: flex-start; z-index: 40; pointer-events: none; }
         .top-info-text { font-size: 10px; font-weight: 900; color: rgba(255,255,255,0.4); text-transform: uppercase; letter-spacing: 0.2em; }
-        
+
         .news-ticker { position: fixed; top: 0; left: 0; right: 0; height: 32px; background: rgba(0,0,0,0.5); backdrop-filter: blur(15px); z-index: 100000; overflow: hidden; border-bottom: 1px solid rgba(255,255,255,0.05); }
         .news-wrapper { display: flex; flex-direction: column; animation: ticker-scroll-vertical 40s linear infinite; }
         .news-ticker:hover .news-wrapper { animation-play-state: paused; }
@@ -45,11 +45,11 @@
 
         .editor-view:empty:before { content: "在此记录思考..."; color: #94a3b8; pointer-events: none; }
         .editor-view h1 { font-size: 2.2em; font-weight: 900; margin: 0.8em 0 0.4em; color: #1e293b; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; }
-        
+
         .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
         .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 10px; }
 
-        .tool-bar-wrap { display: flex; flex-wrap: wrap; gap: 4px; padding: 10px; background: #fff; border-bottom: 1px solid rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100; }
+        .tool-bar-wrap { display: flex; flex-wrap: nowrap; gap: 4px; padding: 10px; background: #fff; border-bottom: 1px solid rgba(0,0,0,0.05); position: sticky; top: 0; z-index: 100; overflow-x: scroll; overflow-y: hidden; -webkit-overflow-scrolling: touch; scrollbar-width: thin; min-width: 120vw; }
         .tool-btn { height: 32px; min-width: 32px; display: flex; align-items: center; justify-content: center; border-radius: 6px; font-size: 10px; font-weight: 900; color: #475569; transition: 0.2s; cursor: pointer; background: rgba(255,255,255,0.98); border: 1px solid #e2e8f0; flex-shrink: 0; padding: 0 4px; }
         .tool-btn:hover { background: #1e293b !important; color: #fff !important; }
 
@@ -58,8 +58,8 @@
 
         .glass-panel { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(60px) saturate(180%); border: 1px solid rgba(255, 255, 255, 0.4); box-shadow: 0 40px 100px rgba(15, 23, 42, 0.3); }
         .tile-widget { flex: 1; min-width: 180px; max-width: 400px; height: 140px; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); cursor: pointer; border: 1px solid rgba(255, 255, 255, 0.08); display: flex; flex-direction: column; padding: 1.5rem; border-radius: 24px; background: rgba(255, 255, 255, 0.04); color: white; }
-        @media (max-width: 768px) { .tile-widget { min-width: 100%; height: 80px; padding: 1rem 1.25rem; border-radius: 16px; } }
-        
+        @media (max-width: 768px) { .tile-widget { flex-direction: column; min-width: unset; width: calc(100vw - 48px); max-width: 400px; height: 90px; padding: 1rem 1.25rem; border-radius: 16px; } }
+
         .badge { @apply absolute -top-1 -right-1 bg-red-500 text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center border border-slate-900/50; }
 
         .chat-bubble { @apply p-4 rounded-2xl max-w-[85%] text-[11px] font-bold leading-relaxed mb-4; }
@@ -91,10 +91,10 @@
         ];
 
         const MOODS = [
-            { icon: "Focus", emoji: "🎯" }, 
-            { icon: "Work", emoji: "💼" }, 
-            { icon: "Creative", emoji: "💡" }, 
-            { icon: "Relax", emoji: "☕" }, 
+            { icon: "Focus", emoji: "🎯" },
+            { icon: "Work", emoji: "💼" },
+            { icon: "Creative", emoji: "💡" },
+            { icon: "Relax", emoji: "☕" },
             { icon: "Alert", emoji: "⚠️" }
         ];
 
@@ -114,7 +114,7 @@
             menu: "M3 12h18M3 6h18M3 18h18", back: "M19 12H5M12 19l-7-7 7-7", lock: "M7 11V7a5 5 0 0110 0v4M5 11h14a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2z",
             calendar: "M19 4H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2z M16 2v4 M8 2v4 M3 10h18",
             indent: "M10 12h10M10 18h10M10 6h10M3 12l4 4M3 12l4-4", list: "M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01",
-            check: "M20 6L9 17l-5-5", upload: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12", 
+            check: "M20 6L9 17l-5-5", upload: "M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12",
             alignLeft: "M17 10H3M21 6H3M17 14H3M21 18H3", alignCenter: "M18 10H6M21 6H3M18 14H6M21 18H3", alignRight: "M21 10H7M21 6H3M21 14H7M21 18H3", alignFull: "M21 10H3M21 6H3M21 14H3M21 18H3",
             mail: "M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1-.9-2 2-2z M22 6l-10 7L2 6", sparkles: "M12 3v3m0 12v3m9-9h-3M6 12H3m15.364-6.364l-2.121 2.121M7.757 16.243l-2.121 2.121m12.728 0l-2.121-2.121M7.757 7.757L5.636 5.636",
             volume2: "M11 5L6 9H2v6h4l5 4V5z M19.07 4.93a10 10 0 0 1 0 14.14 M15.54 8.46a5 5 0 0 1 0 7.07",
@@ -127,7 +127,7 @@
 
         const App = () => {
             const [isLoggedIn, setIsLoggedIn] = useState(() => !!localStorage.getItem('NikAuth_V200'));
-            const [view, setView] = useState(isLoggedIn ? 'desktop' : 'login'); 
+            const [view, setView] = useState(isLoggedIn ? 'desktop' : 'login');
             const [time, setTime] = useState('--:--');
             const [date, setDate] = useState('...');
             const [location, setLocation] = useState('定位中...');
@@ -165,7 +165,7 @@
             const [mailCompose, setMailCompose] = useState(false);
             const [mailForm, setMailForm] = useState({ to: "", subject: "", body: "", attachments: [] });
 
-            const [selectedRef, setSelectedRef] = useState(null); 
+            const [selectedRef, setSelectedRef] = useState(null);
             const [showRefPicker, setShowRefPicker] = useState(false);
             const [isListening, setIsListening] = useState(false);
 
@@ -244,7 +244,7 @@
                         for(let i=0; i<8; i++) {
                             const r = await fetch('https://v1.hitokoto.cn/?c=d&c=i&c=k');
                             const d = await r.json();
-                            items.push(`${d.hitokoto} —— ${d.from_who || ''}《${d.from}》`);
+                            items.push(`${d.hitokoto} -- ${d.from_who || ''}《${d.from}》`);
                         }
                         if (items.length > 0) setNews([...items, ...items]);
                     } catch (e) {}
@@ -259,7 +259,7 @@
                         const app = FB.initializeApp(cfg);
                         dbRef.current = FB.initializeFirestore(app, { experimentalForceLongPolling: true });
                         const auth = FB.getAuth(app);
-                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) { await FB.signInWithCustomToken(auth, __initial_auth_token); } 
+                        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) { await FB.signInWithCustomToken(auth, __initial_auth_token); }
                         else { await FB.signInAnonymously(auth); }
                         FB.onAuthStateChanged(auth, (u) => setUser(u));
                     } catch (err) {}
@@ -373,7 +373,7 @@
                                     <div className="clock-display font-thin text-[18vw] sm:text-[14vw] md:text-[8.5rem] tracking-tighter leading-none text-white drop-shadow-xl">{time}</div>
                                     <div className="date-display text-[8px] sm:text-[10px] md:text-[13px] text-white/50 tracking-[0.4em] uppercase mt-3">{date}</div>
                                 </div>
-                                <div className="w-full flex flex-wrap justify-center gap-4 md:gap-8">
+                                <div className="w-full flex flex-col md:flex-row md:flex-wrap justify-center gap-4 md:gap-8">
                                     <div onClick={()=>setView('schedule')} className="tile-widget"><div className="flex justify-between items-start mb-2 uppercase opacity-20 text-[9px]">Plans<Icon name="calendar" size={10}/></div><div className="space-y-1">{upcomingSchedules.map(t=>(<div key={t.id} className="truncate text-[11px]">• {t.text}</div>))}</div></div>
                                     <div onClick={()=>setView('sticky')} className="tile-widget"><div className="flex justify-between items-start mb-2 uppercase opacity-20 text-[9px]">Stickies<Icon name="pin" size={10}/></div><div className="space-y-1 text-[10px] italic opacity-60">{stickies.filter(s => s.onTile).slice(0,3).map(s=>(<div key={s.id} className="truncate">{s.text}</div>))}</div></div>
                                     <div onClick={()=>setView('note')} className="tile-widget"><div className="flex justify-between items-start mb-2 uppercase opacity-20 text-[9px]">Docs<Icon name="book" size={10}/></div><div className="space-y-1">{notes.slice(0,3).map(n=>(<div key={n.id} className="truncate text-xs">{n.title}</div>))}</div></div>
@@ -392,29 +392,43 @@
                                         {showNoteSidebar && (
                                             <>
                                             <div className="fixed inset-0 z-40 bg-black/30 md:hidden" onClick={()=>setShowNoteSidebar(false)} />
-                                            <aside className="w-full md:w-64 border-r border-slate-900/5 bg-white flex flex-col p-4 fixed md:relative z-50 h-full overflow-y-auto custom-scrollbar md:bg-white/10">
+                                            <aside className="w-64 border-r border-slate-900/5 bg-white flex flex-col p-4 overflow-y-auto custom-scrollbar shrink-0">
                                                 <div className="flex justify-between items-center mb-4 md:hidden"><span className="text-xs font-black text-slate-800">文档列表</span><button onClick={()=>setShowNoteSidebar(false)} className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 hover:text-red-500">×</button></div>
                                                 <button onClick={()=>{const nid=Date.now(); saveNotes([{id:nid, title:'新文档', content:'', pinned:false}, ...notes]); setActiveNoteId(nid); if(window.innerWidth <= 768) setShowNoteSidebar(false);}} className="w-full mb-6 p-3 bg-slate-800 text-white rounded-xl text-[10px] font-black uppercase">New Entry</button>
                                                 <div className="space-y-2">{notes.map(n => ( <div key={n.id} onClick={()=>{setActiveNoteId(n.id); if(window.innerWidth <= 768) setShowNoteSidebar(false);}} className={`group flex items-center justify-between p-3 rounded-xl cursor-pointer text-[12px] font-black transition-all ${activeNoteId===n.id ? 'bg-slate-800 text-white shadow-lg' : 'text-slate-800/30'}`}><span className="truncate flex-1">{n.title}</span><button onClick={(e) => { e.stopPropagation(); if(confirm("物理销毁？")) { const next = notes.filter(x => x.id !== n.id); saveNotes(next); if(activeNoteId === n.id) setActiveNoteId(next[0]?.id); } }} className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-600"><Icon name="trash" size={12}/></button></div> ))}</div>
                                             </aside>
                                             </>
                                         )}
-                                        <main className="flex-1 flex flex-col overflow-hidden bg-white/40">
+                                        <main className="flex-1 flex flex-col bg-white/40 overflow-x-hidden">
                                             <div className="tool-bar-wrap">
                                                 <select className="tool-btn bg-slate-50 border-0 h-8" onChange={(e)=>exec(e, 'fontSize', e.target.value)} title="字号"><option value="3">Size</option><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option></select>
                                                 <select className="tool-btn bg-slate-50 border-0 h-8" onChange={(e)=>exec(e, 'fontName', e.target.value)} title="字体">{FONTS.map(f => <option key={f.value} value={f.value}>{f.label}</option>)}</select>
-                                                <button onMouseDown={(e)=>exec(e, 'bold')} className="tool-btn font-black">B</button><button onMouseDown={(e)=>exec(e, 'italic')} className="tool-btn italic">I</button><button onMouseDown={(e)=>exec(e, 'underline')} className="tool-btn underline">U</button><button onMouseDown={(e)=>exec(e, 'strikeThrough')} className="tool-btn line-through">S</button><button onMouseDown={(e)=>exec(e, 'subscript')} className="tool-btn">x₂</button><button onMouseDown={(e)=>exec(e, 'superscript')} className="tool-btn">x²</button><button onMouseDown={(e)=>exec(e, 'formatBlock', 'H1')} className="tool-btn font-black">H1</button><button onMouseDown={(e)=>exec(e, 'formatBlock', 'H2')} className="tool-btn font-black">H2</button><button onMouseDown={(e)=>exec(e, 'formatBlock', 'H3')} className="tool-btn font-black">H3</button><button onMouseDown={(e)=>exec(e, 'formatBlock', 'BLOCKQUOTE')} className="tool-btn">“</button><button onMouseDown={(e)=>exec(e, 'formatBlock', 'PRE')} className="tool-btn" title="代码模式">&lt;/&gt;</button>
+                                                <button onMouseDown={(e)=>exec(e, 'bold')} className="tool-btn font-black">B</button><button onMouseDown={(e)=>exec(e, 'italic')} className="tool-btn italic">I</button><button onMouseDown={(e)=>exec(e, 'underline')} className="tool-btn underline">U</button><button onMouseDown={(e)=>exec(e, 'strikeThrough')} className="tool-btn line-through">S</button><button onMouseDown={(e)=>exec(e, 'subscript')} className="tool-btn">x₂</button><button onMouseDown={(e)=>exec(e, 'superscript')} className="tool-btn">x²</button><button onMouseDown={(e)=>exec(e, 'formatBlock', 'H1')} className="tool-btn font-black">H1</button><button onMouseDown={(e)=>exec(e, 'formatBlock', 'H2')} className="tool-btn font-black">H2</button><button onMouseDown={(e)=>exec(e, 'formatBlock', 'H3')} className="tool-btn font-black">H3</button><button onMouseDown={(e)=>exec(e, 'formatBlock', 'BLOCKQUOTE')} className="tool-btn">"</button><button onMouseDown={(e)=>exec(e, 'formatBlock', 'PRE')} className="tool-btn" title="代码模式">&lt;/&gt;</button>
                                                 <div className="flex gap-1 items-center bg-slate-50 px-2 h-8 rounded-lg border border-slate-200 flex-shrink-0"><input type="color" onInput={(e)=>exec(e, 'foreColor', e.target.value)} className="w-4 h-4 cursor-pointer" /><input type="color" onInput={(e)=>exec(e, 'hiliteColor', e.target.value)} className="w-4 h-4 cursor-pointer" /></div>
                                                 <button onMouseDown={(e)=>exec(e, 'justifyLeft')} className="tool-btn"><Icon name="alignLeft"/></button><button onMouseDown={(e)=>exec(e, 'justifyCenter')} className="tool-btn"><Icon name="alignCenter"/></button><button onMouseDown={(e)=>exec(e, 'justifyRight')} className="tool-btn"><Icon name="alignRight"/></button><button onMouseDown={(e)=>exec(e, 'justifyFull')} className="tool-btn"><Icon name="alignFull"/></button><button onMouseDown={(e)=>exec(e, 'insertUnorderedList')} className="tool-btn"><Icon name="list"/></button><button onMouseDown={(e)=>exec(e, 'insertOrderedList')} className="tool-btn">1.</button><button onMouseDown={(e)=>exec(e, 'outdent')} className="tool-btn"><Icon name="back" size={10}/></button><button onMouseDown={(e)=>exec(e, 'indent')} className="tool-btn"><Icon name="indent" size={10}/></button><button onMouseDown={(e)=>{e.preventDefault(); const url=prompt("URL:"); if(url) exec(e, "createLink", url);}} className="tool-btn"><Icon name="link"/></button><button onMouseDown={(e)=>exec(e, "insertHorizontalRule")} className="tool-btn">—</button><button onMouseDown={(e)=>exec(e, "insertHTML", "<table style='width:100%;border:1px solid #ddd'><tr><td>Cell</td><td>Cell</td></tr></table>")} className="tool-btn"><Icon name="table"/></button><label className="tool-btn cursor-pointer"><Icon name="image" size={14}/><input type="file" hidden accept="image/*" onChange={(e)=>{const f=e.target.files[0]; const r=new FileReader(); r.onload=(v)=>document.execCommand("insertImage",false,v.target.result); r.readAsDataURL(f);}}/></label><button onMouseDown={(e)=>exec(e, "undo")} className="tool-btn text-blue-600">UNDO</button><button onMouseDown={(e)=>exec(e, "redo")} className="tool-btn text-blue-600">REDO</button><button onMouseDown={(e)=>exec(e, "removeFormat")} className="tool-btn text-red-500">CLR</button><button onClick={()=>{setIsAiOpen(true); callAiApi("分析此文档内容：" + editorRef.current.innerHTML);}} className="tool-btn !bg-slate-800 !text-white !w-14 gap-1 animate-pulse font-black"><Icon name="sparkles" size={12}/>@AI</button>
                                             </div>
-                                            <div className={`flex-1 overflow-y-auto p-6 md:p-24 custom-scrollbar text-slate-800 pb-40 transition-all duration-300 ${isAiOpen ? 'h-[60vh] md:h-full md:flex-1' : 'flex-1'}`}><div className="max-w-3xl mx-auto"><input className="w-full text-2xl md:text-4xl font-black border-0 outline-none mb-10 text-slate-800 bg-transparent font-black" value={notes.find(n=>n.id===activeNoteId)?.title} onChange={e => saveNotes(notes.map(n => n.id === activeNoteId ? {...n, title:e.target.value} : n))} /><div ref={editorRef} onInput={handleEditorInput} contentEditable className="w-full min-h-[500px] outline-none editor-view font-black" dangerouslySetInnerHTML={{ __html: notes.find(n=>n.id===activeNoteId)?.content }}></div></div></div>
-                                        {isAiOpen && view === 'note' && (
-                                            <div className="h-[40vh] md:hidden border-t border-slate-200 bg-white flex flex-col">
-                                                <div className="p-3 border-b border-slate-100 flex justify-between items-center shrink-0"><span className="text-xs font-black text-slate-800">AI 助手</span><button onClick={()=>setIsAiOpen(false)} className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 hover:text-red-500 font-black">×</button></div>
-                                                <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-slate-50">{aiHistory.map((h, i) => (<div key={i} className={`flex ${h.role === 'user' ? 'justify-end' : 'justify-start'}`}><div className={`p-3 rounded-xl max-w-[85%] text-xs font-black ${h.role === 'user' ? 'bg-slate-800 text-white' : 'bg-white border text-slate-800'}`}>{h.text}</div></div>))}</div>
-                                                <div className="p-3 border-t bg-white flex gap-2"><input id="note-ai-input" className="flex-1 bg-slate-100 p-2 rounded-xl outline-none text-xs font-black" placeholder="输入..." onKeyDown={e=>{if(e.key==='Enter'){callAiApi(e.target.value); e.target.value=''}}} /><button onClick={()=>{const i=document.getElementById('note-ai-input'); if(i.value.trim()){callAiApi(i.value); i.value=''}}} className="bg-slate-800 text-white p-2 rounded-xl text-xs font-black">发送</button></div>
+                                            {/* 桌面端编辑器 + AI 侧栏 */}
+                                            <div className="hidden md:flex flex-1 overflow-hidden">
+                                                <div className="flex-1 overflow-y-auto p-6 md:p-24 custom-scrollbar text-slate-800 pb-40 transition-all duration-300"><div className="max-w-3xl mx-auto"><input className="w-full text-2xl md:text-4xl font-black border-0 outline-none mb-10 text-slate-800 bg-transparent font-black" value={notes.find(n=>n.id===activeNoteId)?.title} onChange={e => saveNotes(notes.map(n => n.id === activeNoteId ? {...n, title:e.target.value} : n))} /><div ref={editorRef} onInput={handleEditorInput} contentEditable className="w-full min-h-[500px] outline-none editor-view font-black" dangerouslySetInnerHTML={{ __html: notes.find(n=>n.id===activeNoteId)?.content }}></div></div></div>
+                                                {isAiOpen && (
+                                                    <div className="w-[20%] min-w-[200px] border-l border-slate-200 bg-white flex-col flex">
+                                                        <div className="p-3 border-b border-slate-100 flex justify-between items-center shrink-0"><span className="text-xs font-black text-slate-800">AI 助手</span><button onClick={()=>setIsAiOpen(false)} className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 hover:text-red-500 font-black">×</button></div>
+                                                        <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-slate-50 custom-scrollbar">{aiHistory.map((h, i) => (<div key={i} className={`flex ${h.role === 'user' ? 'justify-end' : 'justify-start'}`}><div className={`p-3 rounded-xl max-w-[95%] text-[11px] font-bold ${h.role === 'user' ? 'bg-slate-800 text-white' : 'bg-white border text-slate-800'}`}>{h.text}</div></div>))}</div>
+                                                        <div className="p-3 border-t bg-white flex gap-2 shrink-0"><input id="note-ai-input" className="flex-1 bg-slate-100 p-2 rounded-xl outline-none text-xs font-black" placeholder="输入..." onKeyDown={e=>{if(e.key==='Enter'){callAiApi(e.target.value); e.target.value=''}}} /><button onClick={()=>{const i=document.getElementById('note-ai-input'); if(i.value.trim()){callAiApi(i.value); i.value=''}}} className="bg-slate-800 text-white p-2 rounded-xl text-xs font-black">发送</button></div>
+                                                    </div>
+                                                )}
                                             </div>
-                                        )}
+                                            {/* 手机端：编辑器单独显示，AI 面板覆盖在底部 */}
+                                            <div className="md:hidden flex-1 flex flex-col overflow-hidden">
+                                                <div className="flex-1 overflow-y-auto p-4 pb-40 custom-scrollbar text-slate-800"><div className="max-w-3xl mx-auto"><input className="w-full text-2xl font-black border-0 outline-none mb-6 text-slate-800 bg-transparent font-black" value={notes.find(n=>n.id===activeNoteId)?.title} onChange={e => saveNotes(notes.map(n => n.id === activeNoteId ? {...n, title:e.target.value} : n))} /><div ref={editorRef} onInput={handleEditorInput} contentEditable className="w-full min-h-[300px] outline-none editor-view font-black" dangerouslySetInnerHTML={{ __html: notes.find(n=>n.id===activeNoteId)?.content }}></div></div></div>
+                                                {isAiOpen && (
+                                                    <div className="absolute inset-x-0 bottom-0 h-[45vh] border-t border-slate-200 bg-white flex flex-col z-50">
+                                                        <div className="p-3 border-b border-slate-100 flex justify-between items-center shrink-0"><span className="text-xs font-black text-slate-800">AI 助手</span><button onClick={()=>setIsAiOpen(false)} className="w-6 h-6 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 hover:text-red-500 font-black">×</button></div>
+                                                        <div className="flex-1 overflow-y-auto p-3 space-y-3 bg-slate-50">{aiHistory.map((h, i) => (<div key={i} className={`flex ${h.role === 'user' ? 'justify-end' : 'justify-start'}`}><div className={`p-3 rounded-xl max-w-[85%] text-xs font-black ${h.role === 'user' ? 'bg-slate-800 text-white' : 'bg-white border text-slate-800'}`}>{h.text}</div></div>))}</div>
+                                                        <div className="p-3 border-t bg-white flex gap-2 shrink-0"><input id="note-ai-input" className="flex-1 bg-slate-100 p-2 rounded-xl outline-none text-xs font-black" placeholder="输入..." onKeyDown={e=>{if(e.key==='Enter'){callAiApi(e.target.value); e.target.value=''}}} /><button onClick={()=>{const i=document.getElementById('note-ai-input'); if(i.value.trim()){callAiApi(i.value); i.value=''}}} className="bg-slate-800 text-white p-2 rounded-xl text-xs font-black">发送</button></div>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </main>
                                     </div>
                                 </div>
@@ -523,8 +537,8 @@
                         )}
                     </main>
 
-                    {/* AI 面板与输入框修复 */}
-                    {isAiOpen && !(view === 'note' && window.innerWidth <= 768) && (
+                    {/* 悬浮 AI 面板：仅在非笔记视图时显示 */}
+                    {isAiOpen && view !== 'note' && (
                         <div className="ai-panel floating-panel fixed z-[85000] md:top-10 md:bottom-24 md:right-10 md:w-[420px] md:rounded-[35px] bottom-0 left-0 right-0 h-[40vh] rounded-t-[28px] transition-all duration-500 bg-white shadow-2xl overflow-hidden flex flex-col font-black">
                             <div className="p-4 md:p-6 border-b border-slate-900/5 flex justify-between items-center bg-white shrink-0 font-black text-slate-800 uppercase text-xs font-black"><div className="flex items-center gap-2 font-black"><div className="md:hidden w-10 h-1 bg-slate-200 rounded-full"></div><span>Nik Copilot</span></div><button onClick={()=>setIsAiOpen(false)} className="w-8 h-8 rounded-full bg-slate-900/5 flex items-center justify-center text-slate-800/30 hover:text-red-500 transition-all font-black font-black"><Icon name="close" size={18}/></button></div>
                             <div className="flex-1 overflow-y-auto p-6 space-y-6 custom-scrollbar bg-slate-50 font-black font-black font-black font-black">{aiHistory.map((h, i) => ( <div key={i} className={`flex flex-col ${h.role === 'user' ? 'items-end' : 'items-start'} font-black font-black font-black`}><div className={`p-4 rounded-2xl max-w-[90%] text-xs font-bold ${h.role === 'user' ? 'bg-slate-800 text-white shadow-lg font-black font-black' : 'bg-white border border-slate-900/5 text-slate-800 shadow-sm font-black font-black'}`}>{h.text}{h.role === 'assistant' && (<div className="mt-3 flex gap-4 font-black font-black font-black font-black font-black"><button onClick={() => {const utterance = new SpeechSynthesisUtterance(h.text); utterance.lang='zh-CN'; window.speechSynthesis.speak(utterance);}} className="opacity-30 hover:opacity-100 transition-opacity font-black font-black font-black font-black font-black font-black font-black font-black font-black font-black"><Icon name="volume2" size={12}/></button></div>)}</div></div> ))}</div>
@@ -550,7 +564,7 @@
                         </div>
                     )}
 
-                    <div className="fixed right-6 bottom-24 md:right-10 md:bottom-32 w-14 h-14 bg-slate-800 border border-white/20 rounded-full flex items-center justify-center cursor-pointer z-[80000] shadow-2xl active:scale-90 transition-transform no-print font-black font-black font-black font-black" onClick={()=>setIsAiOpen(!isAiOpen)}><div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div></div>
+                    <div className={`fixed right-6 bottom-24 md:right-10 md:bottom-32 w-14 h-14 bg-slate-800 border border-white/20 rounded-full flex items-center justify-center cursor-pointer z-[80000] shadow-2xl active:scale-90 transition-transform no-print font-black ${view === 'note' ? 'hidden' : ''}`} onClick={()=>setIsAiOpen(!isAiOpen)}><div className="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></div></div>
 
                     {/* Dock and Search */}
                     <div className="fixed bottom-0 w-full flex justify-center gap-2 md:gap-10 px-4 md:px-8 pb-8 pt-4 no-print z-[200] font-black font-black font-black font-black">
