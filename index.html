@@ -1,11 +1,9 @@
-
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>NikO · 随心而记</title>
- <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%231a2a6c'/%3E%3Ctext x='16' y='23' text-anchor='middle' font-family='Georgia,serif' font-size='18' font-weight='bold' fill='%23b21f1f'%3EN%3C/text%3E%3C/svg%3E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Noto+Serif+SC:wght@300;400;600&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -14,13 +12,12 @@
  --text-secondary: #555;
  --text-muted: #999;
  --accent: #8b7355;
- --border: rgba(0,0,0,0.07);
- --shadow-sm: 0 2px 12px rgba(0,0,0,0.06);
- --shadow-md: 0 8px 32px rgba(0,0,0,0.1);
- --shadow-lg: 0 16px 48px rgba(0,0,0,0.14);
- --radius-sm: 10px;
- --radius-md: 16px;
- --radius-lg: 24px;
+ --border: rgba(0,0,0,0.06);
+ --shadow-sm: 0 2px 12px rgba(0,0,0,0.04);
+ --shadow-md: 0 8px 32px rgba(0,0,0,0.08);
+ --radius-sm: 12px;
+ --radius-md: 20px;
+ --radius-lg: 28px;
  --font-display: 'Cormorant Garamond', 'Noto Serif SC', serif;
  --font-zh: 'Noto Serif SC', serif;
  --font-body: 'Noto Sans SC', sans-serif;
@@ -46,545 +43,305 @@ body {
  align-items: center;
  justify-content: center;
  z-index: 1000;
- background: #f8f6f3;
- background-image:
- radial-gradient(ellipse at 20% 80%, rgba(139,115,85,0.08) 0%, transparent 50%),
- radial-gradient(ellipse at 80% 20%, rgba(139,115,85,0.06) 0%, transparent 50%);
+ background: rgba(248,246,243,0.95);
+ backdrop-filter: blur(20px);
 }
-
 .login-card {
- background: rgba(255,255,255,0.95);
+ background: rgba(255,255,255,0.85);
+ backdrop-filter: blur(20px);
  border-radius: var(--radius-lg);
- padding: 3rem 2.5rem;
- width: 360px;
+ padding: 2.5rem 2rem;
+ width: 320px;
  box-shadow: var(--shadow-lg);
  text-align: center;
- animation: floatIn 0.6s cubic-bezier(0.22, 1, 0.36, 1);
 }
-
-.login-logo {
- font-family: var(--font-display);
- font-size: 3.2rem;
- font-weight: 600;
- color: var(--text-primary);
- letter-spacing: 0.12em;
- line-height: 1;
- margin-bottom: 0.4rem;
-}
-
-.login-slogan {
- font-family: var(--font-zh);
- font-size: 0.85rem;
- color: var(--text-muted);
- letter-spacing: 0.5em;
- margin-bottom: 2.5rem;
-}
-
-.login-input {
- width: 100%;
- padding: 0.9rem 1.2rem;
- border: 1.5px solid var(--border);
- border-radius: var(--radius-sm);
- font-size: 1rem;
- font-family: var(--font-body);
- outline: none;
- background: #fafaf8;
- text-align: center;
- letter-spacing: 0.3em;
- transition: all 0.3s;
-}
-.login-input:focus {
- border-color: var(--accent);
- background: #fff;
- box-shadow: 0 0 0 3px rgba(139,115,85,0.1);
-}
-
-.login-btn {
- width: 100%;
- padding: 0.95rem;
- margin-top: 1rem;
- border: none;
- border-radius: var(--radius-sm);
- background: var(--text-primary);
- color: #fff;
- font-size: 0.95rem;
- font-family: var(--font-body);
- cursor: pointer;
- letter-spacing: 0.3em;
- transition: all 0.3s;
-}
-.login-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.18); }
-.login-error { color: #c44; font-size: 0.82rem; margin-top: 0.75rem; height: 1.2em; transition: opacity 0.3s; }
+.login-logo { font-family: var(--font-display); font-size: 2.8rem; font-weight: 600; letter-spacing: 0.1em; margin-bottom: 0.3rem; }
+.login-slogan { font-size: 0.7rem; color: var(--text-muted); letter-spacing: 0.3em; margin-bottom: 2rem; }
+.login-input { width: 100%; padding: 0.8rem 1rem; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.9rem; outline: none; background: rgba(255,255,255,0.9); text-align: center; transition: all 0.3s; }
+.login-input:focus { border-color: var(--accent); background: white; }
+.login-btn { width: 100%; padding: 0.8rem; margin-top: 1rem; border: none; border-radius: var(--radius-sm); background: #1a1a1a; color: white; font-size: 0.85rem; cursor: pointer; transition: all 0.3s; }
+.login-btn:hover { transform: translateY(-2px); opacity: 0.9; }
+.login-error { color: #c44; font-size: 0.75rem; margin-top: 0.75rem; }
 
 /* 首次设置页 */
-.setup-page {
- position: fixed;
- inset: 0;
- display: none;
- align-items: center;
- justify-content: center;
- z-index: 1000;
- background: #f8f6f3;
- background-image:
- radial-gradient(ellipse at 20% 80%, rgba(139,115,85,0.08) 0%, transparent 50%),
- radial-gradient(ellipse at 80% 20%, rgba(139,115,85,0.06) 0%, transparent 50%);
-}
+.setup-page { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 1000; background: rgba(248,246,243,0.95); backdrop-filter: blur(20px); }
 .setup-page.active { display: flex; }
-
-.setup-card {
- background: rgba(255,255,255,0.95);
- border-radius: var(--radius-lg);
- padding: 3rem 2.5rem;
- width: 380px;
- box-shadow: var(--shadow-lg);
- animation: floatIn 0.6s cubic-bezier(0.22, 1, 0.36, 1);
-}
-.setup-card h2 { font-family: var(--font-display); font-size: 1.5rem; font-weight: 600; margin-bottom: 2rem; text-align: center; }
-
-.field-group { margin-bottom: 1.25rem; }
-.field-group label { display: block; font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.5rem; }
-.field-group input {
- width: 100%; padding: 0.85rem 1rem; border: 1.5px solid var(--border);
- border-radius: var(--radius-sm); font-size: 1rem; font-family: var(--font-body);
- outline: none; transition: all 0.3s; background: #fafaf8;
-}
-.field-group input:focus { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px rgba(139,115,85,0.1); }
-
-.setup-btn {
- width: 100%; padding: 0.95rem; margin-top: 1rem; border: none; border-radius: var(--radius-sm);
- background: var(--text-primary); color: #fff; font-size: 0.95rem; font-family: var(--font-body);
- cursor: pointer; letter-spacing: 0.2em; transition: all 0.3s;
-}
-.setup-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.18); }
+.setup-card { background: rgba(255,255,255,0.9); backdrop-filter: blur(20px); border-radius: var(--radius-lg); padding: 2rem; width: 340px; }
+.setup-card h2 { font-size: 1.3rem; font-weight: 600; margin-bottom: 1.5rem; text-align: center; }
+.field-group { margin-bottom: 1rem; }
+.field-group label { display: block; font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.3rem; }
+.field-group input { width: 100%; padding: 0.7rem 1rem; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.9rem; outline: none; background: rgba(255,255,255,0.9); }
+.field-group input:focus { border-color: var(--accent); background: white; }
+.setup-btn { width: 100%; padding: 0.8rem; margin-top: 1rem; border: none; border-radius: var(--radius-sm); background: #1a1a1a; color: white; cursor: pointer; }
 
 /* 主应用 */
-.app-page { display: none; min-height: 100vh; padding: 0; }
+.app-page { display: none; min-height: 100vh; }
 .app-page.active { display: block; }
-
-.main-content {
- max-width: 800px;
- margin: 0 auto;
- padding: 1.5rem 1.5rem 5rem;
-}
+.main-content { max-width: 800px; margin: 0 auto; padding: 1rem 1rem 5rem; }
 
 /* 顶栏 */
-.app-topbar {
- display: flex;
- justify-content: space-between;
- align-items: flex-start;
- padding: 0.5rem 0 1.5rem;
- animation: fadeDown 0.5s ease;
-}
-.topbar-left { display: flex; flex-direction: column; gap: 0.15rem; }
-.topbar-location { font-size: 0.78rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.3rem; }
-.topbar-weather { font-size: 0.8rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.4rem; margin-top: 0.15rem; }
+.app-topbar { display: flex; justify-content: space-between; align-items: flex-start; padding: 0.5rem 0 1rem; }
+.topbar-left { display: flex; flex-direction: column; gap: 0.2rem; }
+.topbar-location { font-size: 0.7rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.2rem; }
+.topbar-weather { font-size: 0.7rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.3rem; }
 .topbar-right { text-align: right; }
-.topbar-logo { font-family: var(--font-display); font-size: 1.8rem; font-weight: 600; color: var(--text-primary); letter-spacing: 0.1em; line-height: 1; }
-.topbar-slogan { font-family: var(--font-zh); font-size: 0.72rem; color: var(--text-muted); letter-spacing: 0.4em; margin-top: 0.3rem; }
+.topbar-logo { font-family: var(--font-display); font-size: 1.6rem; font-weight: 600; letter-spacing: 0.08em; line-height: 1; }
+.topbar-slogan { font-size: 0.6rem; color: var(--text-muted); letter-spacing: 0.3em; margin-top: 0.2rem; }
 
 /* 时间区 */
-.app-datetime {
- text-align: center;
- padding: 1.5rem 0 1.5rem;
- animation: fadeIn 0.6s ease 0.1s both;
-}
-.datetime-time { font-family: var(--font-display); font-size: 5rem; font-weight: 400; color: var(--text-primary); letter-spacing: -0.02em; line-height: 1; margin-bottom: 0.5rem; }
-.datetime-date { font-size: 0.95rem; color: var(--text-muted); font-weight: 300; letter-spacing: 0.05em; }
+.app-datetime { text-align: center; padding: 1rem 0; }
+.datetime-time { font-family: var(--font-display); font-size: 3.5rem; font-weight: 400; letter-spacing: -0.02em; line-height: 1; margin-bottom: 0.3rem; }
+.datetime-date { font-size: 0.8rem; color: var(--text-muted); }
 
-/* 磁贴 */
-.tiles-grid {
- display: grid;
- grid-template-columns: 1fr 1fr;
- gap: 1rem;
- margin: 1rem 0;
- animation: fadeUp 0.5s ease 0.2s both;
-}
-
-.tile-card {
- background: rgba(255,255,255,0.72);
+/* 磁贴 - 统一半透明，简易图标 */
+.tiles-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin: 1rem 0; }
+.tile-card { 
+ background: rgba(255,255,255,0.7); 
  backdrop-filter: blur(20px);
- -webkit-backdrop-filter: blur(20px);
- border-radius: var(--radius-lg);
- border: 1px solid var(--border);
- padding: 1.75rem 1.5rem;
- cursor: pointer;
- transition: all 0.35s cubic-bezier(0.22, 1, 0.36, 1);
- position: relative;
- overflow: hidden;
- min-height: 180px;
+ border-radius: var(--radius-md); 
+ border: 1px solid rgba(255,255,255,0.3);
+ padding: 1rem; 
+ cursor: pointer; 
+ transition: all 0.25s ease;
 }
-.tile-card::before {
- content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
- background: linear-gradient(90deg, var(--accent), transparent);
- opacity: 0; transition: opacity 0.3s;
-}
-.tile-card:hover { transform: translateY(-5px); box-shadow: var(--shadow-lg); background: rgba(255,255,255,0.9); }
-.tile-card:hover::before { opacity: 1; }
+.tile-card:active { transform: scale(0.97); }
+.tile-sym { font-size: 1.5rem; margin-bottom: 0.5rem; opacity: 0.7; }
+.tile-title { font-weight: 500; font-size: 0.8rem; margin-bottom: 0.5rem; color: #333; }
+.tile-items { display: flex; flex-direction: column; gap: 0.3rem; }
+.tile-item { display: flex; align-items: center; gap: 0.4rem; padding: 0.2rem 0; }
+.tile-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+.tile-text { font-size: 0.7rem; color: #555; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
+.tile-meta { font-size: 0.6rem; color: var(--text-muted); }
+.tile-empty { font-size: 0.7rem; color: var(--text-muted); }
 
-.tile-sym {
- font-size: 1.3rem;
- margin-bottom: 1rem;
- opacity: 0.6;
+/* 滚动新闻 - 中文 */
+.news-scroll { 
+ background: rgba(255,255,255,0.6); 
+ backdrop-filter: blur(20px);
+ border-radius: var(--radius-md); 
+ padding: 0.6rem 1rem; 
+ margin: 0.5rem 0; 
+ overflow: hidden; 
+ white-space: nowrap;
+ border: 1px solid rgba(255,255,255,0.3);
 }
+.news-content { display: inline-block; animation: scrollNews 30s linear infinite; font-size: 0.75rem; color: var(--text-secondary); }
+.news-content span { margin: 0 1.2rem; }
+@keyframes scrollNews { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
 
-.tile-items { display: flex; flex-direction: column; gap: 0.5rem; }
-
-.tile-item {
- display: flex;
- align-items: flex-start;
- gap: 0.5rem;
- padding: 0.4rem 0;
- border-bottom: 1px solid rgba(0,0,0,0.04);
+/* 生存时间 + 提醒 */
+.life-stats { 
+ background: rgba(255,255,255,0.6); 
+ backdrop-filter: blur(20px);
+ border-radius: var(--radius-md); 
+ padding: 0.7rem 1rem; 
+ margin: 0.5rem 0; 
+ display: flex; 
+ justify-content: space-between; 
+ align-items: center;
+ border: 1px solid rgba(255,255,255,0.3);
 }
-.tile-item:last-child { border-bottom: none; }
-
-.tile-dot {
- width: 5px; height: 5px; border-radius: 50%; background: var(--accent);
- flex-shrink: 0; margin-top: 0.45rem;
-}
-.tile-dot-g { background: #ccc; }
-
-.tile-text {
- font-size: 0.85rem;
- color: var(--text-primary);
- line-height: 1.5;
- display: -webkit-box;
- -webkit-line-clamp: 2;
- -webkit-box-orient: vertical;
- overflow: hidden;
- flex: 1;
-}
-.tile-meta { font-size: 0.72rem; color: var(--text-muted); margin-top: 0.1rem; }
-
-.tile-empty {
- font-size: 0.82rem;
- color: var(--text-muted);
- margin-top: 0.5rem;
-}
+.life-label { font-size: 0.7rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.3rem; }
+.life-value { font-size: 0.85rem; font-weight: 500; color: #4a4a4a; }
 
 /* 操作按钮 */
-.actions-row {
- display: flex;
- gap: 0.6rem;
- justify-content: center;
- margin: 1.25rem 0;
- animation: fadeUp 0.5s ease 0.3s both;
-}
-
-.action-btn {
+.actions-row { display: flex; gap: 0.5rem; justify-content: center; margin: 1rem 0; }
+.action-btn { 
  display: flex;
  flex-direction: column;
  align-items: center;
- gap: 0.35rem;
- padding: 0.8rem 0.9rem;
- border: 1.5px solid var(--border);
+ gap: 0.3rem;
+ padding: 0.6rem 0.5rem;
+ border: 1px solid rgba(255,255,255,0.4);
  border-radius: var(--radius-md);
- background: rgba(255,255,255,0.72);
- backdrop-filter: blur(10px);
+ background: rgba(255,255,255,0.6);
+ backdrop-filter: blur(20px);
  cursor: pointer;
- transition: all 0.3s;
- min-width: 72px;
+ transition: all 0.2s;
+ min-width: 60px;
 }
-.action-btn:hover { background: rgba(255,255,255,0.95); transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--accent); }
-.action-btn .icon { font-size: 1.2rem; line-height: 1; }
-.action-btn .label { font-size: 0.72rem; color: var(--text-muted); font-family: var(--font-body); white-space: nowrap; }
+.action-btn:active { transform: scale(0.95); }
+.action-btn .icon { font-size: 1.1rem; line-height: 1; opacity: 0.7; }
+.action-btn .label { font-size: 0.6rem; color: var(--text-muted); }
 
-/* 安全退出 */
-.logout-btn {
- position: fixed;
- top: 1.25rem;
- right: 1.25rem;
- padding: 0.45rem 0.9rem;
- background: rgba(255,255,255,0.7);
- backdrop-filter: blur(10px);
- border: 1px solid var(--border);
- border-radius: 8px;
- cursor: pointer;
- font-size: 0.75rem;
- color: var(--text-muted);
- transition: all 0.3s;
- z-index: 100;
- font-family: var(--font-body);
-}
-.logout-btn:hover { background: rgba(255,255,255,0.95); color: #c44; border-color: #c44; }
+.logout-btn { position: fixed; top: 1rem; right: 1rem; padding: 0.35rem 0.8rem; background: rgba(255,255,255,0.7); backdrop-filter: blur(10px); border: 1px solid rgba(0,0,0,0.05); border-radius: 20px; cursor: pointer; font-size: 0.65rem; color: var(--text-muted); z-index: 100; }
 
 /* 动画 */
-@keyframes floatIn { from { opacity: 0; transform: translateY(30px) scale(0.97); } to { opacity: 1; transform: translateY(0) scale(1); } }
-@keyframes fadeDown { from { opacity: 0; transform: translateY(-15px); } to { opacity: 1; transform: translateY(0); } }
-@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 @keyframes fadeUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
 
 /* 模态框 */
-.modal-overlay {
- position: fixed;
- inset: 0;
- background: rgba(0,0,0,0.35);
- backdrop-filter: blur(6px);
- -webkit-backdrop-filter: blur(6px);
- z-index: 500;
- display: none;
- align-items: flex-end;
- justify-content: center;
- animation: fadeIn 0.25s ease;
-}
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.3); backdrop-filter: blur(8px); z-index: 500; display: none; align-items: flex-end; justify-content: center; }
 .modal-overlay.active { display: flex; }
-
-.modal {
- background: #fff;
- width: 100%;
- max-width: 560px;
- max-height: 88vh;
- border-radius: var(--radius-lg) var(--radius-lg) 0 0;
- padding: 1.75rem 1.75rem calc(1.75rem + env(safe-area-inset-bottom));
- overflow-y: auto;
- animation: slideUp 0.35s cubic-bezier(0.22, 1, 0.36, 1);
-}
 .modal-overlay.center-modal { align-items: center; }
-.modal-overlay.center-modal .modal { border-radius: var(--radius-lg); animation: floatIn 0.35s cubic-bezier(0.22, 1, 0.36, 1); max-height: 85vh; }
-
-@keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
-
-.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; padding-bottom: 1rem; border-bottom: 1px solid var(--border); }
-.modal-title { font-family: var(--font-display); font-size: 1.3rem; font-weight: 600; }
-.modal-close {
- width: 34px; height: 34px; border: none; background: #f5f5f5; border-radius: 50%;
- cursor: pointer; font-size: 1.1rem; color: var(--text-secondary); transition: all 0.2s;
- display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-}
-.modal-close:hover { background: #eee; color: var(--text-primary); }
+.modal { background: white; width: 100%; max-width: 560px; max-height: 85vh; border-radius: 24px 24px 0 0; padding: 1.5rem; overflow-y: auto; }
+.modal-overlay.center-modal .modal { border-radius: 24px; max-height: 85vh; }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; padding-bottom: 0.8rem; border-bottom: 1px solid var(--border); }
+.modal-title { font-weight: 600; font-size: 1.1rem; }
+.modal-close { width: 32px; height: 32px; border: none; background: #f5f5f5; border-radius: 50%; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; }
 
 /* 表单 */
-.form-group { margin-bottom: 1.25rem; }
-.form-group label { display: block; font-size: 0.82rem; color: var(--text-muted); margin-bottom: 0.5rem; }
-.form-group input,
-.form-group textarea,
-.form-group select {
- width: 100%; padding: 0.85rem 1rem; border: 1.5px solid var(--border); border-radius: var(--radius-sm);
- font-size: 1rem; font-family: var(--font-body); outline: none; transition: all 0.3s; background: #fafaf8; color: var(--text-primary);
-}
-.form-group input:focus,
-.form-group textarea:focus { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px rgba(139,115,85,0.1); }
-.form-group textarea { resize: none; min-height: 100px; }
-
-.form-actions { display: flex; gap: 0.6rem; margin-top: 1.5rem; flex-wrap: wrap; }
-.btn {
- flex: 1; min-width: 70px; padding: 0.85rem 1rem; border: none; border-radius: var(--radius-sm);
- font-size: 0.9rem; font-family: var(--font-body); cursor: pointer; transition: all 0.3s; text-align: center;
-}
-.btn-primary { background: var(--text-primary); color: #fff; }
-.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0,0,0,0.2); }
-.btn-secondary { background: #f0f0ee; color: var(--text-secondary); }
-.btn-secondary:hover { background: #e5e5e3; }
+.form-group { margin-bottom: 1rem; }
+.form-group label { display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.3rem; }
+.form-group input, .form-group textarea, .form-group select { width: 100%; padding: 0.7rem 1rem; border: 1px solid var(--border); border-radius: 12px; font-size: 0.85rem; outline: none; background: #fafaf8; }
+.form-group textarea { resize: none; min-height: 80px; }
+.form-actions { display: flex; gap: 0.5rem; margin-top: 1.2rem; }
+.btn { flex: 1; padding: 0.7rem; border: none; border-radius: 12px; font-size: 0.8rem; cursor: pointer; text-align: center; }
+.btn-primary { background: #1a1a1a; color: white; }
+.btn-secondary { background: #f0f0f0; color: #666; }
 .btn-danger { background: #fff0f0; color: #c44; }
-.btn-danger:hover { background: #ffe0e0; }
-.btn-success { background: #f0fff4; color: #2a9; }
-.btn-success:hover { background: #e0ffec; }
-
-/* 标签切换 */
-.list-tabs { display: flex; gap: 0.4rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
-.list-tab {
- padding: 0.45rem 1rem; border: none; background: #f0f0ee; border-radius: 20px;
- font-size: 0.82rem; cursor: pointer; transition: all 0.3s; color: var(--text-secondary); font-family: var(--font-body);
-}
-.list-tab.active { background: var(--text-primary); color: #fff; }
 
 /* 列表 */
-.list-empty { text-align: center; padding: 2.5rem 1rem; color: var(--text-muted); }
-.list-empty .icon { font-size: 2.5rem; margin-bottom: 0.75rem; opacity: 0.3; }
+.list-tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+.list-tab { padding: 0.4rem 1rem; border: none; background: #f0f0f0; border-radius: 20px; font-size: 0.75rem; cursor: pointer; }
+.list-tab.active { background: #1a1a1a; color: white; }
+.list-item { background: #fafaf8; border-radius: 16px; padding: 0.8rem 1rem; margin-bottom: 0.5rem; cursor: pointer; border: 1px solid transparent; transition: all 0.2s; }
+.list-item:hover { background: white; border-color: var(--border); }
+.list-item-header { display: flex; justify-content: space-between; margin-bottom: 0.3rem; }
+.list-item-title { font-weight: 500; font-size: 0.85rem; }
+.list-item-time { font-size: 0.7rem; color: var(--text-muted); }
+.list-item-content { font-size: 0.75rem; color: var(--text-secondary); }
+.list-item-actions { display: flex; gap: 0.3rem; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border); }
+.list-item-actions button { padding: 0.3rem 0.6rem; border: none; border-radius: 8px; font-size: 0.65rem; cursor: pointer; background: #f0f0f0; }
 
-.list-item {
- background: #fafaf8; border-radius: var(--radius-md); padding: 1rem 1.25rem; margin-bottom: 0.65rem;
- cursor: pointer; transition: all 0.3s; border: 1px solid transparent;
-}
-.list-item:hover { background: #fff; border-color: var(--border); box-shadow: var(--shadow-sm); }
-.list-item-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.4rem; }
-.list-item-title { font-weight: 500; color: var(--text-primary); flex: 1; font-size: 0.95rem; }
-.list-item-time { font-size: 0.78rem; color: var(--text-muted); white-space: nowrap; margin-left: 0.75rem; }
-.list-item-content { font-size: 0.82rem; color: var(--text-secondary); line-height: 1.5; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-.list-item-actions {
- display: flex; gap: 0.4rem; margin-top: 0.7rem; padding-top: 0.7rem; border-top: 1px solid var(--border); flex-wrap: wrap;
-}
-.list-item-actions button {
- padding: 0.38rem 0.7rem; border: none; border-radius: 6px; font-size: 0.75rem; cursor: pointer;
- transition: all 0.2s; background: #f0f0ee; color: var(--text-secondary); font-family: var(--font-body);
-}
-.list-item-actions button:hover { background: #e5e5e3; }
-.list-item-actions button.edit-btn:hover { background: #e8f4ff; color: #4a8; }
-.list-item-actions button.del-btn:hover { background: #ffe0e0; color: #c44; }
-.list-item-actions button.done-btn:hover { background: #e0ffec; color: #2a9; }
-.list-item-actions button.pin-btn:hover { background: #fff8e0; color: #a80; }
-.list-item-actions button.pin-btn.pinned { background: #fff8e0; color: #a80; }
+/* 便签卡片 */
+.note-card { border-radius: 16px; padding: 0.8rem; margin-bottom: 0.5rem; cursor: pointer; transition: all 0.2s; position: relative; background: rgba(255,249,230,0.8); }
+.note-card:active { transform: scale(0.98); }
+.note-card-content { font-size: 0.8rem; line-height: 1.4; margin-bottom: 0.4rem; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+.note-card-footer { display: flex; justify-content: space-between; align-items: center; }
+.note-card-mood { font-size: 0.65rem; padding: 0.15rem 0.4rem; border-radius: 10px; background: rgba(0,0,0,0.05); display: flex; align-items: center; gap: 0.2rem; }
+.note-card-time { font-size: 0.6rem; color: var(--text-muted); }
+.note-card-actions { position: absolute; top: 0.4rem; right: 0.4rem; display: flex; gap: 0.2rem; opacity: 0; transition: opacity 0.2s; }
+.note-card:hover .note-card-actions { opacity: 1; }
+.note-card-actions button { width: 24px; height: 24px; border: none; border-radius: 6px; cursor: pointer; background: rgba(255,255,255,0.9); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; }
 
 /* 颜色/心情 */
-.color-picker, .mood-picker { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
-.color-option {
- width: 34px; height: 34px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: all 0.3s;
-}
-.color-option:hover, .color-option.selected { transform: scale(1.15); border-color: var(--accent); }
-.mood-option {
- padding: 0.4rem 0.8rem; border-radius: 20px; cursor: pointer; border: 1.5px solid var(--border);
- transition: all 0.3s; font-size: 0.82rem; display: flex; align-items: center; gap: 0.4rem;
- background: #fafaf8; color: var(--text-secondary); font-family: var(--font-body);
-}
-.mood-option:hover, .mood-option.selected { background: var(--text-primary); color: #fff; border-color: var(--text-primary); }
-
-/* 便签列表卡片 */
-.note-card {
- border-radius: var(--radius-md); padding: 1.1rem 1.25rem; margin-bottom: 0.65rem;
- cursor: pointer; transition: all 0.3s; position: relative;
-}
-.note-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
-.note-card-content { font-size: 0.9rem; line-height: 1.65; color: var(--text-primary); margin-bottom: 0.75rem; display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
-.note-card-footer { display: flex; justify-content: space-between; align-items: center; }
-.note-card-mood { font-size: 0.75rem; padding: 0.25rem 0.6rem; border-radius: 10px; background: rgba(0,0,0,0.06); color: var(--text-muted); display: flex; align-items: center; gap: 0.3rem; }
-.note-card-time { font-size: 0.72rem; color: var(--text-muted); }
-.note-card-actions {
- position: absolute; top: 0.6rem; right: 0.6rem; display: flex; gap: 0.3rem; opacity: 0; transition: opacity 0.2s;
-}
-.note-card:hover .note-card-actions { opacity: 1; }
-.note-card-actions button {
- width: 28px; height: 28px; border: none; border-radius: 6px; cursor: pointer; font-size: 0.75rem;
- background: rgba(255,255,255,0.9); color: var(--text-secondary); transition: all 0.2s;
- display: flex; align-items: center; justify-content: center;
-}
-.note-card-actions button:hover { background: #fff; }
-.note-card-actions button.del:hover { background: #ffe0e0; color: #c44; }
-
-/* 搜索 */
-.search-wrap { position: relative; margin-bottom: 1.25rem; }
-.search-wrap input {
- width: 100%; padding: 0.9rem 1rem 0.9rem 2.75rem; border: 1.5px solid var(--border);
- border-radius: var(--radius-sm); font-size: 1rem; font-family: var(--font-body); outline: none;
- background: #fafaf8; transition: all 0.3s;
-}
-.search-wrap input:focus { border-color: var(--accent); background: #fff; box-shadow: 0 0 0 3px rgba(139,115,85,0.1); }
-.search-wrap .icon { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); font-size: 1rem; color: var(--text-muted); }
-.search-type-tag { font-size: 0.7rem; padding: 0.2rem 0.5rem; border-radius: 4px; background: #f0f0ee; color: var(--text-muted); margin-left: 0.5rem; }
+.color-picker, .mood-picker { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.color-option { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; }
+.color-option.selected { border-color: #1a1a1a; transform: scale(1.1); }
+.mood-option { padding: 0.3rem 0.7rem; border-radius: 20px; cursor: pointer; border: 1px solid var(--border); font-size: 0.7rem; display: flex; align-items: center; gap: 0.2rem; background: #fafaf8; }
+.mood-option.selected { background: #1a1a1a; color: white; border-color: #1a1a1a; }
+.mood-svg { width: 14px; height: 14px; stroke: currentColor; stroke-width: 1.5; fill: none; }
 
 /* 设置 */
-.settings-section { margin-bottom: 2rem; }
-.settings-section-title { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.12em; margin-bottom: 0.85rem; }
-.settings-item {
- display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.25rem;
- background: #fafaf8; border-radius: var(--radius-sm); margin-bottom: 0.5rem; cursor: pointer;
- transition: all 0.3s; border: 1px solid transparent;
-}
-.settings-item:hover { background: #fff; border-color: var(--border); box-shadow: var(--shadow-sm); }
-.settings-item-label { font-size: 0.95rem; color: var(--text-primary); }
-.settings-item-value { font-size: 0.85rem; color: var(--text-muted); }
+.settings-section { margin-bottom: 1.5rem; }
+.settings-section-title { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem; }
+.settings-item { display: flex; justify-content: space-between; align-items: center; padding: 0.8rem 1rem; background: #fafaf8; border-radius: 12px; margin-bottom: 0.4rem; cursor: pointer; }
+.settings-item-label { font-size: 0.85rem; }
+.settings-item-value { font-size: 0.8rem; color: var(--text-muted); }
 
-/* 背景图选择 */
-.bg-picker { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem; margin-top: 0.85rem; }
-.bg-option {
- aspect-ratio: 16/10; border-radius: var(--radius-sm); cursor: pointer; border: 3px solid transparent;
- transition: all 0.3s; background-size: cover; background-position: center; min-height: 60px;
-}
-.bg-option:hover, .bg-option.selected { border-color: var(--accent); transform: scale(1.03); }
-.bg-upload {
- aspect-ratio: 16/10; border-radius: var(--radius-sm); border: 2px dashed var(--border);
- display: flex; flex-direction: column; align-items: center; justify-content: center;
- cursor: pointer; transition: all 0.3s; color: var(--text-muted); font-size: 0.72rem; gap: 0.3rem; min-height: 60px;
-}
-.bg-upload:hover { border-color: var(--accent); color: var(--accent); }
+.bg-picker { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-top: 0.5rem; }
+.bg-option { aspect-ratio: 16/10; border-radius: 12px; cursor: pointer; border: 2px solid transparent; background-size: cover; background-position: center; }
+.bg-option.selected { border-color: var(--accent); }
+.bg-upload { aspect-ratio: 16/10; border-radius: 12px; border: 1.5px dashed var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; font-size: 0.7rem; gap: 0.2rem; }
 .bg-upload input { display: none; }
 
-/* 随手记颜色/字体 */
-.note-style-section { margin-bottom: 1.5rem; }
-.note-style-row { display: flex; gap: 1rem; margin-top: 0.5rem; }
-.note-style-row > div { flex: 1; }
+/* 开关 */
+.toggle-switch { position: relative; display: inline-block; width: 40px; height: 20px; }
+.toggle-switch input { opacity: 0; width: 0; height: 0; }
+.toggle-slider { position: absolute; cursor: pointer; inset: 0; background: #ccc; border-radius: 20px; transition: 0.2s; }
+.toggle-slider::before { position: absolute; content: ''; height: 16px; width: 16px; left: 2px; bottom: 2px; background: white; border-radius: 50%; transition: 0.2s; }
+.toggle-switch input:checked + .toggle-slider { background: #555; }
+.toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
 
-.font-option {
- padding: 0.5rem 0.75rem; border-radius: 8px; cursor: pointer; border: 1.5px solid var(--border);
- font-size: 0.82rem; text-align: center; transition: all 0.2s; background: #fafafa; color: var(--text-secondary);
+/* 悬浮球 */
+.floating-ai-ball {
+    position: fixed;
+    bottom: 100px;
+    right: 20px;
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: rgba(26,26,46,0.9);
+    backdrop-filter: blur(20px);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+    z-index: 200;
+    font-size: 1.3rem;
+    transition: transform 0.2s;
+    border: 1px solid rgba(255,255,255,0.2);
 }
-.font-option:hover, .font-option.selected { border-color: var(--accent); background: #fff; color: var(--text-primary); }
-.font-option.selected { box-shadow: 0 0 0 2px rgba(139,115,85,0.2); }
+.floating-ai-ball:active { transform: scale(0.95); }
 
-.bg-color-option {
- width: 36px; height: 36px; border-radius: 50%; cursor: pointer; border: 3px solid transparent; transition: all 0.3s;
+/* AI 浮层 */
+.ai-chat-panel {
+    position: fixed;
+    bottom: 165px;
+    right: 20px;
+    width: 320px;
+    height: 480px;
+    background: white;
+    border-radius: 24px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+    z-index: 201;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
-.bg-color-option:hover, .bg-color-option.selected { transform: scale(1.15); border-color: var(--accent); }
+.ai-chat-panel.hidden { display: none; }
+.ai-chat-header { padding: 14px 16px; background: #1a1a2e; color: white; display: flex; justify-content: space-between; font-weight: 500; font-size: 0.9rem; }
+.ai-chat-messages { flex: 1; overflow-y: auto; padding: 12px; background: #fafafa; }
+.ai-chat-input { padding: 10px; display: flex; gap: 8px; border-top: 1px solid #eee; background: white; }
+.ai-chat-input input { flex: 1; padding: 8px 12px; border: 1px solid #ddd; border-radius: 30px; outline: none; font-size: 0.8rem; }
+.ai-chat-input button { width: 38px; height: 38px; border-radius: 50%; background: #1a1a2e; color: white; border: none; cursor: pointer; }
+.ai-msg { margin-bottom: 10px; display: flex; }
+.ai-msg.user { justify-content: flex-end; }
+.ai-msg.user .bubble { background: #1a1a2e; color: white; padding: 6px 12px; border-radius: 18px 18px 4px 18px; max-width: 80%; font-size: 0.75rem; }
+.ai-msg.ai .bubble { background: white; border: 1px solid #ddd; padding: 6px 12px; border-radius: 18px 18px 18px 4px; max-width: 80%; font-size: 0.75rem; }
+.ai-history-item { padding: 0.6rem; border-bottom: 1px solid #eee; cursor: pointer; font-size: 0.7rem; }
+.ai-history-item:hover { background: #f5f5f5; }
 
-/* 心情SVG */
-.mood-svg { width: 16px; height: 16px; stroke: currentColor; stroke-width: 1.5; fill: none; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
-
-/* 确认删除 */
-.confirm-dialog {
- position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 600;
- display: none; align-items: center; justify-content: center; animation: fadeIn 0.2s;
+/* 提醒弹窗 */
+.reminder-toast {
+    position: fixed;
+    bottom: 180px;
+    left: 20px;
+    right: 20px;
+    max-width: 280px;
+    background: white;
+    border-radius: 16px;
+    padding: 0.8rem;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+    z-index: 300;
+    border-left: 3px solid var(--accent);
 }
+.reminder-toast.hidden { display: none; }
+.reminder-toast .title { font-weight: 600; font-size: 0.8rem; margin-bottom: 0.2rem; }
+.reminder-toast .content { font-size: 0.7rem; color: var(--text-secondary); margin-bottom: 0.5rem; }
+.reminder-toast button { padding: 0.2rem 0.6rem; border: none; border-radius: 16px; background: var(--accent); color: white; cursor: pointer; font-size: 0.65rem; }
+
+/* 确认弹窗 */
+.confirm-dialog { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 600; display: none; align-items: center; justify-content: center; }
 .confirm-dialog.active { display: flex; }
-.confirm-box { background: #fff; border-radius: var(--radius-md); padding: 2rem; max-width: 300px; text-align: center; animation: floatIn 0.3s; }
-.confirm-box h3 { font-family: var(--font-display); font-size: 1.2rem; margin-bottom: 0.75rem; }
-.confirm-box p { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem; }
-.confirm-actions { display: flex; gap: 0.75rem; }
+.confirm-box { background: white; border-radius: 20px; padding: 1.5rem; max-width: 280px; text-align: center; }
+.confirm-box h3 { font-size: 1.1rem; margin-bottom: 0.5rem; }
+.confirm-box p { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem; }
+.confirm-actions { display: flex; gap: 0.5rem; }
 
-/* 响应式：手机端 */
+/* 响应式 */
 @media (max-width: 599px) {
- .tiles-grid { grid-template-columns: 1fr 1fr; gap: 0.4rem; padding: 0; width: 100%; box-sizing: border-box; }
- .tile-card { padding: 0.5rem 0.35rem; background: rgba(255,252,245,0.72); box-shadow: none; }
- .tile-sym { font-size: 0.82rem; margin-bottom: 0.28rem; }
- .tile-items { gap: 0.1rem; }
- .tile-item { padding: 0.1rem 0; }
- .tile-text { font-size: 0.72rem; -webkit-line-clamp: 2; }
- .tile-meta { font-size: 0.85rem; color: var(--text-secondary); margin-top: 0.2rem; display: flex; align-items: center; min-height: 1.2rem; }
- .tile-empty { font-size: 0.6rem; }
- .tile-dot { width: 3px; height: 3px; margin-top: 0.18rem; }
-
- .datetime-time { font-size: 3.4rem; }
- .datetime-date { font-size: 0.72rem; }
- .main-content { padding: 0.5rem 0.6rem 5rem; }
-
- .app-topbar { padding: 0.3rem 0 0.6rem; }
- .topbar-logo { font-size: 1.3rem; }
- .topbar-slogan { font-size: 0.6rem; }
- .topbar-location { font-size: 0.68rem; }
- .topbar-weather { font-size: 0.68rem; }
- .app-datetime { padding: 0.5rem 0; }
-
- .logout-btn { display: none; }
-
- .actions-row {
- position: fixed;
- bottom: 0; left: 0; right: 0;
- display: flex;
- gap: 0;
- justify-content: center;
- padding: 0.6rem 1rem calc(0.6rem + env(safe-area-inset-bottom));
- background: rgba(255,255,255,0.92);
- backdrop-filter: blur(12px);
- -webkit-backdrop-filter: blur(12px);
- border-top: 1px solid rgba(0,0,0,0.06);
- z-index: 50;
- margin: 0;
- }
- .action-btn {
- background: transparent;
- border: none;
- box-shadow: none;
- padding: 0.5rem 1.2rem;
- min-width: unset;
- border-radius: 0;
- flex: 1;
- max-width: 90px;
- }
- .action-btn:hover { background: transparent; transform: none; box-shadow: none; }
- .action-btn:active { transform: scale(0.94); }
- .action-btn .icon { font-size: 1.25rem; color: #444; }
+ .tiles-grid { gap: 0.5rem; }
+ .tile-card { padding: 0.7rem 0.5rem; }
+ .tile-sym { font-size: 1.2rem; margin-bottom: 0.3rem; }
+ .tile-title { font-size: 0.7rem; }
+ .datetime-time { font-size: 2.8rem; }
+ .main-content { padding: 0.8rem 0.8rem 5rem; }
+ .actions-row { position: fixed; bottom: 0; left: 0; right: 0; display: flex; gap: 0; justify-content: center; padding: 0.5rem 0.8rem calc(0.5rem + env(safe-area-inset-bottom)); background: rgba(255,255,255,0.92); backdrop-filter: blur(20px); border-top: 0.5px solid rgba(0,0,0,0.05); z-index: 50; margin: 0; }
+ .action-btn { background: transparent; border: none; box-shadow: none; padding: 0.4rem 0.8rem; flex: 1; max-width: 70px; }
  .action-btn .label { display: none; }
-
- .modal { padding: 1.25rem 1rem calc(1.25rem + env(safe-area-inset-bottom)); }
+ .action-btn .icon { font-size: 1.1rem; }
+ .logout-btn { display: none; }
+ .floating-ai-ball { bottom: 80px; width: 48px; height: 48px; font-size: 1.2rem; }
+ .ai-chat-panel { bottom: 140px; width: 290px; height: 420px; }
+ .life-stats { padding: 0.5rem 0.8rem; }
+ .life-label { font-size: 0.6rem; }
+ .life-value { font-size: 0.75rem; }
+ .news-scroll { padding: 0.4rem 0.8rem; }
+ .news-content { font-size: 0.65rem; animation: scrollNews 25s linear infinite; }
 }
-
-@media (max-width: 380px) {
- .datetime-time { font-size: 2.7rem; }
-}
-.toggle-switch{position:relative;display:inline-block;width:36px;height:20px;flex-shrink:0}
-.toggle-switch input{opacity:0;width:0;height:0}
-.toggle-slider{position:absolute;cursor:pointer;inset:0;background:#ccc;border-radius:20px;transition:.25s}
-.toggle-slider::before{position:absolute;content:'';height:14px;width:14px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.2s}
-.toggle-switch input:checked+.toggle-slider{background:#555}
-.toggle-switch input:checked+.toggle-slider::before{transform:translateX(16px)}
 </style>
 </head>
 <body>
@@ -604,14 +361,9 @@ body {
 <div class="setup-page" id="setupPage">
  <div class="setup-card">
  <h2>欢迎使用 NikO</h2>
- <div class="field-group">
- <label>给自己起个名字</label>
- <input type="text" id="setupName" placeholder="你的名字" maxlength="10">
- </div>
- <div class="field-group">
- <label>设置密钥（进入的密码）</label>
- <input type="password" id="setupKey" placeholder="密钥" maxlength="20">
- </div>
+ <div class="field-group"><label>你的名字</label><input type="text" id="setupName" placeholder="你的名字" maxlength="10"></div>
+ <div class="field-group"><label>设置密钥</label><input type="password" id="setupKey" placeholder="密钥" maxlength="20"></div>
+ <div class="field-group"><label>出生日期</label><input type="date" id="setupBirthday"></div>
  <button class="setup-btn" onclick="doSetup()">开始使用</button>
  </div>
 </div>
@@ -619,872 +371,250 @@ body {
 <!-- 主应用 -->
 <div class="app-page" id="appPage">
  <button class="logout-btn" onclick="doLogout()">安全退出</button>
- 
  <div class="main-content">
- <!-- 顶栏 -->
- <div class="app-topbar">
- <div class="topbar-left">
- <div class="topbar-location">
- <span>📍</span><span id="locationText">定位中...</span>
- </div>
- <div class="topbar-weather">
- <span id="weatherIcon">🌤</span>
- <span id="weatherText">--°C</span>
- </div>
- </div>
- <div class="topbar-right">
- <div class="topbar-logo">NikO</div>
- <div class="topbar-slogan">随心而记</div>
- </div>
- </div>
+  <div class="app-topbar">
+   <div class="topbar-left"><div class="topbar-location">📍<span id="locationText">定位中...</span></div><div class="topbar-weather"><span id="weatherIcon">🌤</span><span id="weatherText">--°C</span></div></div>
+   <div class="topbar-right"><div class="topbar-logo">NikO</div><div class="topbar-slogan">随心而记</div></div>
+  </div>
+  <div class="app-datetime"><div class="datetime-time" id="currentTime">--:--</div><div class="datetime-date" id="currentDate">----年--月--日</div></div>
 
- <!-- 时间 -->
- <div class="app-datetime">
- <div class="datetime-time" id="currentTime">--:--</div>
- <div class="datetime-date" id="currentDate">----年--月--日</div>
- </div>
+  <!-- 滚动新闻（中文） -->
+  <div class="news-scroll" onclick="openNewsModal()"><div class="news-content" id="newsContent">📰 加载中...</div></div>
 
- <!-- 磁贴 -->
- <div class="tiles-grid">
- <!-- 日程磁贴 -->
- <div class="tile-card" onclick="openSchedule()">
- <div class="tile-sym">📅</div>
- <div class="tile-items" id="scheduleTileItems">
- <div class="tile-empty">暂无日程</div>
- </div>
- </div>
- <!-- 便签磁贴 -->
- <div class="tile-card" onclick="openNotes()">
- <div class="tile-sym">📝</div>
- <div class="tile-items" id="noteTileItems">
- <div class="tile-empty">暂无便签</div>
- </div>
- </div>
- </div>
+  <!-- 生存时间 + 提醒 -->
+  <div class="life-stats"><span class="life-label">📅 我已存在</span><span class="life-value" id="lifeDays">-- 天</span><span class="life-label">⏰ 提醒</span><span class="life-value" id="reminderStatus">--</span></div>
 
- <!-- 操作按钮 -->
- <div class="actions-row">
- <button class="action-btn" onclick="openRecord()">
- <span class="icon">✎</span>
- <span class="label">随手记</span>
- </button>
- <button class="action-btn" onclick="openSearch()">
- <span class="icon">⌕</span>
- <span class="label">搜索</span>
- </button>
- <button class="action-btn" onclick="openSettings()">
- <span class="icon">⚙</span>
- <span class="label">设置</span>
- </button>
+  <!-- 磁贴 -->
+  <div class="tiles-grid">
+   <div class="tile-card" onclick="openSchedule()"><div class="tile-sym">📅</div><div class="tile-title">日程</div><div class="tile-items" id="scheduleTileItems"><div class="tile-empty">暂无日程</div></div></div>
+   <div class="tile-card" onclick="openNotes()"><div class="tile-sym">📝</div><div class="tile-title">便签</div><div class="tile-items" id="noteTileItems"><div class="tile-empty">暂无便签</div></div></div>
+  </div>
+
+  <div class="actions-row">
+   <button class="action-btn" onclick="openRecord()"><span class="icon">✎</span><span class="label">随手记</span></button>
+   <button class="action-btn" onclick="openSearch()"><span class="icon">⌕</span><span class="label">搜索</span></button>
+   <button class="action-btn" onclick="openReminderSettings()"><span class="icon">⏰</span><span class="label">提醒</span></button>
+   <button class="action-btn" onclick="openSettings()"><span class="icon">⚙</span><span class="label">设置</span></button>
+  </div>
  </div>
- </div>
+</div>
+
+<!-- AI 悬浮球 -->
+<div class="floating-ai-ball" id="aiFloatingBall">💬</div>
+
+<!-- AI 对话浮层 -->
+<div id="aiChatPanel" class="ai-chat-panel hidden">
+ <div class="ai-chat-header"><span>✨ NikO 助手</span><button onclick="closeAIChat()" style="background:none; border:none; color:white; font-size:1.1rem; cursor:pointer">✕</button></div>
+ <div id="aiChatMessages" class="ai-chat-messages"><div class="ai-msg ai"><div class="bubble">你好！我是 NikO 生活助手~</div></div></div>
+ <div class="ai-chat-input"><input type="text" id="aiChatInput" placeholder="输入消息..." onkeypress="if(event.key==='Enter')sendAIMessage()"><button onclick="sendAIMessage()">→</button></div>
+ <div style="padding:6px 12px; border-top:1px solid #eee; display:flex; justify-content:space-between; background:#fafafa;"><span style="font-size:0.65rem; color:#999">历史记录</span><button onclick="toggleAIHistory()" style="font-size:0.65rem; background:none; border:none; color:var(--accent); cursor:pointer">📋</button></div>
+ <div id="aiHistoryList" style="display:none; max-height:120px; overflow-y:auto; background:white;"></div>
+</div>
+
+<!-- 提醒设置 -->
+<div class="modal-overlay center-modal" id="reminderModal">
+ <div class="modal"><div class="modal-header"><span class="modal-title">⏰ 事项提醒</span><button class="modal-close" onclick="closeModal('reminderModal')">✕</button></div>
+ <div class="form-group"><label>提醒事项</label><input type="text" id="reminderText" placeholder="例：喝水、吃药" maxlength="50"></div>
+ <div class="form-group"><label>间隔时间</label><select id="reminderInterval"><option value="30">30分钟</option><option value="60">1小时</option><option value="120">2小时</option><option value="180">3小时</option></select></div>
+ <div class="form-group"><label>启用提醒</label><label class="toggle-switch" style="margin-left:1rem"><input type="checkbox" id="reminderEnabled"><span class="toggle-slider"></span></label></div>
+ <div class="form-actions"><button class="btn btn-primary" onclick="saveReminder()">保存</button><button class="btn btn-secondary" onclick="closeReminderSettings()">取消</button></div>
+ <div id="reminderStatusText" style="margin-top:0.8rem; font-size:0.7rem; color:var(--text-muted)"></div></div>
 </div>
 
 <!-- 日程模态框 -->
-<div class="modal-overlay" id="scheduleModal">
- <div class="modal">
- <div class="modal-header">
- <span class="modal-title">日程</span>
- <button class="modal-close" onclick="closeModal('scheduleModal')">✕</button>
- </div>
- <div class="list-tabs">
- <button class="list-tab active" onclick="switchScheduleTab('upcoming')">即将到来</button>
- <button class="list-tab" onclick="switchScheduleTab('done')">已完成</button>
- <button class="list-tab" onclick="switchScheduleTab('all')">全部</button>
- </div>
- <div id="scheduleList"></div>
- <div style="padding-top:1rem">
- <button class="btn btn-primary" onclick="openScheduleForm()">+ 新建日程</button>
- </div>
- </div>
-</div>
-
-<!-- 日程表单 -->
-<div class="modal-overlay" id="scheduleFormModal">
- <div class="modal">
- <div class="modal-header">
- <span class="modal-title" id="scheduleFormTitle">新建日程</span>
- <button class="modal-close" onclick="closeModal('scheduleFormModal')">✕</button>
- </div>
- <input type="hidden" id="scheduleId">
- <div class="form-group"><label>标题</label><input type="text" id="scheduleTitle" placeholder="日程标题" maxlength="50"></div>
- <div class="form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:1rem">
- <div><label>日期</label><input type="date" id="scheduleDate"></div>
- <div><label>时间</label><input type="time" id="scheduleTime"></div>
- </div>
- <div class="form-group"><label>备注</label><textarea id="scheduleNote" placeholder="备注信息（可选）" maxlength="500"></textarea></div>
- <div class="form-actions">
- <button class="btn btn-secondary" onclick="closeModal('scheduleFormModal')">取消</button>
- <button class="btn btn-danger" id="scheduleDelBtn" style="display:none" onclick="confirmDeleteSchedule()">删除</button>
- <button class="btn btn-primary" onclick="saveSchedule()">保存</button>
- </div>
- </div>
-</div>
+<div class="modal-overlay" id="scheduleModal"><div class="modal"><div class="modal-header"><span class="modal-title">日程</span><button class="modal-close" onclick="closeModal('scheduleModal')">✕</button></div><div class="list-tabs"><button class="list-tab active" onclick="switchScheduleTab('upcoming')">即将到来</button><button class="list-tab" onclick="switchScheduleTab('done')">已完成</button><button class="list-tab" onclick="switchScheduleTab('all')">全部</button></div><div id="scheduleList"></div><div style="padding-top:1rem"><button class="btn btn-primary" onclick="openScheduleForm()">+ 新建日程</button></div></div></div>
+<div class="modal-overlay" id="scheduleFormModal"><div class="modal"><div class="modal-header"><span class="modal-title" id="scheduleFormTitle">新建日程</span><button class="modal-close" onclick="closeModal('scheduleFormModal')">✕</button></div><input type="hidden" id="scheduleId"><div class="form-group"><label>标题</label><input type="text" id="scheduleTitle" maxlength="50"></div><div class="form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem"><div><label>日期</label><input type="date" id="scheduleDate"></div><div><label>时间</label><input type="time" id="scheduleTime"></div></div><div class="form-group"><label>备注</label><textarea id="scheduleNote" maxlength="500"></textarea></div><div class="form-actions"><button class="btn btn-secondary" onclick="closeModal('scheduleFormModal')">取消</button><button class="btn btn-danger" id="scheduleDelBtn" style="display:none" onclick="confirmDeleteSchedule()">删除</button><button class="btn btn-primary" onclick="saveSchedule()">保存</button></div></div></div>
 
 <!-- 便签模态框 -->
-<div class="modal-overlay" id="noteModal">
- <div class="modal">
- <div class="modal-header">
- <span class="modal-title">便签</span>
- <button class="modal-close" onclick="closeModal('noteModal')">✕</button>
- </div>
- <div id="noteList"></div>
- <div style="padding-top:1rem">
- <button class="btn btn-primary" onclick="openNoteForm()">+ 新建便签</button>
- </div>
- </div>
-</div>
-
-<!-- 便签表单 -->
-<div class="modal-overlay" id="noteFormModal">
- <div class="modal">
- <div class="modal-header">
- <span class="modal-title" id="noteFormTitle">新建便签</span>
- <button class="modal-close" onclick="closeModal('noteFormModal')">✕</button>
- </div>
- <input type="hidden" id="noteId">
- <div class="form-group"><label>内容</label><textarea id="noteContent" placeholder="写点什么..." maxlength="1000"></textarea></div>
- <div class="form-group"><label>颜色</label>
- <div class="color-picker">
- <div class="color-option selected" style="background:#fff9e6" data-color="#fff9e6"></div>
- <div class="color-option" style="background:#e6f4ff" data-color="#e6f4ff"></div>
- <div class="color-option" style="background:#f0fdf4" data-color="#f0fdf4"></div>
- <div class="color-option" style="background:#fff0f8" data-color="#fff0f8"></div>
- <div class="color-option" style="background:#f5f5f5" data-color="#f5f5f5"></div>
- </div>
- </div>
- <div class="form-group" style="display:flex;align-items:center;gap:0.6rem;margin-top:0.5rem">
- <label style="margin:0;font-size:0.82rem;color:var(--text-secondary)">展示在首页</label>
- <label class="toggle-switch">
- <input type="checkbox" id="notePinCheckbox">
- <span class="toggle-slider"></span>
- </label>
- </div>
- <div class="form-group"><label>心情</label>
- <div class="mood-picker">
- <div class="mood-option selected" data-mood="平静">
- <svg class="mood-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>平静
- </div>
- <div class="mood-option" data-mood="开心">
- <svg class="mood-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><circle cx="9" cy="9" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="9" r="1.5" fill="currentColor" stroke="none"/></svg>开心
- </div>
- <div class="mood-option" data-mood="难过">
- <svg class="mood-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M16 16s-1.5-2-4-2-4 2-4 2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>难过
- </div>
- <div class="mood-option" data-mood="期待">
- <svg class="mood-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><path d="M7 8l3 2M17 8l-3 2"/></svg>期待
- </div>
- <div class="mood-option" data-mood="疲惫">
- <svg class="mood-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M7 14s1.5 2 5 2 5-2 5-2"/><path d="M9 9l-2 1M15 9l2 1"/></svg>疲惫
- </div>
- </div>
- </div>
- <div class="form-actions">
- <button class="btn btn-secondary" onclick="closeModal('noteFormModal')">取消</button>
- <button class="btn btn-danger" id="noteDelBtn" style="display:none" onclick="confirmDeleteNote()">删除</button>
- <button class="btn btn-success" id="noteToScheduleBtn" onclick="noteToSchedule()">转为日程</button>
- <button class="btn btn-primary" onclick="saveNote()">保存</button>
- </div>
- </div>
-</div>
+<div class="modal-overlay" id="noteModal"><div class="modal"><div class="modal-header"><span class="modal-title">便签</span><button class="modal-close" onclick="closeModal('noteModal')">✕</button></div><div id="noteList"></div><div style="padding-top:1rem"><button class="btn btn-primary" onclick="openNoteForm()">+ 新建便签</button></div></div></div>
+<div class="modal-overlay" id="noteFormModal"><div class="modal"><div class="modal-header"><span class="modal-title" id="noteFormTitle">新建便签</span><button class="modal-close" onclick="closeModal('noteFormModal')">✕</button></div><input type="hidden" id="noteId"><div class="form-group"><label>内容</label><textarea id="noteContent" maxlength="1000"></textarea></div><div class="form-group"><label>颜色</label><div class="color-picker"><div class="color-option selected" style="background:#fff9e6" data-color="#fff9e6"></div><div class="color-option" style="background:#e6f4ff" data-color="#e6f4ff"></div><div class="color-option" style="background:#f0fdf4" data-color="#f0fdf4"></div><div class="color-option" style="background:#fff0f8" data-color="#fff0f8"></div><div class="color-option" style="background:#f5f5f5" data-color="#f5f5f5"></div></div></div><div class="form-group"><label>展示在首页</label><label class="toggle-switch"><input type="checkbox" id="notePinCheckbox"><span class="toggle-slider"></span></label></div><div class="form-group"><label>心情</label><div class="mood-picker"><div class="mood-option selected" data-mood="平静">😌 平静</div><div class="mood-option" data-mood="开心">😊 开心</div><div class="mood-option" data-mood="难过">😔 难过</div><div class="mood-option" data-mood="期待">✨ 期待</div><div class="mood-option" data-mood="疲惫">😴 疲惫</div></div></div><div class="form-actions"><button class="btn btn-secondary" onclick="closeModal('noteFormModal')">取消</button><button class="btn btn-danger" id="noteDelBtn" style="display:none" onclick="confirmDeleteNote()">删除</button><button class="btn btn-success" id="noteToScheduleBtn" onclick="noteToSchedule()">转为日程</button><button class="btn btn-primary" onclick="saveNote()">保存</button></div></div></div>
 
 <!-- 随手记 -->
-<div class="modal-overlay" id="recordModal">
- <div class="modal">
- <div class="modal-header">
- <span class="modal-title">随手记</span>
- <button class="modal-close" onclick="closeModal('recordModal')">✕</button>
- </div>
- <div id="quickNoteList"></div>
- <div style="padding-top:1rem">
- <button class="btn btn-primary" onclick="openQuickNoteForm()">+ 新建随手记</button>
- </div>
- </div>
-</div>
-
-<!-- 随手记表单 -->
-<div class="modal-overlay center-modal" id="quickNoteFormModal">
- <div class="modal">
- <div class="modal-header">
- <span class="modal-title" id="quickNoteFormTitle">新建随手记</span>
- <button class="modal-close" onclick="closeModal('quickNoteFormModal')">✕</button>
- </div>
- <input type="hidden" id="quickNoteId">
- <div class="form-group"><label>内容</label><textarea id="quickNoteContent" placeholder="记录此刻的想法..." maxlength="1000" style="min-height:140px"></textarea></div>
- <div class="form-group"><label>颜色</label>
- <div class="color-picker" id="quickColorPicker">
- <div class="color-option selected" style="background:#fff9e6" data-color="#fff9e6"></div>
- <div class="color-option" style="background:#e6f4ff" data-color="#e6f4ff"></div>
- <div class="color-option" style="background:#f0fdf4" data-color="#f0fdf4"></div>
- <div class="color-option" style="background:#fff0f8" data-color="#fff0f8"></div>
- <div class="color-option" style="background:#f5f5f5" data-color="#f5f5f5"></div>
- </div>
- </div>
- <div class="form-actions">
- <button class="btn btn-secondary" onclick="closeModal('quickNoteFormModal')">取消</button>
- <button class="btn btn-danger" id="quickNoteDelBtn" style="display:none" onclick="confirmDeleteQuickNote()">删除</button>
- <button class="btn btn-primary" onclick="saveQuickNote()">保存</button>
- </div>
- </div>
-</div>
+<div class="modal-overlay" id="recordModal"><div class="modal"><div class="modal-header"><span class="modal-title">随手记</span><button class="modal-close" onclick="closeModal('recordModal')">✕</button></div><div id="quickNoteList"></div><div style="padding-top:1rem"><button class="btn btn-primary" onclick="openQuickNoteForm()">+ 新建随手记</button></div></div></div>
+<div class="modal-overlay center-modal" id="quickNoteFormModal"><div class="modal"><div class="modal-header"><span class="modal-title" id="quickNoteFormTitle">新建随手记</span><button class="modal-close" onclick="closeModal('quickNoteFormModal')">✕</button></div><input type="hidden" id="quickNoteId"><div class="form-group"><label>内容</label><textarea id="quickNoteContent" maxlength="1000" style="min-height:120px"></textarea></div><div class="form-group"><label>颜色</label><div class="color-picker" id="quickColorPicker"><div class="color-option selected" style="background:#fff9e6" data-color="#fff9e6"></div><div class="color-option" style="background:#e6f4ff" data-color="#e6f4ff"></div><div class="color-option" style="background:#f0fdf4" data-color="#f0fdf4"></div><div class="color-option" style="background:#fff0f8" data-color="#fff0f8"></div><div class="color-option" style="background:#f5f5f5" data-color="#f5f5f5"></div></div></div><div class="form-actions"><button class="btn btn-secondary" onclick="closeModal('quickNoteFormModal')">取消</button><button class="btn btn-danger" id="quickNoteDelBtn" style="display:none" onclick="confirmDeleteQuickNote()">删除</button><button class="btn btn-primary" onclick="saveQuickNote()">保存</button></div></div></div>
 
 <!-- 搜索 -->
-<div class="modal-overlay center-modal" id="searchModal">
- <div class="modal">
- <div class="modal-header">
- <span class="modal-title">搜索</span>
- <button class="modal-close" onclick="closeModal('searchModal')">✕</button>
- </div>
- <div class="search-wrap">
- <span class="icon">🔍</span>
- <input type="text" id="searchInput" placeholder="搜索日程和便签..." oninput="doSearch()">
- </div>
- <div id="searchResults"></div>
- </div>
-</div>
+<div class="modal-overlay center-modal" id="searchModal"><div class="modal"><div class="modal-header"><span class="modal-title">搜索</span><button class="modal-close" onclick="closeModal('searchModal')">✕</button></div><div class="search-wrap"><span class="icon">🔍</span><input type="text" id="searchInput" placeholder="搜索日程和便签..." oninput="doSearch()"></div><div id="searchResults"></div></div></div>
 
 <!-- 设置 -->
 <div class="modal-overlay center-modal" id="settingsModal">
- <div class="modal">
- <div class="modal-header">
- <span class="modal-title">设置</span>
- <button class="modal-close" onclick="closeModal('settingsModal')">✕</button>
- </div>
- <div class="settings-section">
- <div class="settings-section-title">基本信息</div>
- <div class="settings-item" onclick="openEditName()">
- <span class="settings-item-label">名字</span><span class="settings-item-value" id="settingsName">--- →</span>
- </div>
- <div class="settings-item" onclick="openChangeKey()">
- <span class="settings-item-label">修改密钥</span><span class="settings-item-value">→</span>
- </div>
- <div class="settings-item" onclick="doLogout();closeModal('settingsModal')" style="color:#c44">
- <span class="settings-item-label">安全退出</span><span class="settings-item-value">→</span>
- </div>
- </div>
- <div class="settings-section">
- <div class="settings-section-title">背景图片</div>
- <div class="bg-picker" id="bgPicker"></div>
- </div>
- <div class="settings-section">
- <div class="settings-section-title">随手记样式</div>
- <div class="note-style-section">
- <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:0.5rem">背景色</div>
- <div class="color-picker" id="noteBgColorPicker"></div>
- </div>
- <div class="note-style-section" style="margin-top:1rem">
- <div style="font-size:0.82rem;color:var(--text-muted);margin-bottom:0.5rem">字体</div>
- <div class="note-style-row">
- <div class="font-option selected" data-font="默认" onclick="selectNoteFont(this)" style="font-family:var(--font-body)">默认</div>
- <div class="font-option" data-font="衬线" onclick="selectNoteFont(this)" style="font-family:var(--font-zh)">衬线</div>
- <div class="font-option" data-font="手写" onclick="selectNoteFont(this)" style="font-family:Cormorant Garamond,serif">手写</div>
- </div>
- </div>
- </div>
+ <div class="modal"><div class="modal-header"><span class="modal-title">设置</span><button class="modal-close" onclick="closeModal('settingsModal')">✕</button></div>
+ <div class="settings-section"><div class="settings-section-title">基本信息</div><div class="settings-item" onclick="openEditName()"><span class="settings-item-label">名字</span><span class="settings-item-value" id="settingsName">--- →</span></div><div class="settings-item" onclick="openChangeKey()"><span class="settings-item-label">修改密钥</span><span class="settings-item-value">→</span></div><div class="settings-item" onclick="openEditBirthday()"><span class="settings-item-label">出生日期</span><span class="settings-item-value" id="settingsBirthday">--- →</span></div><div class="settings-item" onclick="doLogout();closeModal('settingsModal')" style="color:#c44"><span class="settings-item-label">安全退出</span><span class="settings-item-value">→</span></div></div>
+ <div class="settings-section"><div class="settings-section-title">AI 模型配置</div><div class="settings-item" style="flex-direction:column; align-items:flex-start; gap:0.5rem"><div style="width:100%"><label style="font-size:0.7rem; color:var(--text-muted)">API Key</label><input type="password" id="aiApiKey" placeholder="输入 API Key" style="width:100%; padding:0.5rem; border:1px solid var(--border); border-radius:8px; margin-top:0.2rem"></div><div style="width:100%"><label style="font-size:0.7rem; color:var(--text-muted)">API Base URL</label><input type="text" id="aiApiBase" placeholder="https://api.siliconflow.cn/v1" value="https://api.siliconflow.cn/v1" style="width:100%; padding:0.5rem; border:1px solid var(--border); border-radius:8px; margin-top:0.2rem"></div><div style="width:100%"><label style="font-size:0.7rem; color:var(--text-muted)">模型名称</label><input type="text" id="aiModel" placeholder="deepseek-ai/DeepSeek-V3" value="deepseek-ai/DeepSeek-V3" style="width:100%; padding:0.5rem; border:1px solid var(--border); border-radius:8px; margin-top:0.2rem"></div></div></div>
+ <div class="settings-section"><div class="settings-section-title">背景图片</div><div class="bg-picker" id="bgPicker"></div></div>
+ <div class="settings-section"><div class="settings-section-title">随手记样式</div><div class="note-style-section"><div style="font-size:0.7rem; margin-bottom:0.3rem">背景色</div><div class="color-picker" id="noteBgColorPicker"></div></div><div class="note-style-section" style="margin-top:1rem"><div style="font-size:0.7rem; margin-bottom:0.3rem">字体</div><div class="note-style-row" style="display:flex; gap:0.5rem"><div class="font-option selected" data-font="默认" onclick="selectNoteFont(this)" style="padding:0.3rem 0.6rem; background:#f0f0f0; border-radius:20px; font-size:0.7rem; cursor:pointer">默认</div><div class="font-option" data-font="衬线" onclick="selectNoteFont(this)" style="padding:0.3rem 0.6rem; background:#f0f0f0; border-radius:20px; font-size:0.7rem; cursor:pointer">衬线</div><div class="font-option" data-font="手写" onclick="selectNoteFont(this)" style="padding:0.3rem 0.6rem; background:#f0f0f0; border-radius:20px; font-size:0.7rem; cursor:pointer">手写</div></div></div></div>
  </div>
 </div>
 
-<!-- 修改名字 -->
-<div class="modal-overlay center-modal" id="editNameModal">
- <div class="modal">
- <div class="modal-header">
- <span class="modal-title">修改名字</span>
- <button class="modal-close" onclick="closeModal('editNameModal')">✕</button>
- </div>
- <div class="form-group"><label>新名字</label><input type="text" id="newNameInput" maxlength="10" placeholder="输入新名字"></div>
- <div class="form-actions">
- <button class="btn btn-secondary" onclick="closeModal('editNameModal')">取消</button>
- <button class="btn btn-primary" onclick="saveName()">保存</button>
- </div>
- </div>
-</div>
+<div class="modal-overlay center-modal" id="editNameModal"><div class="modal"><div class="modal-header"><span class="modal-title">修改名字</span><button class="modal-close" onclick="closeModal('editNameModal')">✕</button></div><div class="form-group"><label>新名字</label><input type="text" id="newNameInput" maxlength="10"></div><div class="form-actions"><button class="btn btn-secondary" onclick="closeModal('editNameModal')">取消</button><button class="btn btn-primary" onclick="saveName()">保存</button></div></div></div>
+<div class="modal-overlay center-modal" id="changeKeyModal"><div class="modal"><div class="modal-header"><span class="modal-title">修改密钥</span><button class="modal-close" onclick="closeModal('changeKeyModal')">✕</button></div><div class="form-group"><label>当前密钥</label><input type="password" id="currentKeyInput"></div><div class="form-group"><label>新密钥</label><input type="password" id="newKeyInput" maxlength="20"></div><div class="form-actions"><button class="btn btn-secondary" onclick="closeModal('changeKeyModal')">取消</button><button class="btn btn-primary" onclick="saveNewKey()">保存</button></div></div></div>
+<div class="modal-overlay center-modal" id="editBirthdayModal"><div class="modal"><div class="modal-header"><span class="modal-title">修改出生日期</span><button class="modal-close" onclick="closeModal('editBirthdayModal')">✕</button></div><div class="form-group"><label>出生日期</label><input type="date" id="birthdayInput"></div><div class="form-actions"><button class="btn btn-secondary" onclick="closeModal('editBirthdayModal')">取消</button><button class="btn btn-primary" onclick="saveBirthday()">保存</button></div></div></div>
 
-<!-- 修改密钥 -->
-<div class="modal-overlay center-modal" id="changeKeyModal">
- <div class="modal">
- <div class="modal-header">
- <span class="modal-title">修改密钥</span>
- <button class="modal-close" onclick="closeModal('changeKeyModal')">✕</button>
- </div>
- <div class="form-group"><label>当前密钥</label><input type="password" id="currentKeyInput" placeholder="输入当前密钥"></div>
- <div class="form-group"><label>新密钥</label><input type="password" id="newKeyInput" placeholder="输入新密钥（至少4位）" maxlength="20"></div>
- <div class="form-actions">
- <button class="btn btn-secondary" onclick="closeModal('changeKeyModal')">取消</button>
- <button class="btn btn-primary" onclick="saveNewKey()">保存</button>
- </div>
- </div>
-</div>
-
-<!-- 便签显示选择 -->
-<div class="modal-overlay center-modal" id="notePinModal">
- <div class="modal">
- <div class="modal-header">
- <span class="modal-title">选择显示的便签</span>
- <button class="modal-close" onclick="closeModal('notePinModal')">✕</button>
- </div>
- <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:1rem">勾选要在首页磁贴显示的便签</p>
- <div id="notePinList"></div>
- <div class="form-actions">
- <button class="btn btn-primary" onclick="saveNotePin();closeModal('notePinModal')" style="flex:1 0 100%">确定</button>
- </div>
- </div>
-</div>
-
-<!-- 确认删除 -->
-<div class="confirm-dialog" id="confirmDialog">
- <div class="confirm-box">
- <h3>确认删除</h3>
- <p id="confirmText">确定要删除吗？</p>
- <div class="confirm-actions">
- <button class="btn btn-secondary" onclick="closeConfirm()">取消</button>
- <button class="btn btn-danger" id="confirmBtn" onclick="doConfirmDelete()">删除</button>
- </div>
- </div>
-</div>
+<div class="confirm-dialog" id="confirmDialog"><div class="confirm-box"><h3>确认删除</h3><p id="confirmText">确定要删除吗？</p><div class="confirm-actions"><button class="btn btn-secondary" onclick="closeConfirm()">取消</button><button class="btn btn-danger" id="confirmBtn" onclick="doConfirmDelete()">删除</button></div></div></div>
+<div id="reminderToast" class="reminder-toast hidden"><div class="title">⏰ 提醒</div><div class="content" id="reminderToastContent"></div><button onclick="closeReminderToast()">知道了</button></div>
 
 <script>
-// 数据
-const DB_KEYS = { config: 'niko_config', schedules: 'niko_schedules', notes: 'niko_notes', quickNotes: 'niko_quick_notes' };
+// ========== 数据存储 ==========
+const DB_KEYS = { config: 'niko_config', schedules: 'niko_schedules', notes: 'niko_notes', quickNotes: 'niko_quick_notes', aiHistory: 'niko_ai_history', reminder: 'niko_reminder' };
 const NOTE_COLORS = ['#fff9e6','#e6f4ff','#f0fdf4','#fff0f8','#f5f5f5'];
 const NOTE_BG_COLORS = ['#ffffff','#faf8f4','#f4f8ff','#f4fff4','#fff4f4'];
-const MOODS = ['平静','开心','难过','期待','疲惫'];
-const MOOD_ICONS = {
- '平静': '<svg class="mood-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>',
- '开心': '<svg class="mood-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><circle cx="9" cy="9" r="1.5" fill="currentColor" stroke="none"/><circle cx="15" cy="9" r="1.5" fill="currentColor" stroke="none"/></svg>',
- '难过': '<svg class="mood-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M16 16s-1.5-2-4-2-4 2-4 2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>',
- '期待': '<svg class="mood-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><path d="M7 8l3 2M17 8l-3 2"/></svg>',
- '疲惫': '<svg class="mood-svg" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M7 14s1.5 2 5 2 5-2 5-2"/><path d="M9 9l-2 1M15 9l2 1"/></svg>'
-};
-
-// 风景背景（Unsplash）
-const BG_IMAGES = [
- 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=1200&q=80',
- 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=1200&q=80',
- 'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=1200&q=80',
- 'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=1200&q=80',
- 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=1200&q=80',
-];
-
-const BG_PREVIEWS = [
- 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&q=60',
- 'https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=400&q=60',
- 'https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=400&q=60',
- 'https://images.unsplash.com/photo-1501854140801-50d01698950b?w=400&q=60',
- 'https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=400&q=60',
-];
+const BG_IMAGES = ['https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80','https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=800&q=80','https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=800&q=80','https://images.unsplash.com/photo-1501854140801-50d01698950b?w=800&q=80','https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&q=80'];
+const BG_PREVIEWS = ['https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&q=60','https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=400&q=60','https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=400&q=60','https://images.unsplash.com/photo-1501854140801-50d01698950b?w=400&q=60','https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=400&q=60'];
 
 let selectedColor = NOTE_COLORS[0];
 let selectedMood = '平静';
 let deleteTarget = { type: '', id: '' };
 let currentScheduleTab = 'upcoming';
+let reminderInterval = null;
+let aiConfig = { apiKey: '', apiBase: 'https://api.siliconflow.cn/v1', model: 'deepseek-ai/DeepSeek-V3' };
+let aiHistory = [];
 
-// 初始化
-document.addEventListener('DOMContentLoaded', () => {
- checkFirstRun();
- setupColorPicker();
- setupMoodPicker();
- renderNoteBgColorPicker();
-});
+document.addEventListener('DOMContentLoaded', () => { checkFirstRun(); setupColorPicker(); setupMoodPicker(); renderNoteBgColorPicker(); setupNews(); startReminderCheck(); });
 
-// 检查首次运行
 function checkFirstRun() {
  const config = getData(DB_KEYS.config);
- if (!config) {
- document.getElementById('loginPage').style.display = 'none';
- document.getElementById('setupPage').classList.add('active');
- } else {
- // 已设过密钥，本次浏览器会话内直接进入，无需重复输入
- if (sessionStorage.getItem('niko_logged_in') === '1') {
- document.getElementById('loginPage').style.display = 'none';
- enterApp();
- } else {
- document.getElementById('loginPage').style.display = 'flex';
- }
- }
+ if (!config) { document.getElementById('loginPage').style.display = 'none'; document.getElementById('setupPage').classList.add('active'); }
+ else if (sessionStorage.getItem('niko_logged_in') === '1') { document.getElementById('loginPage').style.display = 'none'; enterApp(); }
+ else { document.getElementById('loginPage').style.display = 'flex'; }
 }
-
 function doSetup() {
  const name = document.getElementById('setupName').value.trim();
  const key = document.getElementById('setupKey').value;
+ const birthday = document.getElementById('setupBirthday').value;
  if (!name || !key) { alert('请填写名字和密钥'); return; }
- saveData(DB_KEYS.config, { name, key, bgIndex: 0, customBg: null, noteBgColor: '#ffffff', noteFont: '默认', pinnedNoteIds: [] });
+ saveData(DB_KEYS.config, { name, key, bgIndex: 0, customBg: null, noteBgColor: '#ffffff', noteFont: '默认', pinnedNoteIds: [], birthday: birthday });
+ saveData('niko_ai_config', { apiKey: '', apiBase: 'https://api.siliconflow.cn/v1', model: 'deepseek-ai/DeepSeek-V3' });
  enterApp();
 }
-
 function doLogin() {
  const key = document.getElementById('loginKey').value;
  const config = getData(DB_KEYS.config);
  if (config && config.key === key) enterApp();
- else {
- const e = document.getElementById('loginError');
- e.style.opacity = '1'; setTimeout(() => e.style.opacity = '0', 2000);
- }
+ else { const e = document.getElementById('loginError'); e.style.opacity = '1'; setTimeout(() => e.style.opacity = '0', 2000); }
 }
-
-function doLogout() {
- sessionStorage.removeItem('niko_logged_in');
- document.getElementById('appPage').classList.remove('active');
- document.getElementById('loginPage').style.display = 'flex';
- document.getElementById('loginKey').value = '';
-}
-
+function doLogout() { sessionStorage.removeItem('niko_logged_in'); document.getElementById('appPage').classList.remove('active'); document.getElementById('loginPage').style.display = 'flex'; document.getElementById('loginKey').value = ''; if(reminderInterval) clearInterval(reminderInterval); }
 function enterApp() {
  sessionStorage.setItem('niko_logged_in', '1');
  document.getElementById('loginPage').style.display = 'none';
  document.getElementById('setupPage').classList.remove('active');
  document.getElementById('appPage').classList.add('active');
-
  const config = getData(DB_KEYS.config) || {};
  applyBackground(config.bgIndex || 0, config.customBg);
- 
- updateDateTime();
- updateLocation();
- updateWeather();
- updateTilePreviews();
- 
+ updateDateTime(); updateLocation(); updateWeather(); updateTilePreviews(); updateLifeDays(); updateReminderStatus();
+ loadAIHistory();
  setInterval(updateDateTime, 1000);
 }
-
-// 时间
 function updateDateTime() {
  const now = new Date();
  document.getElementById('currentTime').textContent = now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit', hour12: false });
  document.getElementById('currentDate').textContent = now.toLocaleDateString('zh-CN', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' });
 }
-
-// 定位
-function updateLocation() {
- document.getElementById('locationText').textContent = '定位中...';
- fetch('https://ipapi.co/json/').then(r => r.json())
- .then(d => document.getElementById('locationText').textContent = d.city || d.country || '未知')
- .catch(() => document.getElementById('locationText').textContent = '未知');
+function updateLocation() { fetch('https://ipapi.co/json/').then(r=>r.json()).then(d=>document.getElementById('locationText').textContent = d.city || d.country || '未知').catch(()=>document.getElementById('locationText').textContent = '未知'); }
+function updateWeather() { const wc={0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌧️',55:'🌧️',61:'🌧️',63:'🌧️',65:'🌧️',71:'🌨️',73:'🌨️',75:'❄️',77:'🌨️',80:'🌧️',81:'🌧️',82:'🌧️',85:'🌨️',86:'🌨️',95:'⛈️',96:'⛈️',99:'⛈️'};
+ navigator.geolocation.getCurrentPosition(p=>{ fetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.coords.latitude}&longitude=${p.coords.longitude}&current_weather=true`).then(r=>r.json()).then(d=>{ const w=d.current_weather; document.getElementById('weatherIcon').textContent=wc[w.weathercode]||'🌤'; document.getElementById('weatherText').textContent=`${Math.round(w.temperature)}°C`; }).catch(()=>{}); },()=>{});
 }
+function updateLifeDays() { const config = getData(DB_KEYS.config) || {}; if (config.birthday) { const birth = new Date(config.birthday); const diffDays = Math.floor((new Date() - birth) / (86400000)); document.getElementById('lifeDays').textContent = diffDays + ' 天'; } else { document.getElementById('lifeDays').textContent = '未设置'; } }
+function openEditBirthday() { const config = getData(DB_KEYS.config) || {}; document.getElementById('birthdayInput').value = config.birthday || ''; closeModal('settingsModal'); openModal('editBirthdayModal'); }
+function saveBirthday() { const birthday = document.getElementById('birthdayInput').value; const config = getData(DB_KEYS.config) || {}; config.birthday = birthday; saveData(DB_KEYS.config, config); document.getElementById('settingsBirthday').textContent = birthday || '未设置'; updateLifeDays(); closeModal('editBirthdayModal'); openModal('settingsModal'); }
 
-// 天气
-function updateWeather() {
- const wc = {0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌧️',55:'🌧️',61:'🌧️',63:'🌧️',65:'🌧️',71:'🌨️',73:'🌨️',75:'❄️',77:'🌨️',80:'🌧️',81:'🌧️',82:'🌧️',85:'🌨️',86:'🌨️',95:'⛈️',96:'⛈️',99:'⛈️'};
- navigator.geolocation.getCurrentPosition(pos => {
- const { latitude, longitude } = pos.coords;
- fetch(`https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true`)
- .then(r => r.json()).then(data => {
- const w = data.current_weather;
- document.getElementById('weatherIcon').textContent = wc[w.weathercode] || '🌤';
- document.getElementById('weatherText').textContent = `${Math.round(w.temperature)}°C`;
- }).catch(() => { document.getElementById('weatherIcon').textContent = '🌤'; document.getElementById('weatherText').textContent = '--°C'; });
- }, () => {
- document.getElementById('locationText').textContent = '未授权';
- document.getElementById('weatherIcon').textContent = '🌤';
- document.getElementById('weatherText').textContent = '--°C';
- });
+// 提醒
+function openReminderSettings() { const reminder = getData(DB_KEYS.reminder) || { text: '喝水', interval: 60, enabled: false }; document.getElementById('reminderText').value = reminder.text || '喝水'; document.getElementById('reminderInterval').value = reminder.interval || 60; document.getElementById('reminderEnabled').checked = reminder.enabled || false; updateReminderStatus(); openModal('reminderModal'); }
+function closeReminderSettings() { closeModal('reminderModal'); }
+function saveReminder() { const text = document.getElementById('reminderText').value.trim(); const interval = parseInt(document.getElementById('reminderInterval').value); const enabled = document.getElementById('reminderEnabled').checked; if (!text) { alert('请输入提醒事项'); return; } const reminder = { text, interval, enabled, nextRemind: enabled ? Date.now() + interval * 60 * 1000 : null }; saveData(DB_KEYS.reminder, reminder); updateReminderStatus(); closeModal('reminderModal'); if (reminderInterval) clearInterval(reminderInterval); startReminderCheck(); showToast('提醒设置已保存'); }
+function updateReminderStatus() { const reminder = getData(DB_KEYS.reminder) || {}; const status = reminder.enabled ? `${reminder.text} / ${reminder.interval}分钟` : '未开启'; document.getElementById('reminderStatus').textContent = status; document.getElementById('reminderStatusText').innerHTML = reminder.enabled ? `当前提醒：${reminder.text}，每${reminder.interval}分钟` : '提醒未开启'; }
+function startReminderCheck() { const reminder = getData(DB_KEYS.reminder); if (!reminder || !reminder.enabled) return; reminderInterval = setInterval(() => { const now = Date.now(); if (reminder.nextRemind && now >= reminder.nextRemind) { showReminderToast(reminder.text); reminder.nextRemind = now + reminder.interval * 60 * 1000; saveData(DB_KEYS.reminder, reminder); } }, 10000); }
+function showReminderToast(text) { const toast = document.getElementById('reminderToast'); document.getElementById('reminderToastContent').innerHTML = `该${text}了~`; toast.classList.remove('hidden'); setTimeout(() => closeReminderToast(), 5000); }
+function closeReminderToast() { document.getElementById('reminderToast').classList.add('hidden'); }
+
+// 中文新闻
+async function setupNews() {
+ const newsList = ['📰 人生即存在', '✨ NikO 随知而行', '💡 试试随手记功能', '📅 别忘了查看日程', '📝 写下今天的感悟'];
+ document.getElementById('newsContent').innerHTML = newsList.map(n => `<span>${n}</span>`).join('');
 }
+function openNewsModal() { alert('今日小贴士\n\n' + document.getElementById('newsContent').innerText); }
 
-// 更新磁贴预览
+// AI 对话
+function loadAIHistory() { aiHistory = getData(DB_KEYS.aiHistory) || []; renderAIHistoryList(); }
+function saveAIHistory() { saveData(DB_KEYS.aiHistory, aiHistory); }
+function renderAIHistoryList() { const container = document.getElementById('aiHistoryList'); if(!container) return; container.innerHTML = aiHistory.slice().reverse().slice(0,10).map(h => `<div class="ai-history-item" onclick="loadAIChatFromHistory(${h.id})"><div style="font-size:0.6rem; color:#999">${new Date(h.time).toLocaleString()}</div><div style="font-size:0.7rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">Q: ${escapeHtml(h.question)}</div></div>`).join('') || '<div style="padding:0.6rem; text-align:center; color:#999">暂无历史记录</div>'; }
+function toggleAIHistory() { const list = document.getElementById('aiHistoryList'); if(list.style.display === 'none') { list.style.display = 'block'; renderAIHistoryList(); } else list.style.display = 'none'; }
+function loadAIChatFromHistory(id) { const item = aiHistory.find(h => h.id === id); if(item) { const container = document.getElementById('aiChatMessages'); container.innerHTML = `<div class="ai-msg user"><div class="bubble">${escapeHtml(item.question)}</div></div><div class="ai-msg ai"><div class="bubble">${escapeHtml(item.answer)}</div></div>`; toggleAIHistory(); } }
+async function sendAIMessage() {
+ const input = document.getElementById('aiChatInput'); const msg = input.value.trim(); if(!msg) return; input.value = '';
+ const container = document.getElementById('aiChatMessages'); container.insertAdjacentHTML('beforeend', `<div class="ai-msg user"><div class="bubble">${escapeHtml(msg)}</div></div>`); container.insertAdjacentHTML('beforeend', `<div class="ai-msg ai"><div class="bubble">...</div></div>`); container.scrollTop = container.scrollHeight;
+ const aiCfg = getData('niko_ai_config') || { apiKey: '', apiBase: 'https://api.siliconflow.cn/v1', model: 'deepseek-ai/DeepSeek-V3' };
+ if(!aiCfg.apiKey) { const last = container.querySelector('.ai-msg.ai:last-child'); if(last) last.querySelector('.bubble').innerHTML = '请先在设置中配置 API Key'; return; }
+ try {
+  const res = await fetch(aiCfg.apiBase.replace(/\/$/,'') + '/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${aiCfg.apiKey}` }, body: JSON.stringify({ model: aiCfg.model, messages: [{ role: 'system', content: '你是 NikO，一个温暖贴心的生活助手。' }, { role: 'user', content: msg }], stream: false }) });
+  const data = await res.json(); const reply = data.choices?.[0]?.message?.content || '抱歉，我暂时无法回答';
+  const last = container.querySelector('.ai-msg.ai:last-child'); if(last) last.querySelector('.bubble').innerHTML = escapeHtml(reply);
+  aiHistory.unshift({ id: Date.now(), question: msg, answer: reply, time: Date.now() }); if(aiHistory.length > 50) aiHistory.pop(); saveAIHistory(); renderAIHistoryList();
+ } catch(e) { const last = container.querySelector('.ai-msg.ai:last-child'); if(last) last.querySelector('.bubble').innerHTML = '网络错误'; }
+}
+function openAIChat() { document.getElementById('aiChatPanel').classList.remove('hidden'); }
+function closeAIChat() { document.getElementById('aiChatPanel').classList.add('hidden'); }
+
+// 磁贴更新
 function updateTilePreviews() {
- const schedules = getData(DB_KEYS.schedules) || [];
- const notes = getData(DB_KEYS.notes) || [];
- const config = getData(DB_KEYS.config) || {};
- const now = new Date().toISOString().split('T')[0];
- 
- // 日程：最近3条未完成
- const upcoming = schedules.filter(s => !s.done && s.date >= now).sort((a,b) => new Date(a.date+a.time) - new Date(b.date+b.time)).slice(0, 3);
- const schedC = document.getElementById('scheduleTileItems');
- if (!upcoming.length) schedC.innerHTML = '<div class="tile-empty">暂无日程</div>';
- else schedC.innerHTML = upcoming.map(s => `
- <div class="tile-item">
- <div class="tile-dot"></div>
- <div>
- <div class="tile-text">${escapeHtml(s.title)}</div>
- <div class="tile-meta">${s.date} ${s.time}</div>
- </div>
- </div>
- `).join('');
- 
- // 便签：用户选择的
- const pinned = notes.filter(n => (config.pinnedNoteIds || []).includes(n.id)).slice(0, 3);
- const noteC = document.getElementById('noteTileItems');
- if (!pinned.length) {
- noteC.innerHTML = '<div class="tile-empty">暂无便签</div>';
- } else {
- noteC.innerHTML = pinned.map(n => `
- <div class="tile-item">
- <div class="tile-dot tile-dot-g"></div>
- <div>
- <div class="tile-text">${escapeHtml(n.content)}</div>
- </div>
- </div>
- `).join('');
- }
+ const schedules = getData(DB_KEYS.schedules) || []; const notes = getData(DB_KEYS.notes) || []; const config = getData(DB_KEYS.config) || {};
+ const now = new Date().toISOString().split('T')[0]; const upcoming = schedules.filter(s => !s.done && s.date >= now).sort((a,b)=>new Date(a.date+a.time)-new Date(b.date+b.time)).slice(0,2);
+ document.getElementById('scheduleTileItems').innerHTML = upcoming.length ? upcoming.map(s=>`<div class="tile-item"><div class="tile-dot"></div><div class="tile-text">${escapeHtml(s.title)}</div><div class="tile-meta">${s.date}</div></div>`).join('') : '<div class="tile-empty">暂无日程</div>';
+ const pinned = notes.filter(n=> (config.pinnedNoteIds||[]).includes(n.id)).slice(0,2);
+ document.getElementById('noteTileItems').innerHTML = pinned.length ? pinned.map(n=>`<div class="tile-item"><div class="tile-dot"></div><div class="tile-text">${escapeHtml(n.content)}</div></div>`).join('') : '<div class="tile-empty">暂无便签</div>';
 }
-
-// 模态框
 function openModal(id) { document.getElementById(id).classList.add('active'); }
 function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+function showToast(msg) { const t = document.createElement('div'); t.style.cssText = 'position:fixed; bottom:150px; left:50%; transform:translateX(-50%); background:#333; color:white; padding:6px 14px; border-radius:20px; font-size:0.7rem; z-index:1000'; t.innerText = msg; document.body.appendChild(t); setTimeout(()=>t.remove(),2000); }
 
 // 日程
 function openSchedule() { switchScheduleTab('upcoming'); openModal('scheduleModal'); }
-function switchScheduleTab(tab) {
- currentScheduleTab = tab;
- document.querySelectorAll('#scheduleModal .list-tab').forEach(t => t.classList.remove('active'));
- event.target.classList.add('active');
- renderScheduleList();
-}
-function renderScheduleList() {
- const schedules = getData(DB_KEYS.schedules) || [];
- const now = new Date().toISOString().split('T')[0];
- let f = schedules;
- if (currentScheduleTab === 'upcoming') f = schedules.filter(s => !s.done && s.date >= now);
- else if (currentScheduleTab === 'done') f = schedules.filter(s => s.done);
- f.sort((a,b) => new Date(a.date+' '+a.time) - new Date(b.date+' '+b.time));
- const c = document.getElementById('scheduleList');
- if (!f.length) { c.innerHTML='<div class="list-empty"><div class="icon">📅</div><p>暂无日程</p></div>'; return; }
- c.innerHTML = f.map(s => `
- <div class="list-item" onclick="editSchedule('${s.id}')">
- <div class="list-item-header">
- <span class="list-item-title">${escapeHtml(s.title)}${s.done?' ✓':''}</span>
- <span class="list-item-time">${s.date} ${s.time}</span>
- </div>
- ${s.note?`<div class="list-item-content">${escapeHtml(s.note)}</div>`:''}
- <div class="list-item-actions">
- ${!s.done?`<button class="done-btn" onclick="event.stopPropagation();toggleDone('${s.id}')">✓ 完成</button>`:''}
- <button class="edit-btn" onclick="event.stopPropagation();editSchedule('${s.id}')">编辑</button>
- <button class="del-btn" onclick="event.stopPropagation();confirmDeleteScheduleItem('${s.id}')">删除</button>
- </div>
- </div>
- `).join('');
-}
-function openScheduleForm(id=null) {
- document.getElementById('scheduleId').value=''; document.getElementById('scheduleTitle').value='';
- document.getElementById('scheduleDate').value=''; document.getElementById('scheduleTime').value='';
- document.getElementById('scheduleNote').value='';
- document.getElementById('scheduleFormTitle').textContent='新建日程';
- document.getElementById('scheduleDelBtn').style.display='none';
- closeModal('scheduleModal'); openModal('scheduleFormModal');
-}
-function editSchedule(id) {
- const schedules = getData(DB_KEYS.schedules)||[];
- const s = schedules.find(x=>x.id===id); if(!s) return;
- document.getElementById('scheduleId').value=id;
- document.getElementById('scheduleTitle').value=s.title;
- document.getElementById('scheduleDate').value=s.date;
- document.getElementById('scheduleTime').value=s.time;
- document.getElementById('scheduleNote').value=s.note||'';
- document.getElementById('scheduleFormTitle').textContent='编辑日程';
- document.getElementById('scheduleDelBtn').style.display='inline-block';
- closeModal('scheduleModal'); openModal('scheduleFormModal');
-}
-function saveSchedule() {
- const id=document.getElementById('scheduleId').value;
- const title=document.getElementById('scheduleTitle').value.trim();
- const date=document.getElementById('scheduleDate').value;
- const time=document.getElementById('scheduleTime').value;
- const note=document.getElementById('scheduleNote').value.trim();
- if(!title||!date){alert('请填写标题和日期');return;}
- const schedules=getData(DB_KEYS.schedules)||[];
- if(id){const i=schedules.findIndex(s=>s.id===id);if(i!==-1)schedules[i]={...schedules[i],title,date,time,note};}
- else schedules.push({id:Date.now().toString(),title,date,time,note,done:false,created:new Date().toISOString()});
- saveData(DB_KEYS.schedules,schedules);
- closeModal('scheduleFormModal'); updateTilePreviews();
- if(id) openSchedule();
-}
-function toggleDone(id){
- const schedules=getData(DB_KEYS.schedules)||[];
- const i=schedules.findIndex(s=>s.id===id);
- if(i!==-1){schedules[i].done=!schedules[i].done;saveData(DB_KEYS.schedules,schedules);renderScheduleList();updateTilePreviews();}
-}
-function confirmDeleteScheduleItem(id){deleteTarget={type:'schedule',id};document.getElementById('confirmText').textContent='确定要删除这个日程吗？';document.getElementById('confirmDialog').classList.add('active');}
+function switchScheduleTab(tab) { currentScheduleTab = tab; document.querySelectorAll('#scheduleModal .list-tab').forEach(t=>t.classList.remove('active')); event.target.classList.add('active'); renderScheduleList(); }
+function renderScheduleList() { const schedules = getData(DB_KEYS.schedules) || []; const now = new Date().toISOString().split('T')[0]; let f = schedules; if (currentScheduleTab === 'upcoming') f = schedules.filter(s => !s.done && s.date >= now); else if (currentScheduleTab === 'done') f = schedules.filter(s => s.done); f.sort((a,b)=>new Date(a.date+' '+a.time)-new Date(b.date+' '+b.time)); document.getElementById('scheduleList').innerHTML = f.length ? f.map(s=>`<div class="list-item" onclick="editSchedule('${s.id}')"><div class="list-item-header"><span class="list-item-title">${escapeHtml(s.title)}${s.done?' ✓':''}</span><span class="list-item-time">${s.date}</span></div>${s.note?`<div class="list-item-content">${escapeHtml(s.note)}</div>`:''}<div class="list-item-actions">${!s.done?`<button onclick="event.stopPropagation();toggleDone('${s.id}')">✓ 完成</button>`:''}<button onclick="event.stopPropagation();editSchedule('${s.id}')">编辑</button><button onclick="event.stopPropagation();confirmDeleteScheduleItem('${s.id}')">删除</button></div></div>`).join('') : '<div class="list-empty">暂无日程</div>'; }
+function openScheduleForm(id=null) { document.getElementById('scheduleId').value=''; document.getElementById('scheduleTitle').value=''; document.getElementById('scheduleDate').value=''; document.getElementById('scheduleTime').value=''; document.getElementById('scheduleNote').value=''; document.getElementById('scheduleFormTitle').textContent='新建日程'; document.getElementById('scheduleDelBtn').style.display='none'; closeModal('scheduleModal'); openModal('scheduleFormModal'); }
+function editSchedule(id) { const s=getData(DB_KEYS.schedules)?.find(x=>x.id===id); if(!s) return; document.getElementById('scheduleId').value=id; document.getElementById('scheduleTitle').value=s.title; document.getElementById('scheduleDate').value=s.date; document.getElementById('scheduleTime').value=s.time; document.getElementById('scheduleNote').value=s.note||''; document.getElementById('scheduleFormTitle').textContent='编辑日程'; document.getElementById('scheduleDelBtn').style.display='inline-block'; closeModal('scheduleModal'); openModal('scheduleFormModal'); }
+function saveSchedule() { const id=document.getElementById('scheduleId').value; const title=document.getElementById('scheduleTitle').value.trim(); const date=document.getElementById('scheduleDate').value; const time=document.getElementById('scheduleTime').value; const note=document.getElementById('scheduleNote').value.trim(); if(!title||!date){alert('请填写标题和日期');return;} const schedules=getData(DB_KEYS.schedules)||[]; if(id){const i=schedules.findIndex(s=>s.id===id);if(i!==-1)schedules[i]={...schedules[i],title,date,time,note};} else schedules.push({id:Date.now().toString(),title,date,time,note,done:false,created:new Date().toISOString()}); saveData(DB_KEYS.schedules,schedules); closeModal('scheduleFormModal'); updateTilePreviews(); if(id) openSchedule(); }
+function toggleDone(id){ const schedules=getData(DB_KEYS.schedules)||[]; const i=schedules.findIndex(s=>s.id===id); if(i!==-1){schedules[i].done=!schedules[i].done;saveData(DB_KEYS.schedules,schedules);renderScheduleList();updateTilePreviews();} }
+function confirmDeleteScheduleItem(id){deleteTarget={type:'schedule',id};document.getElementById('confirmText').textContent='确定删除这个日程？';document.getElementById('confirmDialog').classList.add('active');}
 function confirmDeleteSchedule(){const id=document.getElementById('scheduleId').value;if(id){confirmDeleteScheduleItem(id);closeModal('scheduleFormModal');}}
 
 // 便签
 function openNotes(){renderNoteList();openModal('noteModal');}
-function renderNoteList(){
- const notes=getData(DB_KEYS.notes)||[];
- notes.sort((a,b)=>new Date(b.created)-new Date(a.created));
- const c=document.getElementById('noteList');
- if(!notes.length){c.innerHTML='<div class="list-empty"><div class="icon">📝</div><p>暂无便签</p></div>';return;}
- const config=getData(DB_KEYS.config)||{};
- const pinned=(config.pinnedNoteIds||[]);
- c.innerHTML=notes.map(n=>`
- <div class="note-card" style="background:${n.color}" onclick="editNote('${n.id}')">
- <div class="note-card-actions">
- <button class="${pinned.includes(n.id)?'del':''}" onclick="event.stopPropagation();togglePinNote('${n.id}')" title="${pinned.includes(n.id)?'取消显示':'显示到首页'}">${pinned.includes(n.id)?'★':'☆'}</button>
- <button class="del" onclick="event.stopPropagation();confirmDeleteNoteItem('${n.id}')">✕</button>
- </div>
- <div class="note-card-content">${escapeHtml(n.content)}</div>
- <div class="note-card-footer">
- <span class="note-card-mood">${MOOD_ICONS[n.mood]||''} ${n.mood}</span>
- <span class="note-card-time">${formatDate(n.created)}</span>
- </div>
- </div>
- `).join('');
-}
-function togglePinNote(id){
- const config=getData(DB_KEYS.config)||{};
- const arr=config.pinnedNoteIds||[];
- const i=arr.indexOf(id);
- if(i>-1)arr.splice(i,1); else arr.push(id);
- config.pinnedNoteIds=arr;
- saveData(DB_KEYS.config,config);
- renderNoteList(); updateTilePreviews();
-}
-function openNoteForm(){
- document.getElementById('noteId').value=''; document.getElementById('noteContent').value='';
- document.getElementById('noteFormTitle').textContent='新建便签';
- document.getElementById('noteDelBtn').style.display='none';
- document.getElementById('noteToScheduleBtn').style.display='inline-block';
- selectedColor=NOTE_COLORS[0]; selectedMood='平静';
- document.querySelectorAll('#noteFormModal .color-option').forEach((el,i)=>el.classList.toggle('selected',i===0));
- document.querySelectorAll('#noteFormModal .mood-option').forEach(el=>el.classList.toggle('selected',el.dataset.mood==='平静'));
- document.getElementById('notePinCheckbox').checked=false;
- closeModal('noteModal'); openModal('noteFormModal');
-}
-function editNote(id){
- const notes=getData(DB_KEYS.notes)||[]; const n=notes.find(x=>x.id===id); if(!n)return;
- document.getElementById('noteId').value=id; document.getElementById('noteContent').value=n.content;
- document.getElementById('noteFormTitle').textContent='编辑便签';
- document.getElementById('noteDelBtn').style.display='inline-block';
- document.getElementById('noteToScheduleBtn').style.display='inline-block';
- selectedColor=n.color; selectedMood=n.mood;
- document.querySelectorAll('#noteFormModal .color-option').forEach(el=>el.classList.toggle('selected',el.dataset.color===n.color));
- document.querySelectorAll('#noteFormModal .mood-option').forEach(el=>el.classList.toggle('selected',el.dataset.mood===n.mood));
- const config=getData(DB_KEYS.config)||{}; const pinned=(config.pinnedNoteIds||[]);
- document.getElementById('notePinCheckbox').checked=pinned.includes(id);
- closeModal('noteModal'); openModal('noteFormModal');
-}
-function saveNote(){
- const id=document.getElementById('noteId').value;
- const content=document.getElementById('noteContent').value.trim();
- if(!content){alert('请填写内容');return;}
- const notes=getData(DB_KEYS.notes)||[];
- if(id){const i=notes.findIndex(n=>n.id===id);if(i!==-1)notes[i]={...notes[i],content,color:selectedColor,mood:selectedMood};}
- else notes.push({id:Date.now().toString(),content,color:selectedColor,mood:selectedMood,created:new Date().toISOString()});
- saveData(DB_KEYS.notes,notes);
- // 同步首页展示勾选状态
- const config=getData(DB_KEYS.config)||{}; let pinned=config.pinnedNoteIds||[];
- const wantPin=document.getElementById('notePinCheckbox').checked;
- if(wantPin&&!pinned.includes(id)){pinned.push(id);}
- else if(!wantPin){pinned=pinned.filter(pid=>pid!==id);}
- config.pinnedNoteIds=pinned; saveData(DB_KEYS.config,config);
- closeModal('noteFormModal'); updateTilePreviews();
- if(id)openNotes();
-}
-function noteToSchedule(){
- const content=document.getElementById('noteContent').value.trim();
- if(!content){alert('请先填写内容');return;}
- closeModal('noteFormModal');
- document.getElementById('scheduleTitle').value=content.substring(0,50);
- document.getElementById('scheduleDate').value=''; document.getElementById('scheduleTime').value='';
- document.getElementById('scheduleNote').value=''; document.getElementById('scheduleId').value='';
- document.getElementById('scheduleFormTitle').textContent='新建日程';
- document.getElementById('scheduleDelBtn').style.display='none';
- openModal('scheduleFormModal');
-}
-function confirmDeleteNoteItem(id){deleteTarget={type:'note',id};document.getElementById('confirmText').textContent='确定要删除这条便签吗？';document.getElementById('confirmDialog').classList.add('active');}
+function renderNoteList(){ const notes=getData(DB_KEYS.notes)||[]; notes.sort((a,b)=>new Date(b.created)-new Date(a.created)); const config=getData(DB_KEYS.config)||{}; const pinned=config.pinnedNoteIds||[]; document.getElementById('noteList').innerHTML=notes.length?notes.map(n=>`<div class="note-card" style="background:${n.color}" onclick="editNote('${n.id}')"><div class="note-card-actions"><button onclick="event.stopPropagation();togglePinNote('${n.id}')" title="${pinned.includes(n.id)?'取消显示':'显示到首页'}">${pinned.includes(n.id)?'★':'☆'}</button><button class="del" onclick="event.stopPropagation();confirmDeleteNoteItem('${n.id}')">✕</button></div><div class="note-card-content">${escapeHtml(n.content)}</div><div class="note-card-footer"><span class="note-card-mood">${n.mood||'平静'}</span><span class="note-card-time">${formatDate(n.created)}</span></div></div>`).join(''):'<div class="list-empty">暂无便签</div>'; }
+function togglePinNote(id){ const config=getData(DB_KEYS.config)||{}; const arr=config.pinnedNoteIds||[]; const i=arr.indexOf(id); if(i>-1)arr.splice(i,1); else arr.push(id); config.pinnedNoteIds=arr; saveData(DB_KEYS.config,config); renderNoteList(); updateTilePreviews(); }
+function openNoteForm(){ document.getElementById('noteId').value=''; document.getElementById('noteContent').value=''; document.getElementById('noteFormTitle').textContent='新建便签'; document.getElementById('noteDelBtn').style.display='none'; selectedColor=NOTE_COLORS[0]; selectedMood='平静'; document.querySelectorAll('#noteFormModal .color-option').forEach((el,i)=>el.classList.toggle('selected',i===0)); document.querySelectorAll('#noteFormModal .mood-option').forEach(el=>el.classList.toggle('selected',el.dataset.mood==='平静')); document.getElementById('notePinCheckbox').checked=false; closeModal('noteModal'); openModal('noteFormModal'); }
+function editNote(id){ const notes=getData(DB_KEYS.notes)||[]; const n=notes.find(x=>x.id===id); if(!n)return; document.getElementById('noteId').value=id; document.getElementById('noteContent').value=n.content; document.getElementById('noteFormTitle').textContent='编辑便签'; document.getElementById('noteDelBtn').style.display='inline-block'; selectedColor=n.color; selectedMood=n.mood; document.querySelectorAll('#noteFormModal .color-option').forEach(el=>el.classList.toggle('selected',el.dataset.color===n.color)); document.querySelectorAll('#noteFormModal .mood-option').forEach(el=>el.classList.toggle('selected',el.dataset.mood===n.mood)); const config=getData(DB_KEYS.config)||{}; const pinned=config.pinnedNoteIds||[]; document.getElementById('notePinCheckbox').checked=pinned.includes(id); closeModal('noteModal'); openModal('noteFormModal'); }
+function saveNote(){ const id=document.getElementById('noteId').value; const content=document.getElementById('noteContent').value.trim(); if(!content){alert('请填写内容');return;} const notes=getData(DB_KEYS.notes)||[]; if(id){const i=notes.findIndex(n=>n.id===id);if(i!==-1)notes[i]={...notes[i],content,color:selectedColor,mood:selectedMood};} else notes.push({id:Date.now().toString(),content,color:selectedColor,mood:selectedMood,created:new Date().toISOString()}); saveData(DB_KEYS.notes,notes); const config=getData(DB_KEYS.config)||{}; let pinned=config.pinnedNoteIds||[]; const wantPin=document.getElementById('notePinCheckbox').checked; if(wantPin&&!pinned.includes(id)){pinned.push(id);} else if(!wantPin){pinned=pinned.filter(pid=>pid!==id);} config.pinnedNoteIds=pinned; saveData(DB_KEYS.config,config); closeModal('noteFormModal'); updateTilePreviews(); if(id)openNotes(); }
+function noteToSchedule(){ const content=document.getElementById('noteContent').value.trim(); if(!content){alert('请先填写内容');return;} closeModal('noteFormModal'); document.getElementById('scheduleTitle').value=content.substring(0,50); document.getElementById('scheduleDate').value=''; document.getElementById('scheduleTime').value=''; document.getElementById('scheduleNote').value=''; document.getElementById('scheduleId').value=''; document.getElementById('scheduleFormTitle').textContent='新建日程'; document.getElementById('scheduleDelBtn').style.display='none'; openModal('scheduleFormModal'); }
+function confirmDeleteNoteItem(id){deleteTarget={type:'note',id};document.getElementById('confirmText').textContent='确定删除这条便签？';document.getElementById('confirmDialog').classList.add('active');}
 function confirmDeleteNote(){const id=document.getElementById('noteId').value;if(id){confirmDeleteNoteItem(id);closeModal('noteFormModal');}}
 
 // 随手记
-function openRecord(){
- renderQuickNoteList();
- openModal('recordModal');
-}
-function renderQuickNoteList(){
- const quickNotes=getData(DB_KEYS.quickNotes)||[];
- quickNotes.sort((a,b)=>new Date(b.created)-new Date(a.created));
- const c=document.getElementById('quickNoteList');
- if(!quickNotes.length){c.innerHTML='<div class="list-empty"><div class="icon">✎</div><p>暂无随手记</p></div>';return;}
- c.innerHTML=quickNotes.map(n=>`
- <div class="note-card" style="background:${n.color}" onclick="editQuickNote('${n.id}')">
- <div class="note-card-actions">
- <button class="del" onclick="event.stopPropagation();confirmDeleteQuickNoteItem('${n.id}')">✕</button>
- </div>
- <div class="note-card-content">${escapeHtml(n.content)}</div>
- <div class="note-card-footer">
- <span class="note-card-time">${formatDate(n.created)}</span>
- </div>
- </div>
- `).join('');
-}
-function openQuickNoteForm(){
- document.getElementById('quickNoteId').value='';
- document.getElementById('quickNoteContent').value='';
- document.getElementById('quickNoteFormTitle').textContent='新建随手记';
- document.getElementById('quickNoteDelBtn').style.display='none';
- selectedColor=NOTE_COLORS[0];
- document.querySelectorAll('#quickColorPicker .color-option').forEach((el,i)=>el.classList.toggle('selected',i===0));
- closeModal('recordModal');
- openModal('quickNoteFormModal');
-}
-function editQuickNote(id){
- const quickNotes=getData(DB_KEYS.quickNotes)||[];
- const n=quickNotes.find(x=>x.id===id);
- if(!n)return;
- document.getElementById('quickNoteId').value=id;
- document.getElementById('quickNoteContent').value=n.content;
- document.getElementById('quickNoteFormTitle').textContent='编辑随手记';
- document.getElementById('quickNoteDelBtn').style.display='inline-block';
- selectedColor=n.color;
- document.querySelectorAll('#quickColorPicker .color-option').forEach(el=>el.classList.toggle('selected',el.dataset.color===n.color));
- closeModal('recordModal');
- openModal('quickNoteFormModal');
-}
-function saveQuickNote(){
- const id=document.getElementById('quickNoteId').value;
- const content=document.getElementById('quickNoteContent').value.trim();
- if(!content){alert('请输入内容');return;}
- const colorEl=document.querySelector('#quickColorPicker .color-option.selected');
- const color=colorEl?colorEl.dataset.color:NOTE_COLORS[0];
- const quickNotes=getData(DB_KEYS.quickNotes)||[];
- if(id){
- const i=quickNotes.findIndex(n=>n.id===id);
- if(i!==-1)quickNotes[i]={...quickNotes[i],content,color};
- }else{
- quickNotes.push({id:Date.now().toString(),content,color,created:new Date().toISOString()});
- }
- saveData(DB_KEYS.quickNotes,quickNotes);
- document.getElementById('quickNoteContent').value='';
- closeModal('quickNoteFormModal');
- if(id)openRecord();
-}
-function confirmDeleteQuickNoteItem(id){deleteTarget={type:'quickNote',id};document.getElementById('confirmText').textContent='确定要删除这条随手记吗？';document.getElementById('confirmDialog').classList.add('active');}
+function openRecord(){renderQuickNoteList();openModal('recordModal');}
+function renderQuickNoteList(){ const qn=getData(DB_KEYS.quickNotes)||[]; qn.sort((a,b)=>new Date(b.created)-new Date(a.created)); document.getElementById('quickNoteList').innerHTML=qn.length?qn.map(n=>`<div class="note-card" style="background:${n.color}" onclick="editQuickNote('${n.id}')"><div class="note-card-actions"><button class="del" onclick="event.stopPropagation();confirmDeleteQuickNoteItem('${n.id}')">✕</button></div><div class="note-card-content">${escapeHtml(n.content)}</div><div class="note-card-footer"><span class="note-card-time">${formatDate(n.created)}</span></div></div>`).join(''):'<div class="list-empty">暂无随手记</div>'; }
+function openQuickNoteForm(){ document.getElementById('quickNoteId').value=''; document.getElementById('quickNoteContent').value=''; document.getElementById('quickNoteFormTitle').textContent='新建随手记'; document.getElementById('quickNoteDelBtn').style.display='none'; selectedColor=NOTE_COLORS[0]; document.querySelectorAll('#quickColorPicker .color-option').forEach((el,i)=>el.classList.toggle('selected',i===0)); closeModal('recordModal'); openModal('quickNoteFormModal'); }
+function editQuickNote(id){ const qn=getData(DB_KEYS.quickNotes)||[]; const n=qn.find(x=>x.id===id); if(!n)return; document.getElementById('quickNoteId').value=id; document.getElementById('quickNoteContent').value=n.content; document.getElementById('quickNoteFormTitle').textContent='编辑随手记'; document.getElementById('quickNoteDelBtn').style.display='inline-block'; selectedColor=n.color; document.querySelectorAll('#quickColorPicker .color-option').forEach(el=>el.classList.toggle('selected',el.dataset.color===n.color)); closeModal('recordModal'); openModal('quickNoteFormModal'); }
+function saveQuickNote(){ const id=document.getElementById('quickNoteId').value; const content=document.getElementById('quickNoteContent').value.trim(); if(!content){alert('请输入内容');return;} const colorEl=document.querySelector('#quickColorPicker .color-option.selected'); const color=colorEl?colorEl.dataset.color:NOTE_COLORS[0]; const qn=getData(DB_KEYS.quickNotes)||[]; if(id){const i=qn.findIndex(n=>n.id===id);if(i!==-1)qn[i]={...qn[i],content,color};} else qn.push({id:Date.now().toString(),content,color,created:new Date().toISOString()}); saveData(DB_KEYS.quickNotes,qn); closeModal('quickNoteFormModal'); if(id)openRecord(); }
+function confirmDeleteQuickNoteItem(id){deleteTarget={type:'quickNote',id};document.getElementById('confirmText').textContent='确定删除这条随手记？';document.getElementById('confirmDialog').classList.add('active');}
 function confirmDeleteQuickNote(){const id=document.getElementById('quickNoteId').value;if(id){confirmDeleteQuickNoteItem(id);closeModal('quickNoteFormModal');}}
 
-// 便签选择弹窗
-function openNotePinModal(){
- const notes=getData(DB_KEYS.notes)||[];
- const config=getData(DB_KEYS.config)||{};
- const pinned=config.pinnedNoteIds||[];
- const c=document.getElementById('notePinList');
- if(!notes.length){c.innerHTML='<div class="list-empty"><p>暂无便签</p></div>';openModal('notePinModal');return;}
- c.innerHTML=notes.sort((a,b)=>new Date(b.created)-new Date(a.created)).map(n=>`
- <label style="display:flex;align-items:flex-start;gap:0.75rem;padding:0.75rem;background:${n.color};border-radius:10px;margin-bottom:0.5rem;cursor:pointer">
- <input type="checkbox" value="${n.id}" ${pinned.includes(n.id)?'checked':''} onclick="event.stopPropagation()" style="margin-top:0.2rem;accent-color:var(--accent)">
- <div style="flex:1">
- <div style="font-size:0.88rem;color:var(--text-primary);line-height:1.5">${escapeHtml(n.content.substring(0,60))}${n.content.length>60?'…':''}</div>
- <div style="font-size:0.72rem;color:var(--text-muted);margin-top:0.25rem">${MOOD_ICONS[n.mood]||''} ${n.mood}</div>
- </div>
- </label>
- `).join('');
- openModal('notePinModal');
-}
-function saveNotePin(){
- const checked=Array.from(document.querySelectorAll('#notePinList input[type=checkbox]:checked')).map(el=>el.value);
- const config=getData(DB_KEYS.config)||{};
- config.pinnedNoteIds=checked;
- saveData(DB_KEYS.config,config);
- updateTilePreviews();
-}
+function openSearch(){ document.getElementById('searchInput').value=''; document.getElementById('searchResults').innerHTML=''; openModal('searchModal'); setTimeout(()=>document.getElementById('searchInput').focus(),300); }
+function doSearch(){ const q=document.getElementById('searchInput').value.trim().toLowerCase(); const r=document.getElementById('searchResults'); if(!q){r.innerHTML='';return;} const schedules=getData(DB_KEYS.schedules)||[]; const notes=getData(DB_KEYS.notes)||[]; const ms=schedules.filter(s=>s.title.toLowerCase().includes(q)||(s.note&&s.note.toLowerCase().includes(q))); const mn=notes.filter(n=>n.content.toLowerCase().includes(q)); let html=''; if(ms.length){html+='<p style="font-size:0.7rem;color:#999;margin:0.5rem 0">日程</p>';ms.forEach(s=>{html+=`<div class="list-item" onclick="editSchedule('${s.id}');closeModal('searchModal')"><div class="list-item-header"><span class="list-item-title">${escapeHtml(s.title)}</span><span class="list-item-time">${s.date}</span></div></div>`;});} if(mn.length){html+='<p style="font-size:0.7rem;color:#999;margin:0.5rem 0">便签</p>';mn.forEach(n=>{html+=`<div class="note-card" style="background:${n.color}" onclick="editNote('${n.id}');closeModal('searchModal')"><div class="note-card-content">${escapeHtml(n.content)}</div></div>`;});} if(!ms.length&&!mn.length)html='<div class="list-empty">没有找到相关结果</div>'; r.innerHTML=html; }
 
-// 搜索
-function openSearch(){
- document.getElementById('searchInput').value=''; document.getElementById('searchResults').innerHTML='';
- openModal('searchModal'); setTimeout(()=>document.getElementById('searchInput').focus(),300);
-}
-function doSearch(){
- const q=document.getElementById('searchInput').value.trim().toLowerCase();
- const results=document.getElementById('searchResults');
- if(!q){results.innerHTML='';return;}
- const schedules=getData(DB_KEYS.schedules)||[]; const notes=getData(DB_KEYS.notes)||[];
- const ms=schedules.filter(s=>s.title.toLowerCase().includes(q)||(s.note&&s.note.toLowerCase().includes(q)));
- const mn=notes.filter(n=>n.content.toLowerCase().includes(q));
- let html='';
- if(ms.length){html+='<p style="font-size:0.78rem;color:#999;margin:1rem 0 0.5rem">日程</p>';ms.forEach(s=>{html+=`<div class="list-item" onclick="editSchedule('${s.id}');closeModal('searchModal')"><div class="list-item-header"><span class="list-item-title">${escapeHtml(s.title)}</span><span class="list-item-time">${s.date}</span></div>${s.note?`<div class="list-item-content">${escapeHtml(s.note)}</div>`:''}</div>`;});}
- if(mn.length){html+='<p style="font-size:0.78rem;color:#999;margin:1rem 0 0.5rem">便签</p>';mn.forEach(n=>{html+=`<div class="note-card" style="background:${n.color}" onclick="editNote('${n.id}');closeModal('searchModal')"><div class="note-card-content">${escapeHtml(n.content)}</div><div class="note-card-footer"><span class="note-card-mood">${MOOD_ICONS[n.mood]||''} ${n.mood}</span></div></div>`;});}
- if(!ms.length&&!mn.length)html='<div class="list-empty"><p>没有找到相关结果</p></div>';
- results.innerHTML=html;
-}
+function openSettings(){ const config=getData(DB_KEYS.config)||{}; document.getElementById('settingsName').textContent=`${config.name||'---'} →`; document.getElementById('settingsBirthday').textContent=config.birthday||'未设置 →'; const aiCfg=getData('niko_ai_config')||{}; document.getElementById('aiApiKey').value=aiCfg.apiKey||''; document.getElementById('aiApiBase').value=aiCfg.apiBase||'https://api.siliconflow.cn/v1'; document.getElementById('aiModel').value=aiCfg.model||'deepseek-ai/DeepSeek-V3'; renderBgPicker(); renderNoteBgColorPicker(); renderNoteFontPicker(); openModal('settingsModal'); }
+function saveAIConfig(){ const aiCfg={ apiKey: document.getElementById('aiApiKey').value, apiBase: document.getElementById('aiApiBase').value, model: document.getElementById('aiModel').value }; saveData('niko_ai_config', aiCfg); showToast('AI配置已保存'); }
+function renderBgPicker(){ const config=getData(DB_KEYS.config)||{}; const idx=config.bgIndex||0; let html=BG_PREVIEWS.map((src,i)=>`<div class="bg-option ${i===idx&&config.customBg===null?'selected':''}" style="background-image:url(${src})" onclick="selectBg(${i})"></div>`).join(''); if(config.customBg)html+=`<div class="bg-option selected" style="background-image:url(${config.customBg});background-size:cover" onclick="selectBg(-1)"></div>`; html+=`<label class="bg-upload"><span>+</span><span>上传</span><input type="file" accept="image/*" onchange="uploadBg(this)"></label>`; document.getElementById('bgPicker').innerHTML=html; }
+function selectBg(index){ const config=getData(DB_KEYS.config)||{}; if(index!==-1){ config.bgIndex=index; config.customBg=null; saveData(DB_KEYS.config,config); } applyBackground(config.bgIndex,config.customBg); renderBgPicker(); }
+function uploadBg(input){ const file=input.files[0]; if(!file)return; const reader=new FileReader(); reader.onload=e=>{ const config=getData(DB_KEYS.config)||{}; config.bgIndex=-1; config.customBg=e.target.result; saveData(DB_KEYS.config,config); applyBackground(-1,e.target.result); renderBgPicker(); }; reader.readAsDataURL(file); }
+function applyBackground(index,customBg){ if(index===-1&&customBg){document.body.style.backgroundImage=`url(${customBg})`;document.body.style.backgroundSize='cover';document.body.style.backgroundPosition='center';} else if(index>=0&&index<BG_IMAGES.length){document.body.style.backgroundImage=`url(${BG_IMAGES[index]})`;document.body.style.backgroundSize='cover';document.body.style.backgroundPosition='center';} else{document.body.style.backgroundImage=`url(${BG_IMAGES[0]})`;document.body.style.backgroundSize='cover';document.body.style.backgroundPosition='center';} }
+function renderNoteBgColorPicker(){ const config=getData(DB_KEYS.config)||{}; const current=config.noteBgColor||'#ffffff'; document.getElementById('noteBgColorPicker').innerHTML=NOTE_BG_COLORS.map(c=>`<div class="color-option ${c===current?'selected':''}" style="background:${c}" data-color="${c}" onclick="selectNoteBgColor(this)"></div>`).join(''); }
+function selectNoteBgColor(el){ document.querySelectorAll('#noteBgColorPicker .color-option').forEach(e=>e.classList.remove('selected')); el.classList.add('selected'); const config=getData(DB_KEYS.config)||{}; config.noteBgColor=el.dataset.color; saveData(DB_KEYS.config,config); }
+function renderNoteFontPicker(){ const config=getData(DB_KEYS.config)||{}; const current=config.noteFont||'默认'; document.querySelectorAll('#settingsModal .font-option').forEach(el=>el.classList.toggle('selected',el.dataset.font===current)); }
+function selectNoteFont(el){ document.querySelectorAll('#settingsModal .font-option').forEach(e=>e.classList.remove('selected')); el.classList.add('selected'); const config=getData(DB_KEYS.config)||{}; config.noteFont=el.dataset.font; saveData(DB_KEYS.config,config); }
+function openEditName(){ const config=getData(DB_KEYS.config)||{}; document.getElementById('newNameInput').value=config.name||''; closeModal('settingsModal'); openModal('editNameModal'); }
+function saveName(){ const name=document.getElementById('newNameInput').value.trim(); if(!name){alert('请输入名字');return;} const config=getData(DB_KEYS.config)||{}; config.name=name; saveData(DB_KEYS.config,config); document.getElementById('settingsName').textContent=`${name} →`; closeModal('editNameModal'); openModal('settingsModal'); }
+function openChangeKey(){ document.getElementById('currentKeyInput').value=''; document.getElementById('newKeyInput').value=''; closeModal('settingsModal'); openModal('changeKeyModal'); }
+function saveNewKey(){ const current=document.getElementById('currentKeyInput').value; const newKey=document.getElementById('newKeyInput').value; const config=getData(DB_KEYS.config)||{}; if(current!==config.key){alert('当前密钥错误');return;} if(!newKey||newKey.length<4){alert('新密钥至少4位');return;} config.key=newKey; saveData(DB_KEYS.config,config); alert('密钥修改成功'); closeModal('changeKeyModal'); }
 
-// 设置
-function openSettings(){
- const config=getData(DB_KEYS.config)||{};
- document.getElementById('settingsName').textContent=`${config.name||'---'} →`;
- renderBgPicker(); renderNoteBgColorPicker(); renderNoteFontPicker();
- openModal('settingsModal');
-}
-function renderBgPicker(){
- const config=getData(DB_KEYS.config)||{}; const idx=config.bgIndex||0;
- const picker=document.getElementById('bgPicker');
- let html=BG_PREVIEWS.map((src,i)=>`<div class="bg-option ${i===idx&&config.customBg===null?'selected':''}" style="background-image:url(${src})" onclick="selectBg(${i})"></div>`).join('');
- if(config.customBg)html+=`<div class="bg-option selected" style="background-image:url(${config.customBg});background-size:cover" onclick="selectBg(-1)"></div>`;
- html+=`<label class="bg-upload"><span style="font-size:1.2rem">+</span><span>上传</span><input type="file" accept="image/*" onchange="uploadBg(this)"></label>`;
- picker.innerHTML=html;
-}
-function selectBg(index){
- const config=getData(DB_KEYS.config)||{};
- if(index===-1){
- // 保持当前自定义背景，只更新选中状态
- } else {
- config.bgIndex=index;
- config.customBg=null;
- saveData(DB_KEYS.config,config);
- }
- applyBackground(config.bgIndex,config.customBg);
- renderBgPicker();
-}
-function uploadBg(input){
- const file=input.files[0]; if(!file)return;
- const reader=new FileReader();
- reader.onload=e=>{
- const config=getData(DB_KEYS.config)||{};
- config.bgIndex=-1;
- config.customBg=e.target.result;
- saveData(DB_KEYS.config,config);
- applyBackground(-1,e.target.result);
- renderBgPicker();
- };
- reader.readAsDataURL(file);
-}
-function applyBackground(index,customBg){
- if(index===-1&&customBg){document.body.style.backgroundImage=`url(${customBg})`;document.body.style.backgroundSize='cover';document.body.style.backgroundPosition='center';}
- else if(index>=0&&index<BG_IMAGES.length){document.body.style.backgroundImage=`url(${BG_IMAGES[index]})`;document.body.style.backgroundSize='cover';document.body.style.backgroundPosition='center';}
- else{document.body.style.backgroundImage=`url(${BG_IMAGES[0]})`;document.body.style.backgroundSize='cover';document.body.style.backgroundPosition='center';}
-}
-
-function renderNoteBgColorPicker(){
- const config=getData(DB_KEYS.config)||{};
- const current=config.noteBgColor||'#ffffff';
- const picker=document.getElementById('noteBgColorPicker');
- picker.innerHTML=NOTE_BG_COLORS.map(c=>`<div class="bg-color-option ${c===current?'selected':''}" style="background:${c}" data-color="${c}" onclick="selectNoteBgColor(this)"></div>`).join('');
-}
-function selectNoteBgColor(el){
- document.querySelectorAll('#noteBgColorPicker .bg-color-option').forEach(e=>e.classList.remove('selected'));
- el.classList.add('selected');
- const color=el.dataset.color;
- const config=getData(DB_KEYS.config)||{}; config.noteBgColor=color; saveData(DB_KEYS.config,config);
-}
-function renderNoteFontPicker(){
- const config=getData(DB_KEYS.config)||{}; const current=config.noteFont||'默认';
- document.querySelectorAll('#settingsModal .font-option').forEach(el=>el.classList.toggle('selected',el.dataset.font===current));
-}
-function selectNoteFont(el){
- document.querySelectorAll('#settingsModal .font-option').forEach(e=>e.classList.remove('selected'));
- el.classList.add('selected');
- const config=getData(DB_KEYS.config)||{}; config.noteFont=el.dataset.font; saveData(DB_KEYS.config,config);
-}
-
-function openEditName(){
- const config=getData(DB_KEYS.config)||{};
- document.getElementById('newNameInput').value=config.name||'';
- closeModal('settingsModal'); openModal('editNameModal');
-}
-function saveName(){
- const name=document.getElementById('newNameInput').value.trim();
- if(!name){alert('请输入名字');return;}
- const config=getData(DB_KEYS.config)||{}; config.name=name; saveData(DB_KEYS.config,config);
- document.getElementById('settingsName').textContent=`${name} →`;
- closeModal('editNameModal'); openModal('settingsModal');
-}
-function openChangeKey(){
- document.getElementById('currentKeyInput').value=''; document.getElementById('newKeyInput').value='';
- closeModal('settingsModal'); openModal('changeKeyModal');
-}
-function saveNewKey(){
- const current=document.getElementById('currentKeyInput').value; const newKey=document.getElementById('newKeyInput').value;
- const config=getData(DB_KEYS.config)||{};
- if(current!==config.key){alert('当前密钥错误');return;}
- if(!newKey||newKey.length<4){alert('新密钥至少4位');return;}
- config.key=newKey; saveData(DB_KEYS.config,config); alert('密钥修改成功'); closeModal('changeKeyModal');
-}
-
-// 删除确认
 function doConfirmDelete(){
  if(deleteTarget.type==='schedule'){let s=getData(DB_KEYS.schedules)||[];s=s.filter(x=>x.id!==deleteTarget.id);saveData(DB_KEYS.schedules,s);closeModal('scheduleModal');}
  else if(deleteTarget.type==='note'){let n=getData(DB_KEYS.notes)||[];n=n.filter(x=>x.id!==deleteTarget.id);saveData(DB_KEYS.notes,n);closeModal('noteModal');}
@@ -1492,8 +622,6 @@ function doConfirmDelete(){
  closeConfirm(); updateTilePreviews();
 }
 function closeConfirm(){document.getElementById('confirmDialog').classList.remove('active');deleteTarget={type:'',id:''};}
-
-// 颜色/心情选择
 function setupColorPicker(){
  document.querySelectorAll('#noteFormModal .color-option').forEach(el=>{el.addEventListener('click',()=>{document.querySelectorAll('#noteFormModal .color-option').forEach(e=>e.classList.remove('selected'));el.classList.add('selected');selectedColor=el.dataset.color;});});
  document.querySelectorAll('#quickColorPicker .color-option').forEach(el=>{el.addEventListener('click',()=>{document.querySelectorAll('#quickColorPicker .color-option').forEach(e=>e.classList.remove('selected'));el.classList.add('selected');selectedColor=el.dataset.color;});});
@@ -1501,17 +629,14 @@ function setupColorPicker(){
 function setupMoodPicker(){
  document.querySelectorAll('#noteFormModal .mood-option').forEach(el=>{el.addEventListener('click',()=>{document.querySelectorAll('#noteFormModal .mood-option').forEach(e=>e.classList.remove('selected'));el.classList.add('selected');selectedMood=el.dataset.mood;});});
 }
-
-// 工具
 function getData(k){try{return JSON.parse(localStorage.getItem(k));}catch{return null;}}
 function saveData(k,d){localStorage.setItem(k,JSON.stringify(d));}
 function escapeHtml(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
 function formatDate(iso){return new Date(iso).toLocaleDateString('zh-CN',{month:'short',day:'numeric'});}
-
-// 点击遮罩关闭
 document.querySelectorAll('.modal-overlay').forEach(m=>{m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('active');});});
-// 回车登录
 document.getElementById('loginKey').addEventListener('keypress',e=>{if(e.key==='Enter')doLogin();});
+document.getElementById('aiFloatingBall').addEventListener('click', openAIChat);
+document.querySelectorAll('#settingsModal .form-actions .btn-primary').forEach(btn=>{if(btn && btn.onclick !== saveAIConfig) btn.onclick = saveAIConfig;});
 </script>
 </body>
 </html>
