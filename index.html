@@ -93,7 +93,7 @@ body {
 .datetime-time { font-family: var(--font-display); font-size: 3.5rem; font-weight: 400; letter-spacing: -0.02em; line-height: 1; margin-bottom: 0.3rem; }
 .datetime-date { font-size: 0.8rem; color: var(--text-muted); }
 
-/* 磁贴 - 统一半透明，简易图标 */
+/* 磁贴 - 统一半透明，图标无颜色 */
 .tiles-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 0.8rem; margin: 1rem 0; }
 .tile-card { 
  background: rgba(255,255,255,0.7); 
@@ -105,7 +105,7 @@ body {
  transition: all 0.25s ease;
 }
 .tile-card:active { transform: scale(0.97); }
-.tile-sym { font-size: 1.5rem; margin-bottom: 0.5rem; opacity: 0.7; }
+.tile-sym { font-size: 1.5rem; margin-bottom: 0.5rem; opacity: 0.7; filter: grayscale(1); }
 .tile-title { font-weight: 500; font-size: 0.8rem; margin-bottom: 0.5rem; color: #333; }
 .tile-items { display: flex; flex-direction: column; gap: 0.3rem; }
 .tile-item { display: flex; align-items: center; gap: 0.4rem; padding: 0.2rem 0; }
@@ -114,7 +114,7 @@ body {
 .tile-meta { font-size: 0.6rem; color: var(--text-muted); }
 .tile-empty { font-size: 0.7rem; color: var(--text-muted); }
 
-/* 滚动新闻 - 中文 */
+/* 滚动新闻 */
 .news-scroll { 
  background: rgba(255,255,255,0.6); 
  backdrop-filter: blur(20px);
@@ -161,7 +161,7 @@ body {
  min-width: 60px;
 }
 .action-btn:active { transform: scale(0.95); }
-.action-btn .icon { font-size: 1.1rem; line-height: 1; opacity: 0.7; }
+.action-btn .icon { font-size: 1.1rem; line-height: 1; opacity: 0.7; filter: grayscale(1); }
 .action-btn .label { font-size: 0.6rem; color: var(--text-muted); }
 
 .logout-btn { position: fixed; top: 1rem; right: 1rem; padding: 0.35rem 0.8rem; background: rgba(255,255,255,0.7); backdrop-filter: blur(10px); border: 1px solid rgba(0,0,0,0.05); border-radius: 20px; cursor: pointer; font-size: 0.65rem; color: var(--text-muted); z-index: 100; }
@@ -293,6 +293,11 @@ body {
 .ai-msg.ai .bubble { background: white; border: 1px solid #ddd; padding: 6px 12px; border-radius: 18px 18px 18px 4px; max-width: 80%; font-size: 0.75rem; }
 .ai-history-item { padding: 0.6rem; border-bottom: 1px solid #eee; cursor: pointer; font-size: 0.7rem; }
 .ai-history-item:hover { background: #f5f5f5; }
+.thinking-indicator { display: inline-block; width: 6px; height: 6px; background: #999; border-radius: 50%; margin: 0 2px; animation: thinkingPulse 1.4s infinite ease-in-out; }
+.thinking-indicator:nth-child(1) { animation-delay: 0s; }
+.thinking-indicator:nth-child(2) { animation-delay: 0.2s; }
+.thinking-indicator:nth-child(3) { animation-delay: 0.4s; }
+@keyframes thinkingPulse { 0%, 60%, 100% { transform: scale(1); opacity: 0.4; } 30% { transform: scale(1.3); opacity: 1; } }
 
 /* 提醒弹窗 */
 .reminder-toast {
@@ -320,6 +325,11 @@ body {
 .confirm-box h3 { font-size: 1.1rem; margin-bottom: 0.5rem; }
 .confirm-box p { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 1rem; }
 .confirm-actions { display: flex; gap: 0.5rem; }
+
+/* 顶部新建按钮 */
+.list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
+.list-header h3 { font-size: 1rem; font-weight: 600; }
+.list-header .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.7rem; border-radius: 20px; background: #1a1a1a; color: white; border: none; cursor: pointer; }
 
 /* 响应式 */
 @media (max-width: 599px) {
@@ -378,7 +388,7 @@ body {
   </div>
   <div class="app-datetime"><div class="datetime-time" id="currentTime">--:--</div><div class="datetime-date" id="currentDate">----年--月--日</div></div>
 
-  <!-- 滚动新闻（中文） -->
+  <!-- 滚动新闻 -->
   <div class="news-scroll" onclick="openNewsModal()"><div class="news-content" id="newsContent">📰 加载中...</div></div>
 
   <!-- 生存时间 + 提醒 -->
@@ -422,15 +432,31 @@ body {
 </div>
 
 <!-- 日程模态框 -->
-<div class="modal-overlay" id="scheduleModal"><div class="modal"><div class="modal-header"><span class="modal-title">日程</span><button class="modal-close" onclick="closeModal('scheduleModal')">✕</button></div><div class="list-tabs"><button class="list-tab active" onclick="switchScheduleTab('upcoming')">即将到来</button><button class="list-tab" onclick="switchScheduleTab('done')">已完成</button><button class="list-tab" onclick="switchScheduleTab('all')">全部</button></div><div id="scheduleList"></div><div style="padding-top:1rem"><button class="btn btn-primary" onclick="openScheduleForm()">+ 新建日程</button></div></div></div>
+<div class="modal-overlay" id="scheduleModal">
+ <div class="modal">
+  <div class="list-header"><h3>日程</h3><button class="btn-sm" onclick="openScheduleForm()">+ 新建</button></div>
+  <div class="list-tabs"><button class="list-tab active" onclick="switchScheduleTab('upcoming')">即将到来</button><button class="list-tab" onclick="switchScheduleTab('done')">已完成</button><button class="list-tab" onclick="switchScheduleTab('all')">全部</button></div>
+  <div id="scheduleList"></div>
+ </div>
+</div>
 <div class="modal-overlay" id="scheduleFormModal"><div class="modal"><div class="modal-header"><span class="modal-title" id="scheduleFormTitle">新建日程</span><button class="modal-close" onclick="closeModal('scheduleFormModal')">✕</button></div><input type="hidden" id="scheduleId"><div class="form-group"><label>标题</label><input type="text" id="scheduleTitle" maxlength="50"></div><div class="form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem"><div><label>日期</label><input type="date" id="scheduleDate"></div><div><label>时间</label><input type="time" id="scheduleTime"></div></div><div class="form-group"><label>备注</label><textarea id="scheduleNote" maxlength="500"></textarea></div><div class="form-actions"><button class="btn btn-secondary" onclick="closeModal('scheduleFormModal')">取消</button><button class="btn btn-danger" id="scheduleDelBtn" style="display:none" onclick="confirmDeleteSchedule()">删除</button><button class="btn btn-primary" onclick="saveSchedule()">保存</button></div></div></div>
 
 <!-- 便签模态框 -->
-<div class="modal-overlay" id="noteModal"><div class="modal"><div class="modal-header"><span class="modal-title">便签</span><button class="modal-close" onclick="closeModal('noteModal')">✕</button></div><div id="noteList"></div><div style="padding-top:1rem"><button class="btn btn-primary" onclick="openNoteForm()">+ 新建便签</button></div></div></div>
+<div class="modal-overlay" id="noteModal">
+ <div class="modal">
+  <div class="list-header"><h3>便签</h3><button class="btn-sm" onclick="openNoteForm()">+ 新建</button></div>
+  <div id="noteList"></div>
+ </div>
+</div>
 <div class="modal-overlay" id="noteFormModal"><div class="modal"><div class="modal-header"><span class="modal-title" id="noteFormTitle">新建便签</span><button class="modal-close" onclick="closeModal('noteFormModal')">✕</button></div><input type="hidden" id="noteId"><div class="form-group"><label>内容</label><textarea id="noteContent" maxlength="1000"></textarea></div><div class="form-group"><label>颜色</label><div class="color-picker"><div class="color-option selected" style="background:#fff9e6" data-color="#fff9e6"></div><div class="color-option" style="background:#e6f4ff" data-color="#e6f4ff"></div><div class="color-option" style="background:#f0fdf4" data-color="#f0fdf4"></div><div class="color-option" style="background:#fff0f8" data-color="#fff0f8"></div><div class="color-option" style="background:#f5f5f5" data-color="#f5f5f5"></div></div></div><div class="form-group"><label>展示在首页</label><label class="toggle-switch"><input type="checkbox" id="notePinCheckbox"><span class="toggle-slider"></span></label></div><div class="form-group"><label>心情</label><div class="mood-picker"><div class="mood-option selected" data-mood="平静">😌 平静</div><div class="mood-option" data-mood="开心">😊 开心</div><div class="mood-option" data-mood="难过">😔 难过</div><div class="mood-option" data-mood="期待">✨ 期待</div><div class="mood-option" data-mood="疲惫">😴 疲惫</div></div></div><div class="form-actions"><button class="btn btn-secondary" onclick="closeModal('noteFormModal')">取消</button><button class="btn btn-danger" id="noteDelBtn" style="display:none" onclick="confirmDeleteNote()">删除</button><button class="btn btn-success" id="noteToScheduleBtn" onclick="noteToSchedule()">转为日程</button><button class="btn btn-primary" onclick="saveNote()">保存</button></div></div></div>
 
-<!-- 随手记 -->
-<div class="modal-overlay" id="recordModal"><div class="modal"><div class="modal-header"><span class="modal-title">随手记</span><button class="modal-close" onclick="closeModal('recordModal')">✕</button></div><div id="quickNoteList"></div><div style="padding-top:1rem"><button class="btn btn-primary" onclick="openQuickNoteForm()">+ 新建随手记</button></div></div></div>
+<!-- 随手记模态框 -->
+<div class="modal-overlay" id="recordModal">
+ <div class="modal">
+  <div class="list-header"><h3>随手记</h3><button class="btn-sm" onclick="openQuickNoteForm()">+ 新建</button></div>
+  <div id="quickNoteList"></div>
+ </div>
+</div>
 <div class="modal-overlay center-modal" id="quickNoteFormModal"><div class="modal"><div class="modal-header"><span class="modal-title" id="quickNoteFormTitle">新建随手记</span><button class="modal-close" onclick="closeModal('quickNoteFormModal')">✕</button></div><input type="hidden" id="quickNoteId"><div class="form-group"><label>内容</label><textarea id="quickNoteContent" maxlength="1000" style="min-height:120px"></textarea></div><div class="form-group"><label>颜色</label><div class="color-picker" id="quickColorPicker"><div class="color-option selected" style="background:#fff9e6" data-color="#fff9e6"></div><div class="color-option" style="background:#e6f4ff" data-color="#e6f4ff"></div><div class="color-option" style="background:#f0fdf4" data-color="#f0fdf4"></div><div class="color-option" style="background:#fff0f8" data-color="#fff0f8"></div><div class="color-option" style="background:#f5f5f5" data-color="#f5f5f5"></div></div></div><div class="form-actions"><button class="btn btn-secondary" onclick="closeModal('quickNoteFormModal')">取消</button><button class="btn btn-danger" id="quickNoteDelBtn" style="display:none" onclick="confirmDeleteQuickNote()">删除</button><button class="btn btn-primary" onclick="saveQuickNote()">保存</button></div></div></div>
 
 <!-- 搜索 -->
@@ -440,7 +466,7 @@ body {
 <div class="modal-overlay center-modal" id="settingsModal">
  <div class="modal"><div class="modal-header"><span class="modal-title">设置</span><button class="modal-close" onclick="closeModal('settingsModal')">✕</button></div>
  <div class="settings-section"><div class="settings-section-title">基本信息</div><div class="settings-item" onclick="openEditName()"><span class="settings-item-label">名字</span><span class="settings-item-value" id="settingsName">--- →</span></div><div class="settings-item" onclick="openChangeKey()"><span class="settings-item-label">修改密钥</span><span class="settings-item-value">→</span></div><div class="settings-item" onclick="openEditBirthday()"><span class="settings-item-label">出生日期</span><span class="settings-item-value" id="settingsBirthday">--- →</span></div><div class="settings-item" onclick="doLogout();closeModal('settingsModal')" style="color:#c44"><span class="settings-item-label">安全退出</span><span class="settings-item-value">→</span></div></div>
- <div class="settings-section"><div class="settings-section-title">AI 模型配置</div><div class="settings-item" style="flex-direction:column; align-items:flex-start; gap:0.5rem"><div style="width:100%"><label style="font-size:0.7rem; color:var(--text-muted)">API Key</label><input type="password" id="aiApiKey" placeholder="输入 API Key" style="width:100%; padding:0.5rem; border:1px solid var(--border); border-radius:8px; margin-top:0.2rem"></div><div style="width:100%"><label style="font-size:0.7rem; color:var(--text-muted)">API Base URL</label><input type="text" id="aiApiBase" placeholder="https://api.siliconflow.cn/v1" value="https://api.siliconflow.cn/v1" style="width:100%; padding:0.5rem; border:1px solid var(--border); border-radius:8px; margin-top:0.2rem"></div><div style="width:100%"><label style="font-size:0.7rem; color:var(--text-muted)">模型名称</label><input type="text" id="aiModel" placeholder="deepseek-ai/DeepSeek-V3" value="deepseek-ai/DeepSeek-V3" style="width:100%; padding:0.5rem; border:1px solid var(--border); border-radius:8px; margin-top:0.2rem"></div></div></div>
+ <div class="settings-section"><div class="settings-section-title">AI 模型配置</div><div class="settings-item" style="flex-direction:column; align-items:flex-start; gap:0.5rem"><div style="width:100%"><label style="font-size:0.7rem; color:var(--text-muted)">API Key</label><input type="password" id="aiApiKey" placeholder="输入 API Key" style="width:100%; padding:0.5rem; border:1px solid var(--border); border-radius:8px; margin-top:0.2rem"></div><div style="width:100%"><label style="font-size:0.7rem; color:var(--text-muted)">API Base URL</label><input type="text" id="aiApiBase" placeholder="https://api.siliconflow.cn/v1" value="https://api.siliconflow.cn/v1" style="width:100%; padding:0.5rem; border:1px solid var(--border); border-radius:8px; margin-top:0.2rem"></div><div style="width:100%"><label style="font-size:0.7rem; color:var(--text-muted)">模型名称</label><input type="text" id="aiModel" placeholder="deepseek-ai/DeepSeek-V3" value="deepseek-ai/DeepSeek-V3" style="width:100%; padding:0.5rem; border:1px solid var(--border); border-radius:8px; margin-top:0.2rem"></div><button class="btn-sm" onclick="saveAIConfig()" style="margin-top:0.5rem; padding:0.4rem; background:#1a1a1a; color:white; border:none; border-radius:8px; cursor:pointer">保存 AI 配置</button></div></div>
  <div class="settings-section"><div class="settings-section-title">背景图片</div><div class="bg-picker" id="bgPicker"></div></div>
  <div class="settings-section"><div class="settings-section-title">随手记样式</div><div class="note-style-section"><div style="font-size:0.7rem; margin-bottom:0.3rem">背景色</div><div class="color-picker" id="noteBgColorPicker"></div></div><div class="note-style-section" style="margin-top:1rem"><div style="font-size:0.7rem; margin-bottom:0.3rem">字体</div><div class="note-style-row" style="display:flex; gap:0.5rem"><div class="font-option selected" data-font="默认" onclick="selectNoteFont(this)" style="padding:0.3rem 0.6rem; background:#f0f0f0; border-radius:20px; font-size:0.7rem; cursor:pointer">默认</div><div class="font-option" data-font="衬线" onclick="selectNoteFont(this)" style="padding:0.3rem 0.6rem; background:#f0f0f0; border-radius:20px; font-size:0.7rem; cursor:pointer">衬线</div><div class="font-option" data-font="手写" onclick="selectNoteFont(this)" style="padding:0.3rem 0.6rem; background:#f0f0f0; border-radius:20px; font-size:0.7rem; cursor:pointer">手写</div></div></div></div>
  </div>
@@ -526,11 +552,8 @@ function startReminderCheck() { const reminder = getData(DB_KEYS.reminder); if (
 function showReminderToast(text) { const toast = document.getElementById('reminderToast'); document.getElementById('reminderToastContent').innerHTML = `该${text}了~`; toast.classList.remove('hidden'); setTimeout(() => closeReminderToast(), 5000); }
 function closeReminderToast() { document.getElementById('reminderToast').classList.add('hidden'); }
 
-// 中文新闻
-async function setupNews() {
- const newsList = ['📰 人生即存在', '✨ NikO 随知而行', '💡 试试随手记功能', '📅 别忘了查看日程', '📝 写下今天的感悟'];
- document.getElementById('newsContent').innerHTML = newsList.map(n => `<span>${n}</span>`).join('');
-}
+// 新闻
+function setupNews() { const newsList = ['📰 存在即真实', '✨ NikO 随知而行', '💡 Niko 随心而记', '📅 看看日程', '📝 今日有什么记录吗']; document.getElementById('newsContent').innerHTML = newsList.map(n => `<span>${n}</span>`).join(''); }
 function openNewsModal() { alert('今日小贴士\n\n' + document.getElementById('newsContent').innerText); }
 
 // AI 对话
@@ -539,17 +562,40 @@ function saveAIHistory() { saveData(DB_KEYS.aiHistory, aiHistory); }
 function renderAIHistoryList() { const container = document.getElementById('aiHistoryList'); if(!container) return; container.innerHTML = aiHistory.slice().reverse().slice(0,10).map(h => `<div class="ai-history-item" onclick="loadAIChatFromHistory(${h.id})"><div style="font-size:0.6rem; color:#999">${new Date(h.time).toLocaleString()}</div><div style="font-size:0.7rem; overflow:hidden; text-overflow:ellipsis; white-space:nowrap">Q: ${escapeHtml(h.question)}</div></div>`).join('') || '<div style="padding:0.6rem; text-align:center; color:#999">暂无历史记录</div>'; }
 function toggleAIHistory() { const list = document.getElementById('aiHistoryList'); if(list.style.display === 'none') { list.style.display = 'block'; renderAIHistoryList(); } else list.style.display = 'none'; }
 function loadAIChatFromHistory(id) { const item = aiHistory.find(h => h.id === id); if(item) { const container = document.getElementById('aiChatMessages'); container.innerHTML = `<div class="ai-msg user"><div class="bubble">${escapeHtml(item.question)}</div></div><div class="ai-msg ai"><div class="bubble">${escapeHtml(item.answer)}</div></div>`; toggleAIHistory(); } }
+function showThinkingIndicator() { return `<div style="display:flex; align-items:center; gap:4px;"><span>思考中</span><span class="thinking-indicator"></span><span class="thinking-indicator"></span><span class="thinking-indicator"></span></div>`; }
 async function sendAIMessage() {
  const input = document.getElementById('aiChatInput'); const msg = input.value.trim(); if(!msg) return; input.value = '';
- const container = document.getElementById('aiChatMessages'); container.insertAdjacentHTML('beforeend', `<div class="ai-msg user"><div class="bubble">${escapeHtml(msg)}</div></div>`); container.insertAdjacentHTML('beforeend', `<div class="ai-msg ai"><div class="bubble">...</div></div>`); container.scrollTop = container.scrollHeight;
- const aiCfg = getData('niko_ai_config') || { apiKey: '', apiBase: 'https://api.siliconflow.cn/v1', model: 'deepseek-ai/DeepSeek-V3' };
- if(!aiCfg.apiKey) { const last = container.querySelector('.ai-msg.ai:last-child'); if(last) last.querySelector('.bubble').innerHTML = '请先在设置中配置 API Key'; return; }
+ const container = document.getElementById('aiChatMessages'); 
+ container.insertAdjacentHTML('beforeend', `<div class="ai-msg user"><div class="bubble">${escapeHtml(msg)}</div></div>`); 
+ const thinkingId = 'thinking-' + Date.now();
+ container.insertAdjacentHTML('beforeend', `<div id="${thinkingId}" class="ai-msg ai"><div class="bubble">${showThinkingIndicator()}</div></div>`);
+ container.scrollTop = container.scrollHeight;
+ 
+ // 加载 AI 配置
+ let aiCfg = getData('niko_ai_config');
+ if (!aiCfg || !aiCfg.apiKey) { aiCfg = { apiKey: '', apiBase: 'https://api.siliconflow.cn/v1', model: 'deepseek-ai/DeepSeek-V3' }; }
+ 
+ if(!aiCfg.apiKey) {
+  const thinkingDiv = document.getElementById(thinkingId);
+  if(thinkingDiv) thinkingDiv.querySelector('.bubble').innerHTML = '请先在设置中配置 API Key';
+  return;
+ }
  try {
-  const res = await fetch(aiCfg.apiBase.replace(/\/$/,'') + '/chat/completions', { method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${aiCfg.apiKey}` }, body: JSON.stringify({ model: aiCfg.model, messages: [{ role: 'system', content: '你是 NikO，一个温暖贴心的生活助手。' }, { role: 'user', content: msg }], stream: false }) });
-  const data = await res.json(); const reply = data.choices?.[0]?.message?.content || '抱歉，我暂时无法回答';
-  const last = container.querySelector('.ai-msg.ai:last-child'); if(last) last.querySelector('.bubble').innerHTML = escapeHtml(reply);
-  aiHistory.unshift({ id: Date.now(), question: msg, answer: reply, time: Date.now() }); if(aiHistory.length > 50) aiHistory.pop(); saveAIHistory(); renderAIHistoryList();
- } catch(e) { const last = container.querySelector('.ai-msg.ai:last-child'); if(last) last.querySelector('.bubble').innerHTML = '网络错误'; }
+  const res = await fetch(aiCfg.apiBase.replace(/\/$/,'') + '/chat/completions', { 
+   method: 'POST', headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${aiCfg.apiKey}` }, 
+   body: JSON.stringify({ model: aiCfg.model, messages: [{ role: 'system', content: '你是 NikO，一个温暖贴心的生活助手。' }, { role: 'user', content: msg }], stream: false }) 
+  });
+  const data = await res.json(); 
+  const reply = data.choices?.[0]?.message?.content || '抱歉，我暂时无法回答';
+  const thinkingDiv = document.getElementById(thinkingId);
+  if(thinkingDiv) thinkingDiv.querySelector('.bubble').innerHTML = escapeHtml(reply);
+  aiHistory.unshift({ id: Date.now(), question: msg, answer: reply, time: Date.now() }); 
+  if(aiHistory.length > 50) aiHistory.pop(); 
+  saveAIHistory(); renderAIHistoryList();
+ } catch(e) { 
+  const thinkingDiv = document.getElementById(thinkingId);
+  if(thinkingDiv) thinkingDiv.querySelector('.bubble').innerHTML = '网络错误，请检查 API 配置';
+ }
 }
 function openAIChat() { document.getElementById('aiChatPanel').classList.remove('hidden'); }
 function closeAIChat() { document.getElementById('aiChatPanel').classList.add('hidden'); }
@@ -597,9 +643,11 @@ function saveQuickNote(){ const id=document.getElementById('quickNoteId').value;
 function confirmDeleteQuickNoteItem(id){deleteTarget={type:'quickNote',id};document.getElementById('confirmText').textContent='确定删除这条随手记？';document.getElementById('confirmDialog').classList.add('active');}
 function confirmDeleteQuickNote(){const id=document.getElementById('quickNoteId').value;if(id){confirmDeleteQuickNoteItem(id);closeModal('quickNoteFormModal');}}
 
+// 搜索
 function openSearch(){ document.getElementById('searchInput').value=''; document.getElementById('searchResults').innerHTML=''; openModal('searchModal'); setTimeout(()=>document.getElementById('searchInput').focus(),300); }
 function doSearch(){ const q=document.getElementById('searchInput').value.trim().toLowerCase(); const r=document.getElementById('searchResults'); if(!q){r.innerHTML='';return;} const schedules=getData(DB_KEYS.schedules)||[]; const notes=getData(DB_KEYS.notes)||[]; const ms=schedules.filter(s=>s.title.toLowerCase().includes(q)||(s.note&&s.note.toLowerCase().includes(q))); const mn=notes.filter(n=>n.content.toLowerCase().includes(q)); let html=''; if(ms.length){html+='<p style="font-size:0.7rem;color:#999;margin:0.5rem 0">日程</p>';ms.forEach(s=>{html+=`<div class="list-item" onclick="editSchedule('${s.id}');closeModal('searchModal')"><div class="list-item-header"><span class="list-item-title">${escapeHtml(s.title)}</span><span class="list-item-time">${s.date}</span></div></div>`;});} if(mn.length){html+='<p style="font-size:0.7rem;color:#999;margin:0.5rem 0">便签</p>';mn.forEach(n=>{html+=`<div class="note-card" style="background:${n.color}" onclick="editNote('${n.id}');closeModal('searchModal')"><div class="note-card-content">${escapeHtml(n.content)}</div></div>`;});} if(!ms.length&&!mn.length)html='<div class="list-empty">没有找到相关结果</div>'; r.innerHTML=html; }
 
+// 设置
 function openSettings(){ const config=getData(DB_KEYS.config)||{}; document.getElementById('settingsName').textContent=`${config.name||'---'} →`; document.getElementById('settingsBirthday').textContent=config.birthday||'未设置 →'; const aiCfg=getData('niko_ai_config')||{}; document.getElementById('aiApiKey').value=aiCfg.apiKey||''; document.getElementById('aiApiBase').value=aiCfg.apiBase||'https://api.siliconflow.cn/v1'; document.getElementById('aiModel').value=aiCfg.model||'deepseek-ai/DeepSeek-V3'; renderBgPicker(); renderNoteBgColorPicker(); renderNoteFontPicker(); openModal('settingsModal'); }
 function saveAIConfig(){ const aiCfg={ apiKey: document.getElementById('aiApiKey').value, apiBase: document.getElementById('aiApiBase').value, model: document.getElementById('aiModel').value }; saveData('niko_ai_config', aiCfg); showToast('AI配置已保存'); }
 function renderBgPicker(){ const config=getData(DB_KEYS.config)||{}; const idx=config.bgIndex||0; let html=BG_PREVIEWS.map((src,i)=>`<div class="bg-option ${i===idx&&config.customBg===null?'selected':''}" style="background-image:url(${src})" onclick="selectBg(${i})"></div>`).join(''); if(config.customBg)html+=`<div class="bg-option selected" style="background-image:url(${config.customBg});background-size:cover" onclick="selectBg(-1)"></div>`; html+=`<label class="bg-upload"><span>+</span><span>上传</span><input type="file" accept="image/*" onchange="uploadBg(this)"></label>`; document.getElementById('bgPicker').innerHTML=html; }
@@ -636,7 +684,6 @@ function formatDate(iso){return new Date(iso).toLocaleDateString('zh-CN',{month:
 document.querySelectorAll('.modal-overlay').forEach(m=>{m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('active');});});
 document.getElementById('loginKey').addEventListener('keypress',e=>{if(e.key==='Enter')doLogin();});
 document.getElementById('aiFloatingBall').addEventListener('click', openAIChat);
-document.querySelectorAll('#settingsModal .form-actions .btn-primary').forEach(btn=>{if(btn && btn.onclick !== saveAIConfig) btn.onclick = saveAIConfig;});
 </script>
 </body>
 </html>
