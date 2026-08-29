@@ -1,702 +1,1223 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<title>NikO · 随心而记 随知而行</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Noto+Serif+SC:wght@300;400;600&family=Noto+Sans+SC:wght@300;400;500&display=swap" rel="stylesheet">
-<style>
-:root {
- --text-primary: #1a1a1a;
- --text-secondary: #555;
- --text-muted: #999;
- --accent: #8b7355;
- --border: rgba(0,0,0,0.06);
- --shadow-sm: 0 2px 12px rgba(0,0,0,0.04);
- --shadow-md: 0 8px 32px rgba(0,0,0,0.08);
- --radius-sm: 12px;
- --radius-md: 20px;
- --radius-lg: 28px;
- --font-display: 'Cormorant Garamond', 'Noto Serif SC', serif;
- --font-zh: 'Noto Serif SC', serif;
- --font-body: 'Noto Sans SC', sans-serif;
-}
-
-* { margin: 0; padding: 0; box-sizing: border-box; }
-
-body {
- font-family: var(--font-body);
- min-height: 100%;
- background-size: cover;
- background-position: center;
- background-attachment: fixed;
- color: var(--text-primary);
- overflow-x: hidden;
-}
-
-/* 登录页 */
-.login-page {
- position: fixed;
- inset: 0;
- display: flex;
- align-items: center;
- justify-content: center;
- z-index: 1000;
- background: rgba(248,246,243,0.95);
- backdrop-filter: blur(20px);
-}
-.login-card {
- background: rgba(255,255,255,0.85);
- backdrop-filter: blur(20px);
- border-radius: var(--radius-lg);
- padding: 2.5rem 2rem;
- width: 320px;
- text-align: center;
-}
-.login-logo { font-family: var(--font-display); font-size: 2.8rem; font-weight: 600; letter-spacing: 0.1em; margin-bottom: 0.3rem; }
-.login-slogan { font-size: 0.7rem; color: var(--text-muted); letter-spacing: 0.3em; margin-bottom: 2rem; }
-.login-input { width: 100%; padding: 0.8rem 1rem; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.9rem; outline: none; background: rgba(255,255,255,0.9); text-align: center; transition: all 0.3s; }
-.login-input:focus { border-color: var(--accent); background: white; }
-.login-btn { width: 100%; padding: 0.8rem; margin-top: 1rem; border: none; border-radius: var(--radius-sm); background: #1a1a1a; color: white; font-size: 0.85rem; cursor: pointer; transition: all 0.3s; }
-.login-btn:hover { transform: translateY(-2px); opacity: 0.9; }
-.login-error { color: #c44; font-size: 0.75rem; margin-top: 0.75rem; }
-
-/* 首次设置页 */
-.setup-page { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 1000; background: rgba(248,246,243,0.95); backdrop-filter: blur(20px); }
-.setup-page.active { display: flex; }
-.setup-card { background: rgba(255,255,255,0.9); backdrop-filter: blur(20px); border-radius: var(--radius-lg); padding: 2rem; width: 340px; }
-.setup-card h2 { font-size: 1.3rem; font-weight: 600; margin-bottom: 1.5rem; text-align: center; }
-.field-group { margin-bottom: 1rem; }
-.field-group label { display: block; font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.3rem; }
-.field-group input { width: 100%; padding: 0.7rem 1rem; border: 1px solid var(--border); border-radius: var(--radius-sm); font-size: 0.9rem; outline: none; background: rgba(255,255,255,0.9); }
-.field-group input:focus { border-color: var(--accent); background: white; }
-.setup-btn { width: 100%; padding: 0.8rem; margin-top: 1rem; border: none; border-radius: var(--radius-sm); background: #1a1a1a; color: white; cursor: pointer; }
-
-/* 主应用 */
-.app-page { display: none; min-height: 100vh; }
-.app-page.active { display: block; }
-.main-content { max-width: 800px; margin: 0 auto; padding: 1rem 1rem 4rem; }
-
-/* 顶栏 */
-.app-topbar { display: flex; justify-content: space-between; align-items: flex-start; padding: 0.5rem 0 1rem; }
-.topbar-left { display: flex; flex-direction: column; gap: 0.2rem; }
-.topbar-location { font-size: 0.7rem; color: var(--text-muted); display: flex; align-items: center; gap: 0.2rem; }
-.topbar-weather { font-size: 0.7rem; color: var(--text-secondary); display: flex; align-items: center; gap: 0.3rem; }
-.topbar-right { text-align: right; }
-.topbar-logo { font-family: var(--font-display); font-size: 1.6rem; font-weight: 600; letter-spacing: 0.08em; line-height: 1; }
-.topbar-slogan { font-size: 0.6rem; color: var(--text-muted); letter-spacing: 0.3em; margin-top: 0.2rem; }
-
-/* 时间区 */
-.app-datetime { text-align: center; padding: 0.8rem 0; }
-.datetime-time { font-family: var(--font-display); font-size: 3.2rem; font-weight: 400; letter-spacing: -0.02em; line-height: 1; margin-bottom: 0.2rem; }
-.datetime-date { font-size: 0.75rem; color: var(--text-muted); }
-
-/* 磁贴 - 透明度提高 */
-.tiles-grid { 
-  display: grid; 
-  grid-template-columns: repeat(3, 1fr); 
-  gap: 1rem; 
-  margin: 1rem 0; 
-}
-.tile-card { 
-  background: rgba(255, 255, 255, 0.48); 
-  backdrop-filter: blur(20px);
-  border-radius: var(--radius-md); 
-  border: 1px solid rgba(255,255,255,0.4);
-  padding: 1rem; 
-  cursor: pointer; 
-  transition: all 0.25s ease;
-}
-.tile-card:active { transform: scale(0.97); }
-.tile-sym { font-size: 1.5rem; margin-bottom: 0.4rem; opacity: 0.7; filter: grayscale(1); }
-.tile-title { font-weight: 500; font-size: 0.8rem; margin-bottom: 0.4rem; color: #333; }
-.tile-items { display: flex; flex-direction: column; gap: 0.25rem; }
-.tile-item { display: flex; align-items: center; gap: 0.35rem; padding: 0.15rem 0; }
-.tile-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
-.tile-text { font-size: 0.7rem; color: #555; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; }
-.tile-meta { font-size: 0.55rem; color: var(--text-muted); }
-.tile-empty { font-size: 0.7rem; color: var(--text-muted); }
-
-/* 滚动新闻 - 所有端纯透明，字体加深加粗 */
-.news-scroll { 
- background: transparent !important;
- backdrop-filter: none !important;
- border-radius: 0; 
- padding: 0.4rem 0.5rem; 
- margin: 0.3rem 0; 
- overflow: hidden; 
- white-space: nowrap;
- border: none;
- cursor: pointer;
-}
-.news-content { 
- display: inline-block; 
- animation: scrollNews 30s linear infinite; 
- font-size: 0.75rem; 
- color: #1a1a1a !important; 
- font-weight: 600 !important;
-}
-.news-content span { margin: 0 1rem; }
-@keyframes scrollNews { 0% { transform: translateX(100%); } 100% { transform: translateX(-100%); } }
-
-/* 生存时间 + 提醒 - 所有端纯透明，字体加深加粗 */
-.life-stats { 
- background: transparent !important;
- backdrop-filter: none !important;
- border-radius: 0; 
- padding: 0.4rem 0.5rem; 
- margin: 0.2rem 0; 
- display: flex; 
- justify-content: space-between; 
- align-items: center;
- border: none;
-}
-.life-label { 
- font-size: 0.7rem; 
- color: #1a1a1a !important; 
- font-weight: 600 !important;
- display: flex; 
- align-items: center; 
- gap: 0.2rem; 
-}
-.life-value { 
- font-size: 0.75rem; 
- font-weight: 700 !important; 
- color: #1a1a1a !important; 
-}
-
-/* 操作按钮行 */
-.actions-row { 
-  display: flex; 
-  gap: 1rem; 
-  justify-content: center; 
-  margin: 1.5rem 0 0.5rem;
-  padding-bottom: 0.5rem;
-}
-.action-btn { 
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.3rem;
-  padding: 0.6rem 1rem;
-  border: 1px solid rgba(255,255,255,0.5);
-  border-radius: var(--radius-md);
-  background: rgba(255,255,255,0.55);
-  backdrop-filter: blur(20px);
-  cursor: pointer;
-  transition: all 0.2s;
-  min-width: 70px;
-}
-.action-btn:active { transform: scale(0.95); }
-.action-btn .icon { font-size: 1.2rem; line-height: 1; opacity: 0.7; filter: grayscale(1); }
-.action-btn .label { font-size: 0.7rem; color: var(--text-secondary); font-weight: 500; }
-
-.logout-btn { position: fixed; top: 1rem; right: 1rem; padding: 0.35rem 0.8rem; background: rgba(255,255,255,0.7); backdrop-filter: blur(10px); border: 1px solid rgba(0,0,0,0.05); border-radius: 20px; cursor: pointer; font-size: 0.65rem; color: var(--text-muted); z-index: 100; }
-
-/* 手机端 */
-@media (max-width: 599px) {
-  .app-topbar { background: transparent !important; backdrop-filter: none !important; padding: 0.3rem 0 0.5rem; }
-  .topbar-logo { font-size: 1.4rem; }
-  .topbar-slogan { font-size: 0.55rem; }
-  .topbar-location, .topbar-weather { font-size: 0.6rem; }
-  .app-datetime { padding: 0.4rem 0; }
-  .datetime-time { font-size: 2.6rem; color: #1a1a1a; }
-  .datetime-date { font-size: 0.7rem; color: #3a3a3a; }
-  .tiles-grid { grid-template-columns: 1fr; gap: 0.7rem; margin: 0.7rem 0; }
-  .tile-card { padding: 0.85rem; background: rgba(255,255,255,0.5); display: flex; align-items: center; gap: 0.8rem; }
-  .tile-card .tile-sym { font-size: 1.5rem; margin-bottom: 0; flex-shrink: 0; }
-  .tile-card .tile-info { flex: 1; }
-  .tile-title { font-size: 0.8rem; margin-bottom: 0.3rem; }
-  .tile-text { font-size: 0.68rem; }
-  .news-scroll { padding: 0.3rem 0.4rem; }
-  .news-content { font-size: 0.68rem; animation: scrollNews 25s linear infinite; font-weight: 600; }
-  .life-stats { padding: 0.3rem 0.4rem; }
-  .life-label { font-size: 0.65rem; font-weight: 600; }
-  .life-value { font-size: 0.7rem; font-weight: 700; }
-  .main-content { padding: 0.6rem 0.8rem 4rem; }
-  .logout-btn { display: none; }
-  .actions-row { margin: 1rem 0 0.3rem; gap: 0.8rem; }
-  .action-btn { padding: 0.5rem 0.7rem; min-width: 60px; }
-  .action-btn .icon { font-size: 1rem; }
-  .action-btn .label { font-size: 0.6rem; }
-  .mobile-settings-fab { display: flex; position: fixed; bottom: 20px; right: 16px; width: 48px; height: 48px; background: rgba(30,30,40,0.85); backdrop-filter: blur(12px); border-radius: 28px; align-items: center; justify-content: center; color: white; font-size: 1.3rem; cursor: pointer; z-index: 100; border: 1px solid rgba(255,255,255,0.3); }
-  .floating-ai-ball { bottom: 80px; width: 46px; height: 46px; font-size: 1.1rem; right: 16px; }
-  .ai-chat-panel { bottom: 135px; width: 290px; height: 420px; right: 16px; }
-}
-@media (min-width: 600px) { .mobile-settings-fab { display: none; } }
-
-/* 模态框样式 */
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.3); backdrop-filter: blur(8px); z-index: 500; display: none; align-items: flex-end; justify-content: center; }
-.modal-overlay.active { display: flex; }
-.modal-overlay.center-modal { align-items: center; }
-.modal { background: white; width: 100%; max-width: 560px; max-height: 85vh; border-radius: 24px 24px 0 0; padding: 1.5rem; overflow-y: auto; }
-.modal-overlay.center-modal .modal { border-radius: 24px; max-height: 85vh; }
-.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem; padding-bottom: 0.8rem; border-bottom: 1px solid var(--border); }
-.modal-title { font-weight: 600; font-size: 1.1rem; }
-.modal-close { width: 32px; height: 32px; border: none; background: #f5f5f5; border-radius: 50%; cursor: pointer; font-size: 1rem; display: flex; align-items: center; justify-content: center; }
-.form-group { margin-bottom: 1rem; }
-.form-group label { display: block; font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.3rem; }
-.form-group input, .form-group textarea, .form-group select { width: 100%; padding: 0.7rem 1rem; border: 1px solid var(--border); border-radius: 12px; font-size: 0.85rem; outline: none; background: #fafaf8; }
-.form-group textarea { resize: none; min-height: 80px; }
-.form-actions { display: flex; gap: 0.5rem; margin-top: 1.2rem; }
-.btn { flex: 1; padding: 0.7rem; border: none; border-radius: 12px; font-size: 0.8rem; cursor: pointer; text-align: center; }
-.btn-primary { background: #1a1a1a; color: white; }
-.btn-secondary { background: #f0f0f0; color: #666; }
-.btn-danger { background: #fff0f0; color: #c44; }
-.list-tabs { display: flex; gap: 0.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
-.list-tab { padding: 0.4rem 1rem; border: none; background: #f0f0f0; border-radius: 20px; font-size: 0.75rem; cursor: pointer; }
-.list-tab.active { background: #1a1a1a; color: white; }
-.list-item { background: #fafaf8; border-radius: 16px; padding: 0.8rem 1rem; margin-bottom: 0.5rem; cursor: pointer; border: 1px solid transparent; transition: all 0.2s; }
-.list-item:hover { background: white; border-color: var(--border); }
-.list-item-header { display: flex; justify-content: space-between; margin-bottom: 0.3rem; }
-.list-item-title { font-weight: 500; font-size: 0.85rem; }
-.list-item-time { font-size: 0.7rem; color: var(--text-muted); }
-.list-item-content { font-size: 0.75rem; color: var(--text-secondary); }
-.list-item-actions { display: flex; gap: 0.3rem; margin-top: 0.5rem; padding-top: 0.5rem; border-top: 1px solid var(--border); }
-.list-item-actions button { padding: 0.3rem 0.6rem; border: none; border-radius: 8px; font-size: 0.65rem; cursor: pointer; background: #f0f0f0; }
-.note-card { border-radius: 16px; padding: 0.8rem; margin-bottom: 0.5rem; cursor: pointer; transition: all 0.2s; position: relative; background: rgba(255,249,230,0.8); }
-.note-card:active { transform: scale(0.98); }
-.note-card-content { font-size: 0.8rem; line-height: 1.4; margin-bottom: 0.4rem; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-.note-card-footer { display: flex; justify-content: space-between; align-items: center; }
-.note-card-mood { font-size: 0.65rem; padding: 0.15rem 0.4rem; border-radius: 10px; background: rgba(0,0,0,0.05); display: flex; align-items: center; gap: 0.2rem; }
-.note-card-time { font-size: 0.6rem; color: var(--text-muted); }
-.note-card-actions { position: absolute; top: 0.4rem; right: 0.4rem; display: flex; gap: 0.2rem; opacity: 0; transition: opacity 0.2s; }
-.note-card:hover .note-card-actions { opacity: 1; }
-.note-card-actions button { width: 24px; height: 24px; border: none; border-radius: 6px; cursor: pointer; background: rgba(255,255,255,0.9); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; }
-.color-picker, .mood-picker { display: flex; gap: 0.4rem; flex-wrap: wrap; }
-.color-option { width: 30px; height: 30px; border-radius: 50%; cursor: pointer; border: 2px solid transparent; transition: all 0.2s; }
-.color-option.selected { border-color: #1a1a1a; transform: scale(1.1); }
-.mood-option { padding: 0.3rem 0.7rem; border-radius: 20px; cursor: pointer; border: 1px solid var(--border); font-size: 0.7rem; display: flex; align-items: center; gap: 0.2rem; background: #fafaf8; }
-.mood-option.selected { background: #1a1a1a; color: white; border-color: #1a1a1a; }
-.toggle-switch { position: relative; display: inline-block; width: 40px; height: 20px; }
-.toggle-switch input { opacity: 0; width: 0; height: 0; }
-.toggle-slider { position: absolute; cursor: pointer; inset: 0; background: #ccc; border-radius: 20px; transition: 0.2s; }
-.toggle-slider::before { position: absolute; content: ''; height: 16px; width: 16px; left: 2px; bottom: 2px; background: white; border-radius: 50%; transition: 0.2s; }
-.toggle-switch input:checked + .toggle-slider { background: #555; }
-.toggle-switch input:checked + .toggle-slider::before { transform: translateX(20px); }
-
-.floating-ai-ball {
-    position: fixed;
-    bottom: 100px;
-    right: 20px;
-    width: 52px;
-    height: 52px;
-    border-radius: 50%;
-    background: rgba(26,26,46,0.9);
-    backdrop-filter: blur(20px);
-    color: white;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;
-    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-    z-index: 200;
-    font-size: 1.3rem;
-    transition: transform 0.2s;
-}
-.floating-ai-ball:active { transform: scale(0.95); }
-.ai-chat-panel {
-    position: fixed;
-    bottom: 165px;
-    right: 20px;
-    width: 320px;
-    height: 480px;
-    background: white;
-    border-radius: 24px;
-    box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-    z-index: 201;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-.ai-chat-panel.hidden { display: none; }
-.ai-chat-header { padding: 14px 16px; background: #1a1a2e; color: white; display: flex; justify-content: space-between; font-weight: 500; font-size: 0.9rem; }
-.ai-chat-messages { flex: 1; overflow-y: auto; padding: 12px; background: #fafafa; }
-.ai-chat-input { padding: 10px; display: flex; gap: 8px; border-top: 1px solid #eee; background: white; }
-.ai-chat-input input { flex: 1; padding: 8px 12px; border: 1px solid #ddd; border-radius: 30px; outline: none; font-size: 0.8rem; }
-.ai-chat-input button { width: 38px; height: 38px; border-radius: 50%; background: #1a1a2e; color: white; border: none; cursor: pointer; }
-.ai-msg { margin-bottom: 10px; display: flex; }
-.ai-msg.user { justify-content: flex-end; }
-.ai-msg.user .bubble { background: #1a1a2e; color: white; padding: 6px 12px; border-radius: 18px 18px 4px 18px; max-width: 80%; font-size: 0.75rem; }
-.ai-msg.ai .bubble { background: white; border: 1px solid #ddd; padding: 6px 12px; border-radius: 18px 18px 18px 4px; max-width: 80%; font-size: 0.75rem; }
-.thinking-indicator { display: inline-block; width: 6px; height: 6px; background: #999; border-radius: 50%; margin: 0 2px; animation: thinkingPulse 1.4s infinite ease-in-out; }
-.thinking-indicator:nth-child(1) { animation-delay: 0s; }
-.thinking-indicator:nth-child(2) { animation-delay: 0.2s; }
-.thinking-indicator:nth-child(3) { animation-delay: 0.4s; }
-@keyframes thinkingPulse { 0%, 60%, 100% { transform: scale(1); opacity: 0.4; } 30% { transform: scale(1.3); opacity: 1; } }
-.reminder-toast { position: fixed; bottom: 180px; left: 20px; right: 20px; max-width: 280px; background: white; border-radius: 16px; padding: 0.8rem; box-shadow: 0 8px 24px rgba(0,0,0,0.15); z-index: 300; border-left: 3px solid var(--accent); }
-.reminder-toast.hidden { display: none; }
-.confirm-dialog { position: fixed; inset: 0; background: rgba(0,0,0,0.4); backdrop-filter: blur(4px); z-index: 600; display: none; align-items: center; justify-content: center; }
-.confirm-dialog.active { display: flex; }
-.confirm-box { background: white; border-radius: 20px; padding: 1.5rem; max-width: 280px; text-align: center; }
-.confirm-actions { display: flex; gap: 0.5rem; margin-top: 1rem; justify-content: center; }
-
-/* 设置页面样式 */
-.settings-section { margin-bottom: 1.5rem; }
-.settings-section-title { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.5rem; }
-.settings-item { display: flex; justify-content: space-between; align-items: center; padding: 0.8rem 1rem; background: #fafaf8; border-radius: 12px; margin-bottom: 0.4rem; cursor: pointer; }
-.settings-item-label { font-size: 0.85rem; }
-.settings-item-value { font-size: 0.8rem; color: var(--text-muted); }
-.bg-picker { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.5rem; margin-top: 0.5rem; }
-.bg-option { aspect-ratio: 16/10; border-radius: 12px; cursor: pointer; border: 2px solid transparent; background-size: cover; background-position: center; }
-.bg-option.selected { border-color: var(--accent); }
-.bg-upload { aspect-ratio: 16/10; border-radius: 12px; border: 1.5px dashed var(--border); display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; font-size: 0.7rem; gap: 0.2rem; }
-.bg-upload input { display: none; }
-.btn-sm { padding: 0.4rem 0.8rem; font-size: 0.7rem; border-radius: 20px; background: #1a1a1a; color: white; border: none; cursor: pointer; }
-.list-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; }
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title id="htmlTitle">象库 · 轻工作台</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    body {
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    }
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #e2e8f0;
+      border-radius: 2px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #cbd5e1;
+    }
+  </style>
 </head>
-<body>
+<body class="bg-[#F8F9FA] text-[#1A1A1A] font-sans antialiased h-screen flex flex-col overflow-hidden select-none">
 
-<!-- 登录页 -->
-<div class="login-page" id="loginPage">
- <div class="login-card">
- <div class="login-logo">NikO</div>
- <div class="login-slogan">随心而记 随知而行</div>
- <input type="password" class="login-input" id="loginKey" placeholder="密钥" maxlength="20">
- <button class="login-btn" onclick="doLogin()">进入</button>
- <div class="login-error" id="loginError">密钥错误</div>
- </div>
-</div>
+  <!-- 隐藏的文件上传 input 用于增量导入 -->
+  <input type="file" id="importFileInput" accept=".json" class="hidden" onchange="XiangKuApp.handleImportFile(event)" />
 
-<!-- 首次设置页 -->
-<div class="setup-page" id="setupPage">
- <div class="setup-card">
- <h2>欢迎使用 NikO</h2>
- <div class="field-group"><label>你的名字</label><input type="text" id="setupName" placeholder="你的名字" maxlength="10"></div>
- <div class="field-group"><label>设置密钥</label><input type="password" id="setupKey" placeholder="密钥" maxlength="20"></div>
- <div class="field-group"><label>出生日期</label><input type="date" id="setupBirthday"></div>
- <button class="setup-btn" onclick="doSetup()">开始使用</button>
- </div>
-</div>
+  <!-- ================= 顶部驾驶舱状态栏 (TOP BAR) ================= -->
+  <header class="h-12 bg-white border-b border-zinc-200/80 px-4 flex items-center justify-between shrink-0 z-10">
+    <div class="flex items-center gap-3">
+      <div class="flex items-center gap-2 cursor-pointer" onclick="XiangKuApp.modules.workspace.select('all')">
+        <div class="w-6 h-6 rounded bg-zinc-900 text-white flex items-center justify-center font-bold text-xs tracking-tighter">
+          象
+        </div>
+        <span id="topAppName" class="font-semibold text-xs tracking-wider text-zinc-900">象库 · 轻工作台</span>
+      </div>
+      <div class="h-3.5 w-px bg-zinc-200 mx-1"></div>
+      <!-- 当前工作空间指示器 -->
+      <div class="flex items-center gap-1.5 text-xs text-zinc-500 bg-zinc-50 border border-zinc-200 px-2 py-0.5 rounded">
+        <i data-lucide="folder" class="w-3 h-3 text-zinc-400"></i>
+        <span id="currentWorkspaceBadge" class="font-medium text-zinc-700">全部工作域</span>
+      </div>
+    </div>
 
-<!-- 主应用 -->
-<div class="app-page" id="appPage">
- <button class="logout-btn" onclick="doLogout()">安全退出</button>
- <div class="main-content">
-  <div class="app-topbar">
-   <div class="topbar-left"><div class="topbar-location">📍<span id="locationText">定位中...</span></div><div class="topbar-weather"><span id="weatherIcon">🌤</span><span id="weatherText">--°C</span></div></div>
-   <div class="topbar-right"><div class="topbar-logo">NikO</div><div class="topbar-slogan">随心而记 随知而行</div></div>
+    <!-- 全局快捷检索、飞书联动、AI 与 设置中心 -->
+    <div class="flex items-center gap-2">
+      <div class="relative flex items-center">
+        <i data-lucide="search" class="w-3.5 h-3.5 absolute left-2.5 text-zinc-400"></i>
+        <input 
+          type="text" 
+          id="globalSearchInput" 
+          oninput="XiangKuApp.handleSearch()" 
+          placeholder="全局检索记录、知识、资产 (/) " 
+          class="w-52 pl-8 pr-3 py-1 text-xs bg-zinc-50 border border-zinc-200 rounded focus:outline-none focus:border-zinc-400 focus:bg-white transition-all placeholder:text-zinc-400"
+        />
+      </div>
+
+      <div class="h-3.5 w-px bg-zinc-200 mx-1"></div>
+
+      <!-- 飞书同步联动按钮 -->
+      <button 
+        onclick="XiangKuApp.modules.feishu.syncToFeishu()" 
+        title="将当前工作内容推送到飞书"
+        class="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded border border-blue-200 bg-blue-50/50 text-blue-700 hover:bg-blue-100 transition-colors font-medium"
+      >
+        <i data-lucide="send" class="w-3 h-3 text-blue-600"></i>
+        <span>同步飞书</span>
+      </button>
+
+      <!-- AI 助手抽屉开关 -->
+      <button 
+        onclick="XiangKuApp.modules.ai.toggleDrawer()" 
+        class="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded bg-zinc-900 text-white hover:bg-zinc-800 transition-colors font-medium shadow-sm"
+      >
+        <i data-lucide="sparkles" class="w-3 h-3 text-amber-300"></i>
+        <span>AI 工作助理</span>
+      </button>
+
+      <!-- 增量导入恢复 -->
+      <button 
+        onclick="document.getElementById('importFileInput').click()" 
+        title="导入备份（增量合并，不覆盖已有内容）"
+        class="text-xs px-2 py-1 border border-zinc-200 text-zinc-600 hover:bg-zinc-50 rounded transition-colors flex items-center gap-1"
+      >
+        <i data-lucide="upload" class="w-3 h-3"></i>
+        <span>导入恢复</span>
+      </button>
+
+      <!-- 数据备份导出 -->
+      <button 
+        onclick="XiangKuApp.exportBackup()" 
+        title="导出本地 JSON 数据库"
+        class="text-xs px-2 py-1 border border-zinc-200 text-zinc-600 hover:bg-zinc-50 rounded transition-colors flex items-center gap-1"
+      >
+        <i data-lucide="download" class="w-3 h-3"></i>
+        <span>导出备份</span>
+      </button>
+
+      <!-- 设置中心入口 -->
+      <button 
+        onclick="XiangKuApp.modules.settings.openModal()" 
+        title="设置中心"
+        class="text-xs p-1.5 border border-zinc-200 text-zinc-600 hover:bg-zinc-50 rounded transition-colors flex items-center gap-1"
+      >
+        <i data-lucide="settings" class="w-3.5 h-3.5"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- ================= 主体工作驾驶舱 (4 栏布局) ================= -->
+  <main class="flex-1 grid grid-cols-12 gap-0 overflow-hidden bg-white">
+    
+    <!-- 1. 【工作空间】(WORKSPACE NAVIGATOR) - 2 列 -->
+    <aside class="col-span-2 border-r border-zinc-200/80 bg-[#FAFAFA] flex flex-col justify-between overflow-hidden">
+      <div class="flex-1 flex flex-col overflow-hidden">
+        <div class="p-3 border-b border-zinc-100 flex items-center justify-between text-xs font-semibold text-zinc-400 tracking-wider">
+          <span>工作空间 / 目录</span>
+          <button onclick="XiangKuApp.modules.workspace.openCreateModal()" class="hover:text-zinc-800 text-zinc-400 p-0.5 rounded hover:bg-zinc-200/50" title="新建工作空间">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+        <div id="workspaceList" class="flex-1 overflow-y-auto p-2 space-y-0.5">
+          <!-- 动态渲染空间列表 -->
+        </div>
+      </div>
+
+      <!-- 底部系统指标沉淀 -->
+      <div class="p-3 border-t border-zinc-200/80 bg-white text-[11px] text-zinc-400 flex flex-col gap-1">
+        <div class="flex justify-between">
+          <span>工作记录</span>
+          <span id="statNotesCount" class="font-mono text-zinc-700 font-medium">0</span>
+        </div>
+        <div class="flex justify-between">
+          <span>沉淀资产</span>
+          <span id="statAssetsCount" class="font-mono text-zinc-700 font-medium">0</span>
+        </div>
+        <div class="flex justify-between items-center pt-1 border-t border-zinc-100">
+          <span id="userBadgeRole" class="truncate max-w-[90px]">个人用户</span>
+          <span class="font-mono text-emerald-600 text-[10px]">● 本地就绪</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 2. 【快速记录】与【工作流 (Daily Log)】- 5 列 -->
+    <section class="col-span-5 border-r border-zinc-200/80 flex flex-col bg-white overflow-hidden">
+      <!-- 快速捕获输入器 -->
+      <div class="p-3 border-b border-zinc-200/80 bg-zinc-50/50">
+        <div class="flex items-center justify-between mb-2">
+          <span class="text-xs font-semibold text-zinc-600 tracking-wide flex items-center gap-1.5">
+            <i data-lucide="zap" class="w-3.5 h-3.5 text-zinc-400"></i>
+            快速知识捕获
+          </span>
+          <select id="quickTypeSelect" class="text-[11px] bg-white border border-zinc-200 rounded px-1.5 py-0.5 text-zinc-600 focus:outline-none">
+            <option value="log">工作流水</option>
+            <option value="progress">阶段进展</option>
+            <option value="issue">异常/问题</option>
+            <option value="insight">经验/心得</option>
+          </select>
+        </div>
+        <form onsubmit="XiangKuApp.modules.notes.handleSubmit(event)" class="space-y-2">
+          <textarea 
+            id="quickInputContent" 
+            rows="2" 
+            placeholder="随时捕获：正在处理的事、新发现的问题、参数或现场记录 (Ctrl+Enter 提交)..." 
+            class="w-full text-xs p-2.5 bg-white border border-zinc-200 rounded focus:outline-none focus:border-zinc-400 transition-all resize-none leading-relaxed placeholder:text-zinc-400"
+            required
+            onkeydown="if((event.ctrlKey||event.metaKey)&&event.keyCode===13){XiangKuApp.modules.notes.handleSubmit(event);}"
+          ></textarea>
+          <div class="flex items-center justify-between pt-0.5">
+            <input 
+              type="text" 
+              id="quickInputTags" 
+              placeholder="#标签 (例如: #巡检 #采购)" 
+              class="text-[11px] bg-transparent border-none focus:outline-none text-zinc-600 w-48 placeholder:text-zinc-400"
+            />
+            <button 
+              type="submit" 
+              class="text-xs bg-zinc-900 text-white px-3 py-1 rounded hover:bg-zinc-800 transition-colors flex items-center gap-1"
+            >
+              <span>沉淀记录</span>
+              <i data-lucide="corner-down-left" class="w-3 h-3 text-zinc-400"></i>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- 工作流时间轴 (Daily Notes Stream) -->
+      <div class="flex-1 flex flex-col overflow-hidden">
+        <div class="px-4 py-2 border-b border-zinc-100 flex items-center justify-between bg-[#FAFAFA]">
+          <span class="text-xs font-semibold text-zinc-500 tracking-wider">今日工作流 (DAILY STREAM)</span>
+          <span id="currentDateStr" class="text-[11px] font-mono text-zinc-400">--</span>
+        </div>
+        <div id="dailyLogStream" class="flex-1 overflow-y-auto p-4 space-y-4">
+          <!-- 动态渲染工作流时间轴 -->
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. 【个人工作资产库】(ASSET & SOP VAULT) - 5 列 -->
+    <section class="col-span-5 flex flex-col bg-[#FAFAFA] overflow-hidden">
+      <div class="p-3 border-b border-zinc-200/80 bg-white flex items-center justify-between">
+        <div>
+          <h2 class="text-xs font-semibold text-zinc-800 tracking-wide flex items-center gap-1.5">
+            <i data-lucide="archive" class="w-3.5 h-3.5 text-zinc-500"></i>
+            个人工作资产库
+          </h2>
+          <p class="text-[10px] text-zinc-400 mt-0.5">沉淀长期有效的规范、模板、关键联系与工作经验</p>
+        </div>
+        <button 
+          onclick="XiangKuApp.modules.assets.openModal()" 
+          class="text-xs border border-zinc-200 hover:bg-zinc-50 px-2.5 py-1 rounded text-zinc-700 transition-colors flex items-center gap-1 font-medium bg-white"
+        >
+          <i data-lucide="plus" class="w-3 h-3"></i>
+          <span>新建资产</span>
+        </button>
+      </div>
+
+      <!-- 资产分类过滤器 -->
+      <div class="px-3 py-2 bg-white border-b border-zinc-100 flex items-center gap-1 text-[11px]">
+        <button onclick="XiangKuApp.modules.assets.filter('all')" class="asset-tab px-2 py-0.5 rounded bg-zinc-900 text-white font-medium" data-type="all">全部</button>
+        <button onclick="XiangKuApp.modules.assets.filter('sop')" class="asset-tab px-2 py-0.5 rounded hover:bg-zinc-50 text-zinc-500" data-type="sop">流程规范</button>
+        <button onclick="XiangKuApp.modules.assets.filter('template')" class="asset-tab px-2 py-0.5 rounded hover:bg-zinc-50 text-zinc-500" data-type="template">工作模板</button>
+        <button onclick="XiangKuApp.modules.assets.filter('contact')" class="asset-tab px-2 py-0.5 rounded hover:bg-zinc-50 text-zinc-500" data-type="contact">常用联系</button>
+        <button onclick="XiangKuApp.modules.assets.filter('experience')" class="asset-tab px-2 py-0.5 rounded hover:bg-zinc-50 text-zinc-500" data-type="experience">经验总结</button>
+      </div>
+
+      <!-- 资产卡片网格 -->
+      <div id="assetCardList" class="flex-1 overflow-y-auto p-3 space-y-2.5">
+        <!-- 动态渲染长效资产卡片 -->
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ================= AI 助手功能抽屉 (AI DRAWER) ================= -->
+  <div id="aiDrawer" class="fixed top-12 right-0 bottom-0 w-[440px] bg-white border-l border-zinc-200 shadow-2xl transform translate-x-full transition-transform duration-200 z-20 flex flex-col">
+    <div class="p-3 border-b border-zinc-200 flex items-center justify-between bg-zinc-50">
+      <div class="flex items-center gap-2">
+        <i data-lucide="sparkles" class="w-4 h-4 text-amber-500"></i>
+        <span class="text-xs font-semibold text-zinc-800">象库 AI 工作助理</span>
+      </div>
+      <button onclick="XiangKuApp.modules.ai.toggleDrawer()" class="text-zinc-400 hover:text-zinc-700 text-xs p-1">✕</button>
+    </div>
+
+    <!-- 快捷分析指令 -->
+    <div class="p-3 bg-zinc-50/50 border-b border-zinc-100 space-y-1.5">
+      <div class="text-[11px] text-zinc-400">快速处理当前上下文:</div>
+      <div class="grid grid-cols-2 gap-1.5">
+        <button onclick="XiangKuApp.modules.ai.runPrompt('summary')" class="text-xs p-1.5 border border-zinc-200 bg-white hover:border-zinc-400 rounded text-left text-zinc-700 font-medium truncate">📋 总结今日工作记录</button>
+        <button onclick="XiangKuApp.modules.ai.runPrompt('weekly')" class="text-xs p-1.5 border border-zinc-200 bg-white hover:border-zinc-400 rounded text-left text-zinc-700 font-medium truncate">📊 生成结构化周报</button>
+        <button onclick="XiangKuApp.modules.ai.runPrompt('issues')" class="text-xs p-1.5 border border-zinc-200 bg-white hover:border-zinc-400 rounded text-left text-zinc-700 font-medium truncate">🔍 未决问题与风险梳理</button>
+        <button onclick="XiangKuApp.modules.ai.runPrompt('extract_asset')" class="text-xs p-1.5 border border-zinc-200 bg-white hover:border-zinc-400 rounded text-left text-zinc-700 font-medium truncate">💡 提炼为经验资产</button>
+      </div>
+    </div>
+
+    <!-- 自由知识问答输入 -->
+    <div class="p-3 border-b border-zinc-100">
+      <form onsubmit="XiangKuApp.modules.ai.handleCustomAsk(event)" class="flex gap-1.5">
+        <input 
+          type="text" 
+          id="aiCustomInput" 
+          placeholder="问象库：查找记录、根据记录写汇报、问答..." 
+          class="flex-1 text-xs px-2.5 py-1.5 border border-zinc-200 rounded focus:outline-none focus:border-zinc-400"
+        />
+        <button type="submit" class="text-xs bg-zinc-900 text-white px-3 py-1.5 rounded hover:bg-zinc-800 shrink-0">发送</button>
+      </form>
+    </div>
+
+    <!-- AI 响应展示区 -->
+    <div class="flex-1 overflow-y-auto p-4 space-y-3 font-mono text-xs">
+      <div class="flex justify-between items-center text-zinc-400 text-[11px]">
+        <span>模型: <span id="aiModelIndicator" class="text-zinc-600">未配置(使用本地算法)</span></span>
+        <button onclick="XiangKuApp.modules.settings.openModal()" class="text-zinc-500 underline hover:text-zinc-800">配置API</button>
+      </div>
+      <div id="aiOutput" class="bg-zinc-50 border border-zinc-200 rounded p-3 text-zinc-800 leading-relaxed whitespace-pre-wrap">
+选择上方快速指令，或输入问题与指令。AI 会读取当前工作台的工作流记录与长效资产进行分析与生成。
+      </div>
+    </div>
   </div>
-  <div class="app-datetime"><div class="datetime-time" id="currentTime">--:--</div><div class="datetime-date" id="currentDate">----年--月--日</div></div>
 
-  <!-- 滚动新闻 -->
-  <div class="news-scroll" onclick="openNewsModal()"><div class="news-content" id="newsContent">📰 加载新闻中...</div></div>
+  <!-- ================= 设置中心弹窗 (SETTINGS MODAL) ================= -->
+  <div id="settingsModal" class="fixed inset-0 bg-black/30 backdrop-blur-sm z-30 hidden flex items-center justify-center">
+    <div class="bg-white border border-zinc-200 rounded-lg w-[560px] shadow-xl overflow-hidden flex flex-col max-h-[85vh]">
+      <div class="p-3 border-b border-zinc-100 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i data-lucide="settings" class="w-4 h-4 text-zinc-600"></i>
+          <span class="text-xs font-semibold text-zinc-800">设置中心</span>
+        </div>
+        <button onclick="XiangKuApp.modules.settings.closeModal()" class="text-zinc-400 hover:text-zinc-700 text-xs p-1">✕</button>
+      </div>
 
-  <!-- 生存时间 + 提醒 -->
-  <div class="life-stats"><span class="life-label">📅 我已存在</span><span class="life-value" id="lifeDays">-- 天</span><span class="life-label">⏰ 提醒</span><span class="life-value" id="reminderStatus">--</span></div>
+      <div class="p-4 overflow-y-auto space-y-5 text-xs">
+        <!-- 1. 基础设置 -->
+        <section class="space-y-3">
+          <h3 class="font-semibold text-zinc-800 border-b border-zinc-100 pb-1">1. 基础设置</h3>
+          <div>
+            <label class="block text-zinc-500 mb-1">工作台名称</label>
+            <input type="text" id="settingAppName" class="w-full text-xs p-2 border border-zinc-200 rounded focus:outline-none focus:border-zinc-400" placeholder="例如：象库 · 轻工作台 / 个人生产力中心" />
+          </div>
+        </section>
 
-  <!-- 磁贴 - 3个 -->
-  <div class="tiles-grid">
-   <div class="tile-card" onclick="openSchedule()"><div class="tile-sym">📅</div><div class="tile-info"><div class="tile-title">日程</div><div class="tile-items" id="scheduleTileItems"><div class="tile-empty">暂无日程</div></div></div></div>
-   <div class="tile-card" onclick="openNotes()"><div class="tile-sym">📝</div><div class="tile-info"><div class="tile-title">便签</div><div class="tile-items" id="noteTileItems"><div class="tile-empty">暂无便签</div></div></div></div>
-   <div class="tile-card" onclick="openRecord()"><div class="tile-sym">💭</div><div class="tile-info"><div class="tile-title">随手记</div><div class="tile-items" id="quickTileItems"><div class="tile-empty">点击记录灵感</div></div></div></div>
+        <!-- 2. 用户信息 -->
+        <section class="space-y-3">
+          <h3 class="font-semibold text-zinc-800 border-b border-zinc-100 pb-1">2. 用户身份 (用于 AI 上下文构建)</h3>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-zinc-500 mb-1">用户姓名 / 称呼</label>
+              <input type="text" id="settingUserName" class="w-full text-xs p-2 border border-zinc-200 rounded focus:outline-none focus:border-zinc-400" placeholder="例如：乌鸦" />
+            </div>
+            <div>
+              <label class="block text-zinc-500 mb-1">工作身份 / 岗位角色</label>
+              <input type="text" id="settingUserRole" class="w-full text-xs p-2 border border-zinc-200 rounded focus:outline-none focus:border-zinc-400" placeholder="例如：系统运维 / 独立开发者" />
+            </div>
+          </div>
+          <div>
+            <label class="block text-zinc-500 mb-1">工作简介 / 职责描述</label>
+            <textarea id="settingUserBio" rows="2" class="w-full text-xs p-2 border border-zinc-200 rounded focus:outline-none focus:border-zinc-400 resize-none" placeholder="简述你的日常工作范畴，方便 AI 给出更精准的汇报与总结语言风格..."></textarea>
+          </div>
+        </section>
+
+        <!-- 3. 飞书联动配置 -->
+        <section class="space-y-3">
+          <h3 class="font-semibold text-zinc-800 border-b border-zinc-100 pb-1 flex items-center justify-between">
+            <span>3. 飞书联动配置 (Webhook)</span>
+            <span class="text-[10px] text-blue-600 font-normal">支持群自定义机器人</span>
+          </h3>
+          <div>
+            <label class="block text-zinc-500 mb-1">飞书自定义机器人 Webhook 地址</label>
+            <input type="text" id="settingFeishuWebhook" class="w-full text-xs p-2 border border-zinc-200 rounded focus:outline-none focus:border-zinc-400 font-mono text-[11px]" placeholder="https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxx" />
+            <p class="text-[10px] text-zinc-400 mt-1">在飞书群设置 -> 自定义机器人中获取 Webhook 地址，配置后可一键将工作记录推送至群聊。</p>
+          </div>
+        </section>
+
+        <!-- 4. AI 模型配置 -->
+        <section class="space-y-3">
+          <h3 class="font-semibold text-zinc-800 border-b border-zinc-100 pb-1">4. AI 模型与接口配置 (标准 OpenAI 兼容接口)</h3>
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="block text-zinc-500 mb-1">模型提供方 / 预设</label>
+              <select id="settingAiProvider" onchange="XiangKuApp.modules.settings.handleProviderChange()" class="w-full text-xs p-2 border border-zinc-200 rounded focus:outline-none">
+                <option value="custom">自定义模型 (OpenAI API 兼容)</option>
+                <option value="openai">OpenAI (GPT-4o / 3.5)</option>
+                <option value="deepseek">DeepSeek (V3 / R1)</option>
+                <option value="qwen">通义千问 (DashScope)</option>
+                <option value="gemini">Google Gemini (OpenAI 兼容端点)</option>
+                <option value="claude">Claude (第三方代理端点)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-zinc-500 mb-1">模型名称 (Model Name)</label>
+              <input type="text" id="settingAiModel" class="w-full text-xs p-2 border border-zinc-200 rounded focus:outline-none focus:border-zinc-400" placeholder="例如：gpt-4o-mini / deepseek-chat" />
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-zinc-500 mb-1">API 接口地址 (Base URL)</label>
+            <input type="text" id="settingAiBaseUrl" class="w-full text-xs p-2 border border-zinc-200 rounded focus:outline-none focus:border-zinc-400 font-mono text-[11px]" placeholder="例如：https://api.openai.com/v1 或代理端点" />
+          </div>
+
+          <div class="grid grid-cols-3 gap-3">
+            <div class="col-span-2">
+              <label class="block text-zinc-500 mb-1">API Key</label>
+              <input type="password" id="settingAiApiKey" class="w-full text-xs p-2 border border-zinc-200 rounded focus:outline-none focus:border-zinc-400 font-mono" placeholder="sk-..." />
+            </div>
+            <div>
+              <label class="block text-zinc-500 mb-1">温度参数 (Temperature)</label>
+              <input type="number" id="settingAiTemp" step="0.1" min="0" max="2" class="w-full text-xs p-2 border border-zinc-200 rounded focus:outline-none focus:border-zinc-400" placeholder="0.7" />
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <div class="p-3 border-t border-zinc-100 flex justify-between items-center bg-zinc-50">
+        <button onclick="XiangKuApp.modules.settings.resetToDefault()" class="text-xs text-red-500 hover:underline">清空并重置全部数据</button>
+        <div class="flex gap-2">
+          <button onclick="XiangKuApp.modules.settings.closeModal()" class="text-xs px-3 py-1.5 border border-zinc-200 rounded text-zinc-600 hover:bg-white">取消</button>
+          <button onclick="XiangKuApp.modules.settings.saveFromUI()" class="text-xs px-4 py-1.5 bg-zinc-900 text-white rounded hover:bg-zinc-800 font-medium">保存设置</button>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <!-- 操作按钮行 -->
-  <div class="actions-row">
-   <button class="action-btn" onclick="openSearch()"><span class="icon">⌕</span><span class="label">搜索</span></button>
-   <button class="action-btn" onclick="openReminderSettings()"><span class="icon">⏰</span><span class="label">提醒</span></button>
-   <button class="action-btn" onclick="openSettings()"><span class="icon">⚙</span><span class="label">设置</span></button>
+  <!-- ================= 资产卡片新建/编辑弹窗 (ASSET MODAL) ================= -->
+  <div id="assetModal" class="fixed inset-0 bg-black/30 backdrop-blur-sm z-30 hidden flex items-center justify-center">
+    <div class="bg-white border border-zinc-200 rounded-lg w-[500px] shadow-xl overflow-hidden">
+      <div class="p-3 border-b border-zinc-100 flex items-center justify-between">
+        <span id="assetModalTitle" class="text-xs font-semibold text-zinc-800">新建工作资产</span>
+        <button onclick="XiangKuApp.modules.assets.closeModal()" class="text-zinc-400 hover:text-zinc-700 text-xs p-1">✕</button>
+      </div>
+      <form onsubmit="XiangKuApp.modules.assets.handleSubmit(event)" class="p-4 space-y-3">
+        <input type="hidden" id="assetFormId" value="" />
+        <div>
+          <label class="block text-[11px] text-zinc-500 mb-1">资产标题 / 规范名称</label>
+          <input type="text" id="assetFormTitle" placeholder="例如：主设备巡检操作标准 (SOP)" class="w-full text-xs p-2 border border-zinc-200 rounded focus:outline-none focus:border-zinc-400" required />
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[11px] text-zinc-500 mb-1">类型</label>
+            <select id="assetFormCategory" class="w-full text-xs p-2 border border-zinc-200 rounded focus:outline-none">
+              <option value="sop">流程规范 (SOP)</option>
+              <option value="template">常用模板</option>
+              <option value="contact">常用联系</option>
+              <option value="experience">经验总结</option>
+            </select>
+          </div>
+          <div>
+            <label class="block text-[11px] text-zinc-500 mb-1">所属工作空间</label>
+            <select id="assetFormWorkspace" class="w-full text-xs p-2 border border-zinc-200 rounded focus:outline-none"></select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-[11px] text-zinc-500 mb-1">资产正文 / 核心内容</label>
+          <textarea id="assetFormContent" rows="6" placeholder="输入具体规程步骤、表格模板、参数或联系方式..." class="w-full text-xs p-2 border border-zinc-200 rounded focus:outline-none focus:border-zinc-400 resize-none font-mono leading-relaxed" required></textarea>
+        </div>
+        <div class="flex justify-end gap-2 pt-2">
+          <button type="button" onclick="XiangKuApp.modules.assets.closeModal()" class="text-xs px-3 py-1.5 border border-zinc-200 rounded text-zinc-600 hover:bg-zinc-50">取消</button>
+          <button type="submit" class="text-xs px-3 py-1.5 bg-zinc-900 text-white rounded hover:bg-zinc-800 font-medium">沉淀在库</button>
+        </div>
+      </form>
+    </div>
   </div>
- </div>
- <div class="mobile-settings-fab" onclick="openSettings()">⚙️</div>
-</div>
 
-<!-- AI 悬浮球 -->
-<div class="floating-ai-ball" id="aiFloatingBall">💬</div>
+  <!-- ================= 核心插件化架构与业务逻辑脚本 ================= -->
+  <script>
+    /**
+     * 象库 · 轻工作台 核心应用
+     */
+    window.XiangKuApp = {
+      STORAGE_KEY: 'xiangku_workstation_db_v2',
 
-<!-- AI 对话浮层 -->
-<div id="aiChatPanel" class="ai-chat-panel hidden">
- <div class="ai-chat-header"><span>✨ NikO 助手</span><button onclick="closeAIChat()" style="background:none; border:none; color:white; font-size:1.1rem; cursor:pointer">✕</button></div>
- <div id="aiChatMessages" class="ai-chat-messages"><div class="ai-msg ai"><div class="bubble">你好！我是 NikO，您的生活助手~</div></div></div>
- <div class="ai-chat-input"><input type="text" id="aiChatInput" placeholder="输入消息..." onkeypress="if(event.key==='Enter')sendAIMessage()"><button onclick="sendAIMessage()">→</button></div>
-</div>
+      // 数据结构 Schema
+      db: {
+        settings: {
+          appName: '象库 · 轻工作台',
+          userName: '工作者',
+          userRole: '日常运维 / 独立工作者',
+          userBio: '',
+          feishuWebhook: '',
+          aiConfig: {
+            provider: 'custom',
+            baseUrl: 'https://api.openai.com/v1',
+            apiKey: '',
+            model: 'gpt-4o-mini',
+            temperature: 0.7
+          }
+        },
+        workspace: [],
+        notes: [],
+        assets: [],
+        plugins: []
+      },
 
-<!-- 提醒设置 -->
-<div class="modal-overlay center-modal" id="reminderModal">
- <div class="modal"><div class="modal-header"><span class="modal-title">⏰ 事项提醒</span><button class="modal-close" onclick="closeModal('reminderModal')">✕</button></div>
- <div class="form-group"><label>提醒事项</label><input type="text" id="reminderText" placeholder="例：喝水、吃药" maxlength="50"></div>
- <div class="form-group"><label>间隔时间</label><select id="reminderInterval"><option value="60">1小时</option><option value="120">2小时</option><option value="240">4小时</option><option value="360">6小时</option></select></div>
- <div class="form-group"><label>启用提醒</label><label class="toggle-switch" style="margin-left:1rem"><input type="checkbox" id="reminderEnabled"><span class="toggle-slider"></span></label></div>
- <div class="form-actions"><button class="btn btn-primary" onclick="saveReminder()">保存</button><button class="btn btn-secondary" onclick="closeReminderSettings()">取消</button></div>
- <div id="reminderStatusText" style="margin-top:0.8rem; font-size:0.7rem; color:var(--text-muted)"></div></div>
-</div>
+      currentWorkspaceId: 'all',
+      currentAssetCategory: 'all',
 
-<!-- 日程模态框 -->
-<div class="modal-overlay" id="scheduleModal">
- <div class="modal">
-  <div class="list-header"><h3>日程</h3><button class="btn-sm" onclick="openScheduleForm()">+ 新建</button></div>
-  <div class="list-tabs"><button class="list-tab active" onclick="switchScheduleTab('upcoming')">即将到来</button><button class="list-tab" onclick="switchScheduleTab('done')">已完成</button><button class="list-tab" onclick="switchScheduleTab('all')">全部</button></div>
-  <div id="scheduleList"></div>
- </div>
-</div>
-<div class="modal-overlay" id="scheduleFormModal"><div class="modal"><div class="modal-header"><span class="modal-title" id="scheduleFormTitle">新建日程</span><button class="modal-close" onclick="closeModal('scheduleFormModal')">✕</button></div><input type="hidden" id="scheduleId"><div class="form-group"><label>标题</label><input type="text" id="scheduleTitle" maxlength="50"></div><div class="form-group" style="display:grid;grid-template-columns:1fr 1fr;gap:0.8rem"><div><label>日期</label><input type="date" id="scheduleDate"></div><div><label>时间</label><input type="time" id="scheduleTime"></div></div><div class="form-group"><label>备注</label><textarea id="scheduleNote" maxlength="500"></textarea></div><div class="form-actions"><button class="btn btn-secondary" onclick="closeModal('scheduleFormModal')">取消</button><button class="btn btn-danger" id="scheduleDelBtn" style="display:none" onclick="confirmDeleteSchedule()">删除</button><button class="btn btn-primary" onclick="saveSchedule()">保存</button></div></div></div>
+      // 核心初始化
+      init() {
+        this.loadStorage();
+        this.applySettingsUI();
+        this.renderAll();
+        document.getElementById('currentDateStr').innerText = new Date().toISOString().slice(0, 10).replace(/-/g, '.');
+      },
 
-<!-- 便签模态框 -->
-<div class="modal-overlay" id="noteModal">
- <div class="modal">
-  <div class="list-header"><h3>便签</h3><button class="btn-sm" onclick="openNoteForm()">+ 新建</button></div>
-  <div id="noteList"></div>
- </div>
-</div>
-<div class="modal-overlay" id="noteFormModal"><div class="modal"><div class="modal-header"><span class="modal-title" id="noteFormTitle">新建便签</span><button class="modal-close" onclick="closeModal('noteFormModal')">✕</button></div><input type="hidden" id="noteId"><div class="form-group"><label>内容</label><textarea id="noteContent" maxlength="1000"></textarea></div><div class="form-group"><label>颜色</label><div class="color-picker" id="noteColorPicker"></div></div><div class="form-group"><label>展示在首页</label><label class="toggle-switch"><input type="checkbox" id="notePinCheckbox"><span class="toggle-slider"></span></label></div><div class="form-group"><label>心情</label><div class="mood-picker" id="noteMoodPicker"></div></div><div class="form-actions"><button class="btn btn-secondary" onclick="closeModal('noteFormModal')">取消</button><button class="btn btn-danger" id="noteDelBtn" style="display:none" onclick="confirmDeleteNote()">删除</button><button class="btn btn-primary" onclick="saveNote()">保存</button></div></div></div>
+      loadStorage() {
+        const saved = localStorage.getItem(this.STORAGE_KEY);
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            this.db.settings = { ...this.db.settings, ...(parsed.settings || {}) };
+            this.db.workspace = parsed.workspace || [];
+            this.db.notes = parsed.notes || [];
+            this.db.assets = parsed.assets || [];
+            this.db.plugins = parsed.plugins || [];
+          } catch (e) {
+            console.error('存储读取错误，保持默认库', e);
+          }
+        }
+      },
 
-<!-- 随手记模态框 -->
-<div class="modal-overlay" id="recordModal">
- <div class="modal">
-  <div class="list-header"><h3>随手记</h3><button class="btn-sm" onclick="openQuickNoteForm()">+ 新建</button></div>
-  <div id="quickNoteList"></div>
- </div>
-</div>
-<div class="modal-overlay center-modal" id="quickNoteFormModal"><div class="modal"><div class="modal-header"><span class="modal-title" id="quickNoteFormTitle">新建随手记</span><button class="modal-close" onclick="closeModal('quickNoteFormModal')">✕</button></div><input type="hidden" id="quickNoteId"><div class="form-group"><label>内容</label><textarea id="quickNoteContent" maxlength="1000" style="min-height:120px"></textarea></div><div class="form-group"><label>颜色</label><div class="color-picker" id="quickColorPicker"></div></div><div class="form-actions"><button class="btn btn-secondary" onclick="closeModal('quickNoteFormModal')">取消</button><button class="btn btn-danger" id="quickNoteDelBtn" style="display:none" onclick="confirmDeleteQuickNote()">删除</button><button class="btn btn-primary" onclick="saveQuickNote()">保存</button></div></div></div>
+      saveStorage() {
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.db));
+        this.updateStats();
+      },
 
-<!-- 搜索 -->
-<div class="modal-overlay center-modal" id="searchModal"><div class="modal"><div class="modal-header"><span class="modal-title">搜索</span><button class="modal-close" onclick="closeModal('searchModal')">✕</button></div><div class="search-wrap"><input type="text" id="searchInput" placeholder="搜索日程、便签和随手记..." oninput="doSearch()" style="width:100%; padding:0.7rem; border-radius:30px; border:1px solid #ddd;"></div><div id="searchResults"></div></div></div>
+      applySettingsUI() {
+        const { appName, userRole } = this.db.settings;
+        document.getElementById('htmlTitle').innerText = appName || '象库 · 轻工作台';
+        document.getElementById('topAppName').innerText = appName || '象库 · 轻工作台';
+        document.getElementById('userBadgeRole').innerText = userRole || '个人用户';
 
-<!-- 设置 -->
-<div class="modal-overlay center-modal" id="settingsModal">
- <div class="modal"><div class="modal-header"><span class="modal-title">设置</span><button class="modal-close" onclick="closeModal('settingsModal')">✕</button></div>
- <div class="settings-section"><div class="settings-section-title">基本信息</div>
- <div class="settings-item" onclick="openEditName()"><span class="settings-item-label">名字</span><span class="settings-item-value" id="settingsName">--- →</span></div>
- <div class="settings-item" onclick="openChangeKey()"><span class="settings-item-label">修改密钥</span><span class="settings-item-value">→</span></div>
- <div class="settings-item" onclick="openEditBirthday()"><span class="settings-item-label">出生日期</span><span class="settings-item-value" id="settingsBirthday">--- →</span></div>
- <div class="settings-item" onclick="doLogout();closeModal('settingsModal')" style="color:#c44"><span class="settings-item-label">安全退出</span><span class="settings-item-value">→</span></div>
- </div>
- <div class="settings-section"><div class="settings-section-title">AI 模型配置</div>
- <div class="form-group"><label>API Key</label><input type="password" id="aiApiKey" placeholder="输入 API Key"></div>
- <div class="form-group"><label>API Base URL</label><input type="text" id="aiApiBase" placeholder="https://api.siliconflow.cn/v1" value="https://api.siliconflow.cn/v1"></div>
- <div class="form-group"><label>模型名称</label><input type="text" id="aiModel" placeholder="deepseek-ai/DeepSeek-V3" value="deepseek-ai/DeepSeek-V3"></div>
- <button class="btn btn-primary" onclick="saveAIConfig()" style="margin-top:0.5rem">保存 AI 配置</button>
- </div>
- <div class="settings-section"><div class="settings-section-title">背景图片</div><div class="bg-picker" id="bgPicker"></div></div>
- </div>
-</div>
+        const ai = this.db.settings.aiConfig || {};
+        const indicator = document.getElementById('aiModelIndicator');
+        if (ai.apiKey && ai.model) {
+          indicator.innerText = `${ai.model}`;
+          indicator.className = 'text-emerald-600 font-semibold';
+        } else {
+          indicator.innerText = '未配置API(使用本地算法)';
+          indicator.className = 'text-zinc-500';
+        }
+      },
 
-<div class="confirm-dialog" id="confirmDialog"><div class="confirm-box"><h3>确认删除</h3><p id="confirmText">确定要删除吗？</p><div class="confirm-actions"><button class="btn btn-secondary" onclick="closeConfirm()">取消</button><button class="btn btn-danger" id="confirmBtn" onclick="doConfirmDelete()">删除</button></div></div></div>
-<div id="reminderToast" class="reminder-toast hidden"><div class="title">⏰ 提醒</div><div class="content" id="reminderToastContent"></div><button onclick="closeReminderToast()">知道了</button></div>
+      renderAll() {
+        this.modules.workspace.render();
+        this.modules.notes.render();
+        this.modules.assets.render();
+        this.updateStats();
+        lucide.createIcons();
+      },
 
-<script>
-// ========== 完整数据存储 ==========
-const DB_KEYS = { config: 'niko_config', schedules: 'niko_schedules', notes: 'niko_notes', quickNotes: 'niko_quick_notes', aiHistory: 'niko_ai_history', reminder: 'niko_reminder', aiConfig: 'niko_ai_config' };
-const NOTE_COLORS = ['#fff9e6','#e6f4ff','#f0fdf4','#fff0f8','#f5f5f5'];
-const BG_IMAGES = ['https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800&q=80','https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=800&q=80','https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=800&q=80','https://images.unsplash.com/photo-1501854140801-50d01698950b?w=800&q=80','https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=800&q=80'];
-const BG_PREVIEWS = ['https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=400&q=60','https://images.unsplash.com/photo-1470071459604-3b5ec3a7fe05?w=400&q=60','https://images.unsplash.com/photo-1472214103451-9374bd1c798e?w=400&q=60','https://images.unsplash.com/photo-1501854140801-50d01698950b?w=400&q=60','https://images.unsplash.com/photo-1469474968028-56623f02e42e?w=400&q=60'];
+      updateStats() {
+        document.getElementById('statNotesCount').innerText = this.db.notes.length;
+        document.getElementById('statAssetsCount').innerText = this.db.assets.length;
+      },
 
-let selectedColor = NOTE_COLORS[0];
-let selectedMood = '平静';
-let deleteTarget = { type: '', id: '' };
-let currentScheduleTab = 'upcoming';
-let reminderInterval = null;
+      handleSearch() {
+        const kw = document.getElementById('globalSearchInput').value.trim();
+        this.modules.notes.render(kw);
+        this.modules.assets.render(kw);
+      },
 
-function getData(k){try{return JSON.parse(localStorage.getItem(k));}catch{return null;}}
-function saveData(k,d){localStorage.setItem(k,JSON.stringify(d));}
-function escapeHtml(t){const d=document.createElement('div');d.textContent=t;return d.innerHTML;}
-function formatDate(iso){return new Date(iso).toLocaleDateString('zh-CN',{month:'short',day:'numeric'});}
-function openModal(id){document.getElementById(id).classList.add('active');}
-function closeModal(id){document.getElementById(id).classList.remove('active');}
-function showToast(msg){const t=document.createElement('div');t.style.cssText='position:fixed; bottom:150px; left:50%; transform:translateX(-50%); background:#333; color:white; padding:6px 14px; border-radius:20px; font-size:0.7rem; z-index:1000';t.innerText=msg;document.body.appendChild(t);setTimeout(()=>t.remove(),2000);}
+      // 导出备份
+      exportBackup() {
+        const dataStr = JSON.stringify(this.db, null, 2);
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `xiangku_backup_${new Date().toISOString().slice(0, 10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      },
 
-// 更新磁贴预览
-function updateTilePreviews() {
- const schedules = getData(DB_KEYS.schedules) || [];
- const notes = getData(DB_KEYS.notes) || [];
- const quickNotes = getData(DB_KEYS.quickNotes) || [];
- const nowDate = new Date().toISOString().split('T')[0];
- const upcoming = schedules.filter(s => !s.done && s.date >= nowDate).sort((a,b)=>new Date(a.date+' '+a.time)-new Date(b.date+' '+b.time)).slice(0,2);
- document.getElementById('scheduleTileItems').innerHTML = upcoming.length ? upcoming.map(s=>`<div class="tile-item"><div class="tile-dot"></div><div class="tile-text">${escapeHtml(s.title)}</div><div class="tile-meta">${s.date}</div></div>`).join('') : '<div class="tile-empty">暂无日程</div>';
- const config = getData(DB_KEYS.config) || {};
- const pinnedIds = config.pinnedNoteIds || [];
- const pinnedNotes = notes.filter(n=>pinnedIds.includes(n.id)).slice(0,2);
- document.getElementById('noteTileItems').innerHTML = pinnedNotes.length ? pinnedNotes.map(n=>`<div class="tile-item"><div class="tile-dot"></div><div class="tile-text">${escapeHtml(n.content.substring(0,18))}</div></div>`).join('') : '<div class="tile-empty">暂无便签</div>';
- const recentQuick = quickNotes.sort((a,b)=>new Date(b.created)-new Date(a.created)).slice(0,2);
- document.getElementById('quickTileItems').innerHTML = recentQuick.length ? recentQuick.map(q=>`<div class="tile-item"><div class="tile-dot"></div><div class="tile-text">${escapeHtml(q.content.substring(0,20))}</div></div>`).join('') : '<div class="tile-empty">点击随手记</div>';
-}
+      // 增量导入恢复（核心：增加合并而不是覆盖）
+      handleImportFile(event) {
+        const file = event.target.files[0];
+        if (!file) return;
 
-// 新闻抓取
-async function fetchRealNews() {
- try {
-  const res = await fetch('https://api.51vstan.com/api/news?page=1&limit=8');
-  if(res.ok) { const data=await res.json(); if(data.data && data.data.length) { const newsList=data.data.slice(0,8).map(item=>`📰 ${item.title}`); document.getElementById('newsContent').innerHTML=newsList.map(n=>`<span>${n}</span>`).join('')+'<span>✨ NikO</span>'; return; } }
-  throw new Error();
- } catch(e) { document.getElementById('newsContent').innerHTML='<span>📰 暂无滚动新闻，静享此刻</span><span>✨ 随心而记</span>'; }
-}
-function openNewsModal(){ alert('📌 新闻摘要：' + document.getElementById('newsContent').innerText); }
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const imported = JSON.parse(e.target.result);
+            this.mergeDatabase(imported);
+            event.target.value = ''; // 清空选择
+          } catch (err) {
+            alert('导入失败：文件不是合法的 JSON 格式');
+          }
+        };
+        reader.readAsText(file);
+      },
 
-// 背景壁纸
-function renderBgPicker(){ const config=getData(DB_KEYS.config)||{}; const idx=config.bgIndex||0; let html=BG_PREVIEWS.map((src,i)=>`<div class="bg-option ${i===idx&&config.customBg===null?'selected':''}" style="background-image:url(${src})" onclick="selectBg(${i})"></div>`).join(''); if(config.customBg)html+=`<div class="bg-option selected" style="background-image:url(${config.customBg});background-size:cover" onclick="selectBg(-1)"></div>`; html+=`<label class="bg-upload"><span>+</span><span>上传</span><input type="file" accept="image/*" onchange="uploadBg(this)"></label>`; document.getElementById('bgPicker').innerHTML=html; }
-function selectBg(index){ const config=getData(DB_KEYS.config)||{}; if(index!==-1){ config.bgIndex=index; config.customBg=null; saveData(DB_KEYS.config,config); } applyBackground(config.bgIndex,config.customBg); renderBgPicker(); }
-function uploadBg(input){ const file=input.files[0]; if(!file)return; const reader=new FileReader(); reader.onload=e=>{ const config=getData(DB_KEYS.config)||{}; config.bgIndex=-1; config.customBg=e.target.result; saveData(DB_KEYS.config,config); applyBackground(-1,e.target.result); renderBgPicker(); }; reader.readAsDataURL(file); }
-function applyBackground(index,customBg){ if(index===-1&&customBg){document.body.style.backgroundImage=`url(${customBg})`;document.body.style.backgroundSize='cover';document.body.style.backgroundPosition='center';} else if(index>=0&&index<BG_IMAGES.length){document.body.style.backgroundImage=`url(${BG_IMAGES[index]})`;document.body.style.backgroundSize='cover';document.body.style.backgroundPosition='center';} else{document.body.style.backgroundImage=`url(${BG_IMAGES[0]})`;} }
+      mergeDatabase(imported) {
+        let addedWorkspaces = 0;
+        let addedNotes = 0;
+        let addedAssets = 0;
 
-// AI配置
-function saveAIConfig(){ const aiCfg={ apiKey: document.getElementById('aiApiKey').value, apiBase: document.getElementById('aiApiBase').value, model: document.getElementById('aiModel').value }; saveData(DB_KEYS.aiConfig, aiCfg); showToast('AI配置已保存'); }
+        // 1. 增量合并 Workspace
+        if (Array.isArray(imported.workspace)) {
+          imported.workspace.forEach(ws => {
+            if (!this.db.workspace.some(item => item.id === ws.id || item.name === ws.name)) {
+              this.db.workspace.push(ws);
+              addedWorkspaces++;
+            }
+          });
+        }
 
-// 日程功能
-function openSchedule(){ renderScheduleList(); openModal('scheduleModal'); }
-function renderScheduleList() {
- const schedules = getData(DB_KEYS.schedules) || [];
- const now = new Date().toISOString().split('T')[0];
- let filtered = schedules;
- if(currentScheduleTab === 'upcoming') filtered = schedules.filter(s => !s.done && s.date >= now);
- else if(currentScheduleTab === 'done') filtered = schedules.filter(s => s.done);
- filtered.sort((a,b)=>new Date(a.date+' '+a.time)-new Date(b.date+' '+b.time));
- document.getElementById('scheduleList').innerHTML = filtered.length ? filtered.map(s=>`<div class="list-item" onclick="editSchedule('${s.id}')"><div class="list-item-header"><span class="list-item-title">${escapeHtml(s.title)}${s.done?' ✓':''}</span><span class="list-item-time">${s.date} ${s.time||''}</span></div>${s.note?`<div class="list-item-content">${escapeHtml(s.note)}</div>`:''}<div class="list-item-actions">${!s.done?`<button onclick="event.stopPropagation();toggleDone('${s.id}')">✓ 完成</button>`:''}<button onclick="event.stopPropagation();editSchedule('${s.id}')">编辑</button><button onclick="event.stopPropagation();confirmDeleteScheduleItem('${s.id}')">删除</button></div></div>`).join('') : '<div class="list-empty">暂无日程</div>';
-}
-function switchScheduleTab(tab){ currentScheduleTab=tab; document.querySelectorAll('#scheduleModal .list-tab').forEach(t=>t.classList.remove('active')); event.target.classList.add('active'); renderScheduleList(); }
-function openScheduleForm(id=null){ document.getElementById('scheduleId').value=''; document.getElementById('scheduleTitle').value=''; document.getElementById('scheduleDate').value=''; document.getElementById('scheduleTime').value=''; document.getElementById('scheduleNote').value=''; document.getElementById('scheduleFormTitle').textContent='新建日程'; document.getElementById('scheduleDelBtn').style.display='none'; closeModal('scheduleModal'); openModal('scheduleFormModal'); }
-function editSchedule(id){ const s=getData(DB_KEYS.schedules)?.find(x=>x.id===id); if(!s)return; document.getElementById('scheduleId').value=id; document.getElementById('scheduleTitle').value=s.title; document.getElementById('scheduleDate').value=s.date; document.getElementById('scheduleTime').value=s.time||''; document.getElementById('scheduleNote').value=s.note||''; document.getElementById('scheduleFormTitle').textContent='编辑日程'; document.getElementById('scheduleDelBtn').style.display='inline-block'; closeModal('scheduleModal'); openModal('scheduleFormModal'); }
-function saveSchedule(){ const id=document.getElementById('scheduleId').value; const title=document.getElementById('scheduleTitle').value.trim(); const date=document.getElementById('scheduleDate').value; const time=document.getElementById('scheduleTime').value; const note=document.getElementById('scheduleNote').value.trim(); if(!title||!date){alert('请填写标题和日期');return;} const schedules=getData(DB_KEYS.schedules)||[]; if(id){const i=schedules.findIndex(s=>s.id===id);if(i!==-1)schedules[i]={...schedules[i],title,date,time,note};} else schedules.push({id:Date.now().toString(),title,date,time,note,done:false,created:new Date().toISOString()}); saveData(DB_KEYS.schedules,schedules); closeModal('scheduleFormModal'); updateTilePreviews(); openSchedule(); }
-function toggleDone(id){ const schedules=getData(DB_KEYS.schedules)||[]; const i=schedules.findIndex(s=>s.id===id); if(i!==-1){schedules[i].done=!schedules[i].done;saveData(DB_KEYS.schedules,schedules);renderScheduleList();updateTilePreviews();} }
-function confirmDeleteScheduleItem(id){deleteTarget={type:'schedule',id};document.getElementById('confirmText').textContent='确定删除这个日程？';document.getElementById('confirmDialog').classList.add('active');}
-function confirmDeleteSchedule(){ const id=document.getElementById('scheduleId').value; if(id){confirmDeleteScheduleItem(id);closeModal('scheduleFormModal');} }
+        // 2. 增量合并 Notes (按 id 去重，未有 id 则按内容去重)
+        if (Array.isArray(imported.notes)) {
+          imported.notes.forEach(note => {
+            const exists = this.db.notes.some(item => item.id === note.id || (item.time === note.time && item.content === note.content));
+            if (!exists) {
+              this.db.notes.push(note);
+              addedNotes++;
+            }
+          });
+          // 按时间/ID重新排序
+          this.db.notes.sort((a, b) => (b.id || '').localeCompare(a.id || ''));
+        }
 
-// 便签功能
-function openNotes(){renderNoteList();openModal('noteModal');}
-function renderNoteList(){ const notes=getData(DB_KEYS.notes)||[]; notes.sort((a,b)=>new Date(b.created)-new Date(a.created)); const config=getData(DB_KEYS.config)||{}; const pinned=config.pinnedNoteIds||[]; document.getElementById('noteList').innerHTML=notes.length?notes.map(n=>`<div class="note-card" style="background:${n.color}" onclick="editNote('${n.id}')"><div class="note-card-actions"><button onclick="event.stopPropagation();togglePinNote('${n.id}')" title="${pinned.includes(n.id)?'取消显示':'显示到首页'}">${pinned.includes(n.id)?'★':'☆'}</button><button onclick="event.stopPropagation();confirmDeleteNoteItem('${n.id}')">✕</button></div><div class="note-card-content">${escapeHtml(n.content)}</div><div class="note-card-footer"><span class="note-card-mood">${n.mood||'平静'}</span><span class="note-card-time">${formatDate(n.created)}</span></div></div>`).join(''):'<div class="list-empty">暂无便签</div>'; }
-function togglePinNote(id){ const config=getData(DB_KEYS.config)||{}; const arr=config.pinnedNoteIds||[]; const i=arr.indexOf(id); if(i>-1)arr.splice(i,1); else arr.push(id); config.pinnedNoteIds=arr; saveData(DB_KEYS.config,config); renderNoteList(); updateTilePreviews(); }
-function openNoteForm(){ document.getElementById('noteId').value=''; document.getElementById('noteContent').value=''; document.getElementById('noteFormTitle').textContent='新建便签'; document.getElementById('noteDelBtn').style.display='none'; selectedColor=NOTE_COLORS[0]; selectedMood='平静'; renderColorPicker('noteColorPicker',selectedColor,(c)=>selectedColor=c); renderMoodPicker('noteMoodPicker',selectedMood,(m)=>selectedMood=m); document.getElementById('notePinCheckbox').checked=false; closeModal('noteModal'); openModal('noteFormModal'); }
-function editNote(id){ const notes=getData(DB_KEYS.notes)||[]; const n=notes.find(x=>x.id===id); if(!n)return; document.getElementById('noteId').value=id; document.getElementById('noteContent').value=n.content; document.getElementById('noteFormTitle').textContent='编辑便签'; document.getElementById('noteDelBtn').style.display='inline-block'; selectedColor=n.color; selectedMood=n.mood; renderColorPicker('noteColorPicker',selectedColor,(c)=>selectedColor=c); renderMoodPicker('noteMoodPicker',selectedMood,(m)=>selectedMood=m); const config=getData(DB_KEYS.config)||{}; const pinned=config.pinnedNoteIds||[]; document.getElementById('notePinCheckbox').checked=pinned.includes(id); closeModal('noteModal'); openModal('noteFormModal'); }
-function saveNote(){ const id=document.getElementById('noteId').value; const content=document.getElementById('noteContent').value.trim(); if(!content){alert('请填写内容');return;} const notes=getData(DB_KEYS.notes)||[]; if(id){const i=notes.findIndex(n=>n.id===id);if(i!==-1)notes[i]={...notes[i],content,color:selectedColor,mood:selectedMood};} else notes.push({id:Date.now().toString(),content,color:selectedColor,mood:selectedMood,created:new Date().toISOString()}); saveData(DB_KEYS.notes,notes); const config=getData(DB_KEYS.config)||{}; let pinned=config.pinnedNoteIds||[]; const wantPin=document.getElementById('notePinCheckbox').checked; if(wantPin&&!pinned.includes(id)){pinned.push(id);} else if(!wantPin){pinned=pinned.filter(pid=>pid!==id);} config.pinnedNoteIds=pinned; saveData(DB_KEYS.config,config); closeModal('noteFormModal'); updateTilePreviews(); openNotes(); }
-function confirmDeleteNoteItem(id){deleteTarget={type:'note',id};document.getElementById('confirmText').textContent='确定删除这条便签？';document.getElementById('confirmDialog').classList.add('active');}
-function confirmDeleteNote(){ const id=document.getElementById('noteId').value; if(id){confirmDeleteNoteItem(id);closeModal('noteFormModal');} }
+        // 3. 增量合并 Assets
+        if (Array.isArray(imported.assets)) {
+          imported.assets.forEach(asset => {
+            const exists = this.db.assets.some(item => item.id === asset.id || item.title === asset.title);
+            if (!exists) {
+              this.db.assets.push(asset);
+              addedAssets++;
+            }
+          });
+        }
 
-// 随手记功能
-function openRecord(){renderQuickNoteList();openModal('recordModal');}
-function renderQuickNoteList(){ const qn=getData(DB_KEYS.quickNotes)||[]; qn.sort((a,b)=>new Date(b.created)-new Date(a.created)); document.getElementById('quickNoteList').innerHTML=qn.length?qn.map(n=>`<div class="note-card" style="background:${n.color}" onclick="editQuickNote('${n.id}')"><div class="note-card-actions"><button onclick="event.stopPropagation();confirmDeleteQuickNoteItem('${n.id}')">✕</button></div><div class="note-card-content">${escapeHtml(n.content)}</div><div class="note-card-footer"><span class="note-card-time">${formatDate(n.created)}</span></div></div>`).join(''):'<div class="list-empty">暂无随手记</div>'; }
-function openQuickNoteForm(){ document.getElementById('quickNoteId').value=''; document.getElementById('quickNoteContent').value=''; document.getElementById('quickNoteFormTitle').textContent='新建随手记'; document.getElementById('quickNoteDelBtn').style.display='none'; selectedColor=NOTE_COLORS[0]; renderColorPicker('quickColorPicker',selectedColor,(c)=>selectedColor=c); closeModal('recordModal'); openModal('quickNoteFormModal'); }
-function editQuickNote(id){ const qn=getData(DB_KEYS.quickNotes)||[]; const n=qn.find(x=>x.id===id); if(!n)return; document.getElementById('quickNoteId').value=id; document.getElementById('quickNoteContent').value=n.content; document.getElementById('quickNoteFormTitle').textContent='编辑随手记'; document.getElementById('quickNoteDelBtn').style.display='inline-block'; selectedColor=n.color; renderColorPicker('quickColorPicker',selectedColor,(c)=>selectedColor=c); closeModal('recordModal'); openModal('quickNoteFormModal'); }
-function saveQuickNote(){ const id=document.getElementById('quickNoteId').value; const content=document.getElementById('quickNoteContent').value.trim(); if(!content){alert('请输入内容');return;} const qn=getData(DB_KEYS.quickNotes)||[]; if(id){const i=qn.findIndex(n=>n.id===id);if(i!==-1)qn[i]={...qn[i],content,color:selectedColor};} else qn.push({id:Date.now().toString(),content,color:selectedColor,created:new Date().toISOString()}); saveData(DB_KEYS.quickNotes,qn); closeModal('quickNoteFormModal'); updateTilePreviews(); openRecord(); }
-function confirmDeleteQuickNoteItem(id){deleteTarget={type:'quickNote',id};document.getElementById('confirmText').textContent='确定删除这条随手记？';document.getElementById('confirmDialog').classList.add('active');}
-function confirmDeleteQuickNote(){ const id=document.getElementById('quickNoteId').value; if(id){confirmDeleteQuickNoteItem(id);closeModal('quickNoteFormModal');} }
+        // 4. 合并设置（仅在当前项为空时补充，不覆盖现有设置）
+        if (imported.settings) {
+          if (!this.db.settings.userBio && imported.settings.userBio) this.db.settings.userBio = imported.settings.userBio;
+          if (!this.db.settings.feishuWebhook && imported.settings.feishuWebhook) this.db.settings.feishuWebhook = imported.settings.feishuWebhook;
+        }
 
-// 颜色/心情选择器
-function renderColorPicker(containerId, current, onChange){ const container=document.getElementById(containerId); if(!container)return; container.innerHTML=NOTE_COLORS.map(c=>`<div class="color-option ${c===current?'selected':''}" style="background:${c}" data-color="${c}"></div>`).join(''); container.querySelectorAll('.color-option').forEach(el=>{el.addEventListener('click',()=>{container.querySelectorAll('.color-option').forEach(e=>e.classList.remove('selected'));el.classList.add('selected');onChange(el.dataset.color);});}); }
-function renderMoodPicker(containerId, current, onChange){ const moods=['平静','开心','难过','期待','疲惫']; const container=document.getElementById(containerId); if(!container)return; container.innerHTML=moods.map(m=>`<div class="mood-option ${m===current?'selected':''}" data-mood="${m}">${m}</div>`).join(''); container.querySelectorAll('.mood-option').forEach(el=>{el.addEventListener('click',()=>{container.querySelectorAll('.mood-option').forEach(e=>e.classList.remove('selected'));el.classList.add('selected');onChange(el.dataset.mood);});}); }
+        this.saveStorage();
+        this.renderAll();
+        alert(`增量合并成功！\n- 新增工作空间: ${addedWorkspaces} 个\n- 新增工作记录: ${addedNotes} 条\n- 新增知识资产: ${addedAssets} 篇\n已有内容已完好保留。`);
+      },
 
-// 搜索
-function doSearch(){ const kw=document.getElementById('searchInput').value.toLowerCase(); if(!kw){document.getElementById('searchResults').innerHTML='';return;} const schedules=getData(DB_KEYS.schedules)||[]; const notes=getData(DB_KEYS.notes)||[]; const quick=getData(DB_KEYS.quickNotes)||[]; const all=[...schedules.map(s=>({type:'日程',title:s.title,note:s.note})),...notes.map(n=>({type:'便签',title:n.content})),...quick.map(q=>({type:'随手记',title:q.content}))]; const filtered=all.filter(i=>i.title.toLowerCase().includes(kw)||(i.note&&i.note.toLowerCase().includes(kw))); document.getElementById('searchResults').innerHTML=filtered.length?filtered.map(r=>`<div class="list-item">📌 ${r.type}: ${escapeHtml(r.title)}</div>`).join(''):'<div>无结果</div>'; }
-function openSearch(){ document.getElementById('searchInput').value=''; document.getElementById('searchResults').innerHTML=''; openModal('searchModal'); }
+      // 统一 AI 通讯引擎
+      async callAI(prompt, systemContext = '') {
+        const ai = this.db.settings.aiConfig || {};
+        if (!ai.apiKey || !ai.baseUrl) {
+          throw new Error('MISSING_CONFIG');
+        }
 
-// 提醒功能
-function openReminderSettings(){ const r=getData(DB_KEYS.reminder)||{text:'喝水',interval:60,enabled:false}; document.getElementById('reminderText').value=r.text; document.getElementById('reminderInterval').value=r.interval; document.getElementById('reminderEnabled').checked=r.enabled; openModal('reminderModal'); updateReminderStatus(); }
-function closeReminderSettings(){ closeModal('reminderModal'); }
-function saveReminder(){ const text=document.getElementById('reminderText').value.trim(); const interval=parseInt(document.getElementById('reminderInterval').value); const enabled=document.getElementById('reminderEnabled').checked; if(!text){alert('请输入提醒事项');return;} const reminder={text,interval,enabled,nextNotify:enabled?Date.now()+interval*60*1000:null}; saveData(DB_KEYS.reminder,reminder); updateReminderStatus(); closeModal('reminderModal'); if(reminderInterval) clearInterval(reminderInterval); startReminderCheck(); showToast('提醒设置已保存'); }
-function updateReminderStatus(){ const r=getData(DB_KEYS.reminder)||{}; const status=r.enabled?`${r.text} / ${r.interval}分钟`:'未开启'; document.getElementById('reminderStatus').textContent=status; document.getElementById('reminderStatusText').innerHTML=r.enabled?`当前提醒：${r.text}，每${r.interval}分钟`:'提醒未开启'; }
-function startReminderCheck(){ const r=getData(DB_KEYS.reminder); if(r&&r.enabled){ reminderInterval=setInterval(()=>{ const now=Date.now(); if(r.nextNotify&&now>=r.nextNotify){ const toast=document.getElementById('reminderToast'); document.getElementById('reminderToastContent').innerHTML=`该${r.text}了~`; toast.classList.remove('hidden'); setTimeout(()=>toast.classList.add('hidden'),5000); r.nextNotify=now+r.interval*60*1000; saveData(DB_KEYS.reminder,r); } },10000); } }
-function closeReminderToast(){ document.getElementById('reminderToast').classList.add('hidden'); }
+        const url = ai.baseUrl.replace(/\/+$/, '') + '/chat/completions';
+        const headers = {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${ai.apiKey}`
+        };
 
-// 设置
-function openSettings(){ const cfg=getData(DB_KEYS.config)||{}; document.getElementById('settingsName').innerHTML=(cfg.name||'---')+' →'; document.getElementById('settingsBirthday').innerHTML=(cfg.birthday||'未设置')+' →'; const aiCfg=getData(DB_KEYS.aiConfig)||{}; document.getElementById('aiApiKey').value=aiCfg.apiKey||''; document.getElementById('aiApiBase').value=aiCfg.apiBase||'https://api.siliconflow.cn/v1'; document.getElementById('aiModel').value=aiCfg.model||'deepseek-ai/DeepSeek-V3'; renderBgPicker(); openModal('settingsModal'); }
-function openEditName(){ const cfg=getData(DB_KEYS.config)||{}; const newName=prompt('请输入新名字',cfg.name||''); if(newName){cfg.name=newName;saveData(DB_KEYS.config,cfg);document.getElementById('settingsName').innerHTML=newName+' →';showToast('名字已修改');} }
-function openChangeKey(){ const cfg=getData(DB_KEYS.config); if(!cfg)return; const old=prompt('请输入当前密钥'); if(old!==cfg.key){alert('当前密钥错误');return;} const newKey=prompt('请输入新密钥（至少4位）'); if(newKey&&newKey.length>=4){cfg.key=newKey;saveData(DB_KEYS.config,cfg);alert('密钥修改成功');} else alert('密钥无效'); }
-function openEditBirthday(){ const cfg=getData(DB_KEYS.config)||{}; const newBd=prompt('请输入出生日期 (YYYY-MM-DD)',cfg.birthday||''); if(newBd){cfg.birthday=newBd;saveData(DB_KEYS.config,cfg);document.getElementById('settingsBirthday').innerHTML=newBd+' →';updateLifeDays();} }
-function updateLifeDays(){ const cfg=getData(DB_KEYS.config)||{}; if(cfg.birthday){ const days=Math.floor((new Date()-new Date(cfg.birthday))/86400000); document.getElementById('lifeDays').innerHTML=days+' 天'; } else document.getElementById('lifeDays').innerHTML='未设置'; }
+        const body = {
+          model: ai.model || 'gpt-4o-mini',
+          messages: [
+            { role: 'system', content: systemContext || '你是一个专业高效的个人工作知识助理。' },
+            { role: 'user', content: prompt }
+          ],
+          temperature: parseFloat(ai.temperature) || 0.7
+        };
 
-// ========== AI 对话 - 完整 API 调用 ==========
-function showThinkingIndicator() {
- return `<div style="display:flex; align-items:center; gap:4px;"><span>思考中</span><span class="thinking-indicator"></span><span class="thinking-indicator"></span><span class="thinking-indicator"></span></div>`;
-}
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: headers,
+          body: JSON.stringify(body)
+        });
 
-async function sendAIMessage() {
- const input = document.getElementById('aiChatInput');
- const msg = input.value.trim();
- if (!msg) return;
- input.value = '';
- 
- const container = document.getElementById('aiChatMessages');
- container.insertAdjacentHTML('beforeend', `<div class="ai-msg user"><div class="bubble">${escapeHtml(msg)}</div></div>`);
- 
- const thinkingId = 'thinking-' + Date.now();
- container.insertAdjacentHTML('beforeend', `<div id="${thinkingId}" class="ai-msg ai"><div class="bubble">${showThinkingIndicator()}</div></div>`);
- container.scrollTop = container.scrollHeight;
- 
- // 读取 AI 配置
- const aiCfg = getData(DB_KEYS.aiConfig) || {};
- const apiKey = aiCfg.apiKey;
- const apiBase = aiCfg.apiBase || 'https://api.siliconflow.cn/v1';
- const model = aiCfg.model || 'deepseek-ai/DeepSeek-V3';
- 
- if (!apiKey) {
-   const thinkingDiv = document.getElementById(thinkingId);
-   if (thinkingDiv) thinkingDiv.querySelector('.bubble').innerHTML = '⚠️ 请先在设置中配置 API Key';
-   return;
- }
- 
- try {
-   const response = await fetch(apiBase.replace(/\/$/, '') + '/chat/completions', {
-     method: 'POST',
-     headers: {
-       'Content-Type': 'application/json',
-       'Authorization': `Bearer ${apiKey}`
-     },
-     body: JSON.stringify({
-       model: model,
-       messages: [
-         { role: 'system', content: '你是 NikO，一个温暖贴心的生活助手。请用简洁友好的方式回答用户的问题。' },
-         { role: 'user', content: msg }
-       ],
-       stream: false,
-       temperature: 0.7,
-       max_tokens: 1024
-     })
-   });
-   
-   const data = await response.json();
-   let reply = '抱歉，我暂时无法回答。';
-   
-   if (data && data.choices && data.choices[0] && data.choices[0].message) {
-     reply = data.choices[0].message.content;
-   } else if (data && data.error) {
-     reply = `API 错误：${data.error.message || '未知错误'}`;
-   }
-   
-   const thinkingDiv = document.getElementById(thinkingId);
-   if (thinkingDiv) thinkingDiv.querySelector('.bubble').innerHTML = escapeHtml(reply);
-   container.scrollTop = container.scrollHeight;
-   
-   // 保存历史记录
-   let aiHistory = getData(DB_KEYS.aiHistory) || [];
-   aiHistory.unshift({ id: Date.now(), question: msg, answer: reply, time: Date.now() });
-   if (aiHistory.length > 50) aiHistory.pop();
-   saveData(DB_KEYS.aiHistory, aiHistory);
-   
- } catch (error) {
-   console.error('AI API 调用失败:', error);
-   const thinkingDiv = document.getElementById(thinkingId);
-   if (thinkingDiv) thinkingDiv.querySelector('.bubble').innerHTML = `网络错误：${error.message}<br>请检查 API 配置或网络连接`;
-   container.scrollTop = container.scrollHeight;
- }
-}
+        if (!response.ok) {
+          const errText = await response.text();
+          throw new Error(`API 响应错误 (${response.status}): ${errText}`);
+        }
 
-function closeAIChat(){ document.getElementById('aiChatPanel').classList.add('hidden'); }
-document.getElementById('aiFloatingBall').onclick=()=>document.getElementById('aiChatPanel').classList.toggle('hidden');
+        const resData = await response.json();
+        return resData.choices?.[0]?.message?.content || '未返回有效内容';
+      },
 
-// 确认删除统一处理
-function doConfirmDelete(){ if(deleteTarget.type==='schedule'){let s=getData(DB_KEYS.schedules)||[];s=s.filter(x=>x.id!==deleteTarget.id);saveData(DB_KEYS.schedules,s);renderScheduleList();} else if(deleteTarget.type==='note'){let n=getData(DB_KEYS.notes)||[];n=n.filter(x=>x.id!==deleteTarget.id);saveData(DB_KEYS.notes,n);renderNoteList();} else if(deleteTarget.type==='quickNote'){let q=getData(DB_KEYS.quickNotes)||[];q=q.filter(x=>x.id!==deleteTarget.id);saveData(DB_KEYS.quickNotes,q);renderQuickNoteList();} closeConfirm(); updateTilePreviews(); }
-function closeConfirm(){ document.getElementById('confirmDialog').classList.remove('active'); deleteTarget={type:'',id:''}; }
+      // 模块化结构
+      modules: {
+        // ========== 1. 设置中心模块 ==========
+        settings: {
+          openModal() {
+            const s = XiangKuApp.db.settings;
+            document.getElementById('settingAppName').value = s.appName || '';
+            document.getElementById('settingUserName').value = s.userName || '';
+            document.getElementById('settingUserRole').value = s.userRole || '';
+            document.getElementById('settingUserBio').value = s.userBio || '';
+            document.getElementById('settingFeishuWebhook').value = s.feishuWebhook || '';
 
-// 时间更新
-function updateDateTime(){ const now=new Date(); document.getElementById('currentTime').innerHTML=now.toLocaleTimeString('zh-CN',{hour12:false}); document.getElementById('currentDate').innerHTML=now.toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long'}); }
-setInterval(updateDateTime,1000); updateDateTime();
+            const ai = s.aiConfig || {};
+            document.getElementById('settingAiProvider').value = ai.provider || 'custom';
+            document.getElementById('settingAiModel').value = ai.model || '';
+            document.getElementById('settingAiBaseUrl').value = ai.baseUrl || '';
+            document.getElementById('settingAiApiKey').value = ai.apiKey || '';
+            document.getElementById('settingAiTemp').value = ai.temperature ?? 0.7;
 
-// 地理位置和天气
-function updateLocation(){ fetch('https://ipapi.co/json/').then(r=>r.json()).then(d=>document.getElementById('locationText').innerHTML=d.city||d.country||'未知').catch(()=>document.getElementById('locationText').innerHTML='未知'); }
-function updateWeather(){ navigator.geolocation.getCurrentPosition(p=>{ fetch(`https://api.open-meteo.com/v1/forecast?latitude=${p.coords.latitude}&longitude=${p.coords.longitude}&current_weather=true`).then(r=>r.json()).then(d=>{ const w=d.current_weather; const wc={0:'☀️',1:'🌤️',2:'⛅',3:'☁️',45:'🌫️',48:'🌫️',51:'🌦️',53:'🌧️',55:'🌧️',61:'🌧️',63:'🌧️',65:'🌧️',71:'🌨️',73:'🌨️',75:'❄️',77:'🌨️',80:'🌧️',81:'🌧️',82:'🌧️',85:'🌨️',86:'🌨️',95:'⛈️',96:'⛈️',99:'⛈️'}; document.getElementById('weatherIcon').innerHTML=wc[w.weathercode]||'🌤️'; document.getElementById('weatherText').innerHTML=`${Math.round(w.temperature)}°C`; }).catch(()=>{}); },()=>{}); }
-updateLocation(); updateWeather();
+            document.getElementById('settingsModal').classList.remove('hidden');
+          },
 
-// 登录流程
-function doLogin(){ const key=document.getElementById('loginKey').value; const cfg=getData(DB_KEYS.config); if(cfg&&cfg.key===key){ sessionStorage.setItem('niko_logged','1'); document.getElementById('loginPage').style.display='none'; document.getElementById('appPage').classList.add('active'); updateTilePreviews(); fetchRealNews(); updateLifeDays(); startReminderCheck(); const bgCfg=getData(DB_KEYS.config)||{}; applyBackground(bgCfg.bgIndex,bgCfg.customBg); } else { document.getElementById('loginError').innerText='密钥错误'; } }
-function doSetup(){ const name=document.getElementById('setupName').value.trim(); const key=document.getElementById('setupKey').value; const birthday=document.getElementById('setupBirthday').value; if(!name||!key){alert('请填写名字和密钥');return;} saveData(DB_KEYS.config,{name,key,birthday,pinnedNoteIds:[],bgIndex:0,customBg:null}); saveData(DB_KEYS.schedules,[]); saveData(DB_KEYS.notes,[]); saveData(DB_KEYS.quickNotes,[]); doLogin(); }
-function doLogout(){ sessionStorage.removeItem('niko_logged'); location.reload(); }
+          closeModal() {
+            document.getElementById('settingsModal').classList.add('hidden');
+          },
 
-// 初始化检查
-if(sessionStorage.getItem('niko_logged')==='1'){ document.getElementById('loginPage').style.display='none'; document.getElementById('appPage').classList.add('active'); updateTilePreviews(); fetchRealNews(); updateLifeDays(); startReminderCheck(); const cfg=getData(DB_KEYS.config)||{}; applyBackground(cfg.bgIndex,cfg.customBg); } else { document.getElementById('loginPage').style.display='flex'; if(!getData(DB_KEYS.config)) document.getElementById('setupPage').classList.add('active'); }
+          handleProviderChange() {
+            const provider = document.getElementById('settingAiProvider').value;
+            const urlInput = document.getElementById('settingAiBaseUrl');
+            const modelInput = document.getElementById('settingAiModel');
 
-// 模态框点击背景关闭
-document.querySelectorAll('.modal-overlay').forEach(m=>{m.addEventListener('click',e=>{if(e.target===m)m.classList.remove('active');});});
-document.getElementById('loginKey').addEventListener('keypress',e=>{if(e.key==='Enter')doLogin();});
-</script>
+            const presets = {
+              openai: { url: 'https://api.openai.com/v1', model: 'gpt-4o-mini' },
+              deepseek: { url: 'https://api.deepseek.com/v1', model: 'deepseek-chat' },
+              qwen: { url: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-turbo' },
+              gemini: { url: 'https://generativelanguage.googleapis.com/v1beta/openai/', model: 'gemini-1.5-flash' },
+              claude: { url: 'https://api.anthropic.com/v1', model: 'claude-3-5-sonnet-20240620' },
+              custom: { url: '', model: '' }
+            };
+
+            if (presets[provider] && provider !== 'custom') {
+              urlInput.value = presets[provider].url;
+              modelInput.value = presets[provider].model;
+            }
+          },
+
+          saveFromUI() {
+            XiangKuApp.db.settings.appName = document.getElementById('settingAppName').value.trim() || '象库 · 轻工作台';
+            XiangKuApp.db.settings.userName = document.getElementById('settingUserName').value.trim() || '工作者';
+            XiangKuApp.db.settings.userRole = document.getElementById('settingUserRole').value.trim() || '日常运维';
+            XiangKuApp.db.settings.userBio = document.getElementById('settingUserBio').value.trim();
+            XiangKuApp.db.settings.feishuWebhook = document.getElementById('settingFeishuWebhook').value.trim();
+
+            XiangKuApp.db.settings.aiConfig = {
+              provider: document.getElementById('settingAiProvider').value,
+              model: document.getElementById('settingAiModel').value.trim(),
+              baseUrl: document.getElementById('settingAiBaseUrl').value.trim(),
+              apiKey: document.getElementById('settingAiApiKey').value.trim(),
+              temperature: parseFloat(document.getElementById('settingAiTemp').value) || 0.7
+            };
+
+            XiangKuApp.saveStorage();
+            XiangKuApp.applySettingsUI();
+            this.closeModal();
+          },
+
+          resetToDefault() {
+            if (confirm('警告：这将清空当前所有数据并重置为空白状态。确定继续？')) {
+              localStorage.removeItem(XiangKuApp.STORAGE_KEY);
+              location.reload();
+            }
+          }
+        },
+
+        // ========== 2. 飞书联动模块 ==========
+        feishu: {
+          async syncToFeishu() {
+            const webhookUrl = XiangKuApp.db.settings.feishuWebhook;
+            if (!webhookUrl) {
+              if (confirm('尚未配置飞书 Webhook 地址，是否前往设置中心填写？')) {
+                XiangKuApp.modules.settings.openModal();
+              }
+              return;
+            }
+
+            const notes = XiangKuApp.db.notes;
+            const assets = XiangKuApp.db.assets;
+            const user = XiangKuApp.db.settings;
+
+            if (notes.length === 0 && assets.length === 0) {
+              alert('当前没有记录或资产，暂无需同步的内容。');
+              return;
+            }
+
+            // 构建飞书富文本消息格式
+            const noteContentText = notes.slice(0, 10).map((n, i) => `${i+1}. [${n.time || '--:--'}] ${n.content}`).join('\n');
+            const summaryText = `【${user.appName} · 工作流同步】\n` +
+              `👤 操作人: ${user.userName} (${user.userRole})\n` +
+              `📅 同步日期: ${new Date().toLocaleDateString()}\n\n` +
+              `📝 今日工作记录 (${notes.length}条):\n` +
+              (noteContentText || '暂无记录') +
+              `\n\n📚 资产沉淀库共计: ${assets.length} 篇`;
+
+            const payload = {
+              msg_type: "text",
+              content: {
+                text: summaryText
+              }
+            };
+
+            try {
+              const res = await fetch(webhookUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+              });
+
+              if (res.ok) {
+                alert('✅ 已成功推送至飞书群机器人！');
+              } else {
+                alert(`推送飞书失败，响应状态码: ${res.status}`);
+              }
+            } catch (err) {
+              alert(`推送飞书遇到网络或跨域问题: ${err.message}\n请检查 Webhook 链接是否正确。`);
+            }
+          }
+        },
+
+        // ========== 3. 工作空间模块 ==========
+        workspace: {
+          render() {
+            const container = document.getElementById('workspaceList');
+            container.innerHTML = '';
+
+            // 全局固定项
+            const allBtn = document.createElement('button');
+            const isAllActive = XiangKuApp.currentWorkspaceId === 'all';
+            allBtn.className = `w-full flex items-center justify-between px-2.5 py-1.5 rounded text-xs transition-colors ${
+              isAllActive ? 'bg-zinc-200/70 text-zinc-900 font-semibold' : 'text-zinc-600 hover:bg-zinc-100'
+            }`;
+            allBtn.onclick = () => this.select('all');
+            allBtn.innerHTML = `
+              <div class="flex items-center gap-2 truncate">
+                <i data-lucide="layers" class="w-3.5 h-3.5 text-zinc-400"></i>
+                <span>全部工作域</span>
+              </div>
+              <span class="text-[10px] font-mono text-zinc-400">${XiangKuApp.db.notes.length}</span>
+            `;
+            container.appendChild(allBtn);
+
+            // 自建工作空间
+            if (XiangKuApp.db.workspace.length === 0) {
+              const emptyTip = document.createElement('div');
+              emptyTip.className = 'p-3 text-[11px] text-zinc-400 text-center leading-relaxed';
+              emptyTip.innerHTML = '暂无工作空间<br><button onclick="XiangKuApp.modules.workspace.openCreateModal()" class="text-zinc-700 underline mt-1">+ 创建首个项目</button>';
+              container.appendChild(emptyTip);
+            } else {
+              XiangKuApp.db.workspace.forEach(ws => {
+                const isActive = XiangKuApp.currentWorkspaceId === ws.id;
+                const count = XiangKuApp.db.notes.filter(n => n.workspaceId === ws.id).length;
+                const item = document.createElement('div');
+                item.className = `group flex items-center justify-between px-2.5 py-1.5 rounded text-xs transition-colors cursor-pointer ${
+                  isActive ? 'bg-zinc-200/70 text-zinc-900 font-semibold' : 'text-zinc-600 hover:bg-zinc-100'
+                }`;
+                item.onclick = () => this.select(ws.id);
+                item.innerHTML = `
+                  <div class="flex items-center gap-2 truncate">
+                    <i data-lucide="folder" class="w-3.5 h-3.5 text-zinc-400 shrink-0"></i>
+                    <span class="truncate">${ws.name}</span>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <span class="text-[10px] font-mono text-zinc-400">${count}</span>
+                    <button onclick="event.stopPropagation(); XiangKuApp.modules.workspace.delete('${ws.id}')" class="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-red-500 text-xs px-1">✕</button>
+                  </div>
+                `;
+                container.appendChild(item);
+              });
+            }
+
+            // 更新 Asset Modal 下拉
+            const wsSelect = document.getElementById('assetFormWorkspace');
+            wsSelect.innerHTML = '<option value="general">通用空间</option>';
+            XiangKuApp.db.workspace.forEach(ws => {
+              const opt = document.createElement('option');
+              opt.value = ws.id;
+              opt.innerText = ws.name;
+              wsSelect.appendChild(opt);
+            });
+          },
+
+          select(id) {
+            XiangKuApp.currentWorkspaceId = id;
+            let label = '全部工作域';
+            if (id !== 'all') {
+              const found = XiangKuApp.db.workspace.find(w => w.id === id);
+              if (found) label = found.name;
+            }
+            document.getElementById('currentWorkspaceBadge').innerText = label;
+            XiangKuApp.renderAll();
+          },
+
+          openCreateModal() {
+            const name = prompt('请输入新工作空间 / 项目名称:');
+            if (!name || !name.trim()) return;
+            const desc = prompt('请输入工作空间描述 (选填):') || '';
+            const newWs = {
+              id: 'ws_' + Date.now(),
+              name: name.trim(),
+              description: desc.trim()
+            };
+            XiangKuApp.db.workspace.push(newWs);
+            XiangKuApp.saveStorage();
+            this.select(newWs.id);
+          },
+
+          delete(id) {
+            if (confirm('删除该工作空间不会删除已有记录，确认删除？')) {
+              XiangKuApp.db.workspace = XiangKuApp.db.workspace.filter(w => w.id !== id);
+              if (XiangKuApp.currentWorkspaceId === id) {
+                XiangKuApp.currentWorkspaceId = 'all';
+              }
+              XiangKuApp.saveStorage();
+              XiangKuApp.renderAll();
+            }
+          }
+        },
+
+        // ========== 4. 工作流记录模块 (Daily Notes) ==========
+        notes: {
+          render(filterKw = '') {
+            const container = document.getElementById('dailyLogStream');
+            container.innerHTML = '';
+
+            let list = XiangKuApp.db.notes.filter(n => {
+              const matchWs = (XiangKuApp.currentWorkspaceId === 'all' || n.workspaceId === XiangKuApp.currentWorkspaceId);
+              const matchKw = !filterKw || 
+                n.content.toLowerCase().includes(filterKw.toLowerCase()) ||
+                (n.title && n.title.toLowerCase().includes(filterKw.toLowerCase()));
+              return matchWs && matchKw;
+            });
+
+            if (list.length === 0) {
+              container.innerHTML = `
+                <div class="h-64 flex flex-col items-center justify-center text-zinc-400 text-xs gap-1.5">
+                  <i data-lucide="edit-3" class="w-6 h-6 text-zinc-300 stroke-1"></i>
+                  <span>暂无工作记录</span>
+                  <p class="text-[11px] text-zinc-400">在上方快速捕获第一条工作流水或现场心得</p>
+                </div>
+              `;
+              lucide.createIcons();
+              return;
+            }
+
+            const typeConfig = {
+              log: { label: '流水', class: 'bg-zinc-100 text-zinc-700 border-zinc-200' },
+              progress: { label: '进展', class: 'bg-blue-50 text-blue-700 border-blue-200' },
+              issue: { label: '异常', class: 'bg-red-50 text-red-700 border-red-200' },
+              insight: { label: '心得', class: 'bg-amber-50 text-amber-700 border-amber-200' }
+            };
+
+            list.forEach(note => {
+              const item = document.createElement('div');
+              item.className = 'relative pl-5 border-l-2 border-zinc-200 group transition-all';
+
+              const conf = typeConfig[note.type] || typeConfig.log;
+
+              item.innerHTML = `
+                <div class="absolute -left-[5px] top-1 w-2 h-2 rounded-full bg-zinc-300 group-hover:bg-zinc-900 transition-colors"></div>
+                <div class="flex items-center justify-between text-[11px] mb-1">
+                  <div class="flex items-center gap-1.5">
+                    <span class="font-mono text-zinc-400">${note.time || '--:--'}</span>
+                    <span class="text-[10px] px-1.5 py-0.2 rounded border ${conf.class}">${conf.label}</span>
+                  </div>
+                  <button onclick="XiangKuApp.modules.notes.delete('${note.id}')" class="opacity-0 group-hover:opacity-100 text-zinc-300 hover:text-red-500 text-xs px-1">删除</button>
+                </div>
+                <p class="text-xs text-zinc-800 leading-relaxed font-sans whitespace-pre-wrap">${note.content}</p>
+              `;
+              container.appendChild(item);
+            });
+            lucide.createIcons();
+          },
+
+          handleSubmit(e) {
+            e.preventDefault();
+            const contentEl = document.getElementById('quickInputContent');
+            const tagsEl = document.getElementById('quickInputTags');
+            const typeEl = document.getElementById('quickTypeSelect');
+
+            const content = contentEl.value.trim();
+            if (!content) return;
+
+            const now = new Date();
+            const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            const tags = tagsEl.value.trim();
+
+            const fullContent = tags ? `${content}\n${tags}` : content;
+
+            const newNote = {
+              id: 'n_' + Date.now(),
+              title: content.slice(0, 16),
+              content: fullContent,
+              time: timeStr,
+              type: typeEl.value,
+              workspaceId: XiangKuApp.currentWorkspaceId === 'all' ? 'general' : XiangKuApp.currentWorkspaceId
+            };
+
+            XiangKuApp.db.notes.unshift(newNote);
+            contentEl.value = '';
+            tagsEl.value = '';
+            XiangKuApp.saveStorage();
+            XiangKuApp.renderAll();
+          },
+
+          delete(id) {
+            if (confirm('确认删除该条记录？')) {
+              XiangKuApp.db.notes = XiangKuApp.db.notes.filter(n => n.id !== id);
+              XiangKuApp.saveStorage();
+              XiangKuApp.renderAll();
+            }
+          }
+        },
+
+        // ========== 5. 工作资产库模块 ==========
+        assets: {
+          render(filterKw = '') {
+            const container = document.getElementById('assetCardList');
+            container.innerHTML = '';
+
+            let list = XiangKuApp.db.assets.filter(a => {
+              const matchWs = (XiangKuApp.currentWorkspaceId === 'all' || a.workspaceId === XiangKuApp.currentWorkspaceId);
+              const matchCat = (XiangKuApp.currentAssetCategory === 'all' || a.category === XiangKuApp.currentAssetCategory);
+              const matchKw = !filterKw || 
+                a.title.toLowerCase().includes(filterKw.toLowerCase()) ||
+                a.content.toLowerCase().includes(filterKw.toLowerCase());
+              return matchWs && matchCat && matchKw;
+            });
+
+            if (list.length === 0) {
+              container.innerHTML = `
+                <div class="h-64 flex flex-col items-center justify-center text-zinc-400 text-xs gap-1.5">
+                  <i data-lucide="inbox" class="w-6 h-6 text-zinc-300 stroke-1"></i>
+                  <span>暂无沉淀资料 / 资产</span>
+                  <p class="text-[11px] text-zinc-400">点击右上角「新建资产」沉淀 SOP 或规范</p>
+                </div>
+              `;
+              lucide.createIcons();
+              return;
+            }
+
+            const catBadgeMap = {
+              sop: '流程规范',
+              template: '工作模板',
+              contact: '常用联系',
+              experience: '经验总结'
+            };
+
+            list.forEach(asset => {
+              const card = document.createElement('div');
+              card.className = 'p-3 bg-white border border-zinc-200/80 rounded hover:border-zinc-400 transition-all shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex flex-col gap-2 group';
+
+              card.innerHTML = `
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-1.5 min-w-0">
+                    <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-100 text-zinc-600 border border-zinc-200 shrink-0">
+                      ${catBadgeMap[asset.category] || '资料'}
+                    </span>
+                    <h3 class="text-xs font-semibold text-zinc-900 truncate">${asset.title}</h3>
+                  </div>
+                  <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onclick="XiangKuApp.modules.assets.openModal('${asset.id}')" class="text-zinc-400 hover:text-zinc-800 text-xs p-1" title="编辑">✎</button>
+                    <button onclick="XiangKuApp.modules.assets.delete('${asset.id}')" class="text-zinc-400 hover:text-red-600 text-xs p-1" title="删除">✕</button>
+                  </div>
+                </div>
+                <pre class="text-[11px] text-zinc-600 bg-[#FAFAFA] p-2 rounded border border-zinc-100 font-mono whitespace-pre-wrap leading-relaxed max-h-36 overflow-y-auto">${asset.content}</pre>
+                <div class="flex items-center justify-between text-[10px] text-zinc-400 pt-0.5">
+                  <span>长效资料</span>
+                  <button onclick="XiangKuApp.modules.assets.copy('${asset.id}')" class="text-zinc-500 hover:text-zinc-900 hover:underline">复制内容</button>
+                </div>
+              `;
+              container.appendChild(card);
+            });
+            lucide.createIcons();
+          },
+
+          filter(cat) {
+            XiangKuApp.currentAssetCategory = cat;
+            document.querySelectorAll('.asset-tab').forEach(btn => {
+              if (btn.dataset.type === cat) {
+                btn.className = 'asset-tab px-2 py-0.5 rounded bg-zinc-900 text-white font-medium';
+              } else {
+                btn.className = 'asset-tab px-2 py-0.5 rounded hover:bg-zinc-50 text-zinc-500';
+              }
+            });
+            this.render();
+          },
+
+          openModal(editId = null) {
+            const modal = document.getElementById('assetModal');
+            modal.classList.remove('hidden');
+
+            if (editId) {
+              const item = XiangKuApp.db.assets.find(a => a.id === editId);
+              if (!item) return;
+              document.getElementById('assetModalTitle').innerText = '编辑工作资产';
+              document.getElementById('assetFormId').value = item.id;
+              document.getElementById('assetFormTitle').value = item.title;
+              document.getElementById('assetFormCategory').value = item.category;
+              document.getElementById('assetFormWorkspace').value = item.workspaceId || 'general';
+              document.getElementById('assetFormContent').value = item.content;
+            } else {
+              document.getElementById('assetModalTitle').innerText = '新建工作资产';
+              document.getElementById('assetFormId').value = '';
+              document.getElementById('assetFormTitle').value = '';
+              document.getElementById('assetFormContent').value = '';
+            }
+          },
+
+          closeModal() {
+            document.getElementById('assetModal').classList.add('hidden');
+          },
+
+          handleSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('assetFormId').value;
+            const title = document.getElementById('assetFormTitle').value.trim();
+            const category = document.getElementById('assetFormCategory').value;
+            const workspaceId = document.getElementById('assetFormWorkspace').value;
+            const content = document.getElementById('assetFormContent').value.trim();
+
+            if (!title || !content) return;
+
+            if (id) {
+              const target = XiangKuApp.db.assets.find(a => a.id === id);
+              if (target) {
+                target.title = title;
+                target.category = category;
+                target.workspaceId = workspaceId;
+                target.content = content;
+              }
+            } else {
+              XiangKuApp.db.assets.unshift({
+                id: 'ast_' + Date.now(),
+                title: title,
+                content: content,
+                category: category,
+                workspaceId: workspaceId
+              });
+            }
+
+            XiangKuApp.saveStorage();
+            this.closeModal();
+            XiangKuApp.renderAll();
+          },
+
+          delete(id) {
+            if (confirm('确认删除该工作资产？')) {
+              XiangKuApp.db.assets = XiangKuApp.db.assets.filter(a => a.id !== id);
+              XiangKuApp.saveStorage();
+              XiangKuApp.renderAll();
+            }
+          },
+
+          copy(id) {
+            const item = XiangKuApp.db.assets.find(a => a.id === id);
+            if (!item) return;
+            navigator.clipboard.writeText(item.content).then(() => {
+              alert('资产正文已复制到剪贴板');
+            });
+          }
+        },
+
+        // ========== 6. AI 助手与智能沉淀模块 ==========
+        ai: {
+          toggleDrawer() {
+            const drawer = document.getElementById('aiDrawer');
+            drawer.classList.toggle('translate-x-full');
+          },
+
+          buildContext() {
+            const user = XiangKuApp.db.settings;
+            const notes = XiangKuApp.db.notes;
+            const assets = XiangKuApp.db.assets;
+
+            return `
+用户背景信息:
+- 姓名: ${user.userName || '未知'}
+- 岗位角色: ${user.userRole || '通用'}
+- 职责简介: ${user.userBio || '无'}
+
+当前已沉淀的工作流记录 (${notes.length}条):
+${notes.map(n => `[${n.time || ''}][${n.type}] ${n.content}`).join('\n')}
+
+当前长期知识资产库 (${assets.length}篇):
+${assets.map(a => `【${a.title}】(${a.category}):\n${a.content}`).join('\n---\n')}
+`;
+          },
+
+          async runPrompt(type) {
+            const output = document.getElementById('aiOutput');
+            output.innerText = '正在提取工作台知识并向 AI 发起请求...';
+
+            const prompts = {
+              summary: '请帮我总结今天的所有工作流记录，按推进进展、处理细节与后续建议输出一份清晰的今日工作总结。',
+              weekly: '请基于当前已有的工作流水记录，提炼并生成一份结构化的工作周报草稿（包含本周完成、重点突破、问题与下周规划）。',
+              issues: '请全面梳理记录中的 [异常/问题] 以及潜在风险，并给出优先排错建议。',
+              extract_asset: '请分析当前的工作流记录，找出值得沉淀为长期 SOP 规范或经验总结的内容，并格式化为标准资产卡片形式。'
+            };
+
+            const userPrompt = prompts[type] || '请分析当前工作台内容。';
+            const context = this.buildContext();
+
+            try {
+              const res = await XiangKuApp.callAI(userPrompt, `你是一个高级个人工作助理与知识管理专家。请严格基于以下上下文回答用户问题：\n${context}`);
+              output.innerText = res;
+            } catch (err) {
+              if (err.message === 'MISSING_CONFIG') {
+                this.fallbackLocalAnalysis(type);
+              } else {
+                output.innerText = `调用失败: ${err.message}\n\n请在右上角设置中检查 API Key、Base URL 与 Model 配置。`;
+              }
+            }
+          },
+
+          async handleCustomAsk(e) {
+            e.preventDefault();
+            const input = document.getElementById('aiCustomInput');
+            const q = input.value.trim();
+            if (!q) return;
+
+            const output = document.getElementById('aiOutput');
+            output.innerText = `正在分析问题: "${q}"...`;
+            const context = this.buildContext();
+
+            try {
+              const res = await XiangKuApp.callAI(q, `你是一个嵌入在象库轻工作台中的个人知识助理。请基于以下工作台真实数据回答：\n${context}`);
+              output.innerText = res;
+              input.value = '';
+            } catch (err) {
+              if (err.message === 'MISSING_CONFIG') {
+                output.innerText = `提示：未配置 AI API Key。\n\n请点击右上角 [设置] -> [AI模型配置] 填入你的大模型 API 即可激活真实对话。`;
+              } else {
+                output.innerText = `调用异常: ${err.message}`;
+              }
+            }
+          },
+
+          fallbackLocalAnalysis(type) {
+            const notes = XiangKuApp.db.notes;
+            const output = document.getElementById('aiOutput');
+
+            if (notes.length === 0) {
+              output.innerText = '当前暂无任何工作记录。请先在工作台中输入并沉淀工作流水后再试。';
+              return;
+            }
+
+            if (type === 'summary') {
+              output.innerText = `【本地结构化提取 - 今日工作总结】\n\n共捕获 ${notes.length} 条流水：\n` + 
+                notes.map((n, i) => `${i+1}. [${n.time || '--:--'}] ${n.content}`).join('\n') +
+                `\n\n提示：如需深度润色与智能总结，请在 [设置] 中配置 API Key。`;
+            } else if (type === 'issues') {
+              const issues = notes.filter(n => n.type === 'issue');
+              output.innerText = `【本地异常筛选 - 共 ${issues.length} 项】\n\n` + 
+                (issues.length ? issues.map((n, i) => `${i+1}. [${n.time}] ${n.content}`).join('\n') : '暂无异常类型记录。');
+            } else {
+              output.innerText = `已读取当前 ${notes.length} 条记录与 ${XiangKuApp.db.assets.length} 篇资产。\n\n提示：请在右上角设置中心配置 AI 模型 API Key，即可开启完整的生成周报与知识问答。`;
+            }
+          }
+        }
+      }
+    };
+
+    // 页面加载自动启动
+    window.addEventListener('DOMContentLoaded', () => {
+      XiangKuApp.init();
+    });
+  </script>
 </body>
 </html>
