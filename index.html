@@ -59,10 +59,10 @@
       background-color: #121314 !important;
     }
 
-    /* N Ik 呼吸光晕球特效 */
+    /* NIK 呼吸光晕悬浮球 */
     @keyframes nikPulse {
-      0%, 100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.4); }
-      50% { box-shadow: 0 0 0 8px rgba(245, 158, 11, 0); }
+      0%, 100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.5); }
+      50% { box-shadow: 0 0 0 8px rgba(59, 130, 246, 0); }
     }
     .nik-orb {
       animation: nikPulse 3s infinite ease-in-out;
@@ -91,7 +91,7 @@
       </div>
     </div>
 
-    <!-- 全局快捷检索、夜晚切换、飞书联动与 N Ik 助手 -->
+    <!-- 全局快捷检索、夜晚切换、飞书联动与 工作助理 -->
     <div class="flex items-center gap-2">
       <div class="relative flex items-center">
         <i data-lucide="search" class="w-3.5 h-3.5 absolute left-2.5 text-zinc-400"></i>
@@ -126,13 +126,13 @@
         <span>同步飞书</span>
       </button>
 
-      <!-- N Ik 助手快捷开关 -->
+      <!-- 工作助理快捷开关（仅分析本工作台数据） -->
       <button 
-        onclick="XiangKuApp.modules.ai.toggleDrawer()" 
+        onclick="XiangKuApp.modules.assistant.toggleDrawer()" 
         class="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-white transition-colors font-medium shadow-sm"
       >
         <i data-lucide="sparkles" class="w-3 h-3 text-amber-300 dark:text-amber-500"></i>
-        <span>N Ik 助理</span>
+        <span>工作助理</span>
       </button>
 
       <!-- 增量导入恢复 -->
@@ -291,65 +291,102 @@
 
   </main>
 
-  <!-- ================= 全域 N Ik 对话悬浮球 (FLOATING ORB) ================= -->
-  <div 
-    id="nikFloatingOrb" 
-    onclick="XiangKuApp.modules.ai.toggleDrawer()"
-    title="呼出 N Ik 全域智能助理"
-    class="fixed bottom-6 right-6 z-40 w-12 h-12 rounded-full bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 flex items-center justify-center shadow-2xl cursor-pointer hover:scale-105 active:scale-95 transition-all nik-orb border border-zinc-700/30 dark:border-zinc-300/30"
-  >
-    <div class="relative flex items-center justify-center">
-      <span class="font-mono font-bold text-xs tracking-tighter">N Ik</span>
-      <span class="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-amber-400 animate-ping"></span>
-    </div>
-  </div>
-
-  <!-- ================= N Ik 助手功能抽屉 (DRAWER) ================= -->
-  <div id="aiDrawer" class="fixed top-12 right-0 bottom-0 w-[450px] bg-white dark:bg-[#181818] border-l border-zinc-200 dark:border-zinc-800 shadow-2xl transform translate-x-full transition-transform duration-200 z-30 flex flex-col">
+  <!-- ================= 顶栏唤出的「工作助理」抽屉 (仅限内部知识库分析) ================= -->
+  <div id="assistantDrawer" class="fixed top-12 right-0 bottom-0 w-[450px] bg-white dark:bg-[#181818] border-l border-zinc-200 dark:border-zinc-800 shadow-2xl transform translate-x-full transition-transform duration-200 z-30 flex flex-col">
     <div class="p-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between bg-zinc-50 dark:bg-zinc-900">
       <div class="flex items-center gap-2">
-        <div class="w-5 h-5 rounded bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 flex items-center justify-center font-bold text-[10px] font-mono">
-          N
-        </div>
-        <span class="text-xs font-semibold text-zinc-800 dark:text-zinc-100">N Ik 全域工作助理</span>
+        <i data-lucide="sparkles" class="w-4 h-4 text-amber-500"></i>
+        <span class="text-xs font-semibold text-zinc-800 dark:text-zinc-100">本台工作助理 (内部上下文)</span>
       </div>
-      <button onclick="XiangKuApp.modules.ai.toggleDrawer()" class="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 text-xs p-1">✕</button>
+      <button onclick="XiangKuApp.modules.assistant.toggleDrawer()" class="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 text-xs p-1">✕</button>
     </div>
 
     <!-- 快捷分析指令 -->
     <div class="p-3 bg-zinc-50/50 dark:bg-zinc-900/50 border-b border-zinc-100 dark:border-zinc-800 space-y-1.5">
-      <div class="text-[11px] text-zinc-400 dark:text-zinc-500">N Ik 知识提取快捷指令:</div>
+      <div class="text-[11px] text-zinc-400 dark:text-zinc-500">本台数据结构化指令:</div>
       <div class="grid grid-cols-2 gap-1.5">
-        <button onclick="XiangKuApp.modules.ai.runPrompt('summary')" class="text-xs p-1.5 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-500 rounded text-left text-zinc-700 dark:text-zinc-200 font-medium truncate">📋 总结今日工作记录</button>
-        <button onclick="XiangKuApp.modules.ai.runPrompt('weekly')" class="text-xs p-1.5 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-500 rounded text-left text-zinc-700 dark:text-zinc-200 font-medium truncate">📊 生成结构化周报</button>
-        <button onclick="XiangKuApp.modules.ai.runPrompt('issues')" class="text-xs p-1.5 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-500 rounded text-left text-zinc-700 dark:text-zinc-200 font-medium truncate">🔍 未决问题与风险梳理</button>
-        <button onclick="XiangKuApp.modules.ai.runPrompt('extract_asset')" class="text-xs p-1.5 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-500 rounded text-left text-zinc-700 dark:text-zinc-200 font-medium truncate">💡 提炼为经验资产</button>
+        <button onclick="XiangKuApp.modules.assistant.runPrompt('summary')" class="text-xs p-1.5 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-500 rounded text-left text-zinc-700 dark:text-zinc-200 font-medium truncate">📋 总结今日工作记录</button>
+        <button onclick="XiangKuApp.modules.assistant.runPrompt('weekly')" class="text-xs p-1.5 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-500 rounded text-left text-zinc-700 dark:text-zinc-200 font-medium truncate">📊 生成结构化周报</button>
+        <button onclick="XiangKuApp.modules.assistant.runPrompt('issues')" class="text-xs p-1.5 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-500 rounded text-left text-zinc-700 dark:text-zinc-200 font-medium truncate">🔍 未决异常与风险梳理</button>
+        <button onclick="XiangKuApp.modules.assistant.runPrompt('extract_asset')" class="text-xs p-1.5 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-500 rounded text-left text-zinc-700 dark:text-zinc-200 font-medium truncate">💡 提炼为经验资产</button>
       </div>
     </div>
 
-    <!-- 自由对话与问答输入 -->
+    <!-- 本台数据问答 -->
     <div class="p-3 border-b border-zinc-100 dark:border-zinc-800">
-      <form onsubmit="XiangKuApp.modules.ai.handleCustomAsk(event)" class="flex gap-1.5">
+      <form onsubmit="XiangKuApp.modules.assistant.handleCustomAsk(event)" class="flex gap-1.5">
         <input 
           type="text" 
-          id="aiCustomInput" 
-          placeholder="问 N Ik：查找记录、根据记录写汇报、答疑..." 
+          id="assistantCustomInput" 
+          placeholder="基于本工作台数据查询、写总结..." 
           class="flex-1 text-xs px-2.5 py-1.5 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded focus:outline-none focus:border-zinc-400 text-zinc-800 dark:text-zinc-100"
         />
-        <button type="submit" class="text-xs bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-3 py-1.5 rounded hover:bg-zinc-800 dark:hover:bg-white font-medium shrink-0">发送</button>
+        <button type="submit" class="text-xs bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-3 py-1.5 rounded hover:bg-zinc-800 dark:hover:bg-white font-medium shrink-0">执行</button>
       </form>
     </div>
 
-    <!-- N Ik 响应输出区 -->
+    <!-- 输出区 -->
     <div class="flex-1 overflow-y-auto p-4 space-y-3 font-mono text-xs">
-      <div class="flex justify-between items-center text-zinc-400 dark:text-zinc-500 text-[11px]">
-        <span>引擎: <span id="aiModelIndicator" class="text-zinc-600 dark:text-zinc-400">未配置(使用本地算法)</span></span>
-        <button onclick="XiangKuApp.modules.settings.openModal()" class="text-zinc-500 underline hover:text-zinc-800 dark:hover:text-zinc-200">配置API</button>
-      </div>
-      <div id="aiOutput" class="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded p-3 text-zinc-800 dark:text-zinc-200 leading-relaxed whitespace-pre-wrap">
-我是 N Ik，你的全域工作智能助理。选择上方指令，或直接向我提问，我将严格基于当前工作台的所有记录与资产为你提供分析、总结与写作支持。
+      <div id="assistantOutput" class="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded p-3 text-zinc-800 dark:text-zinc-200 leading-relaxed whitespace-pre-wrap">
+工作助理已就绪。点击上方指令或输入要求，我将基于你的工作流记录与长效资产库为你提供针对性的总结与分析。
       </div>
     </div>
+  </div>
+
+  <!-- ================= 右下角 NIK 全域 AI 对话悬浮球 ================= -->
+  <div 
+    id="nikFloatingOrb" 
+    onclick="XiangKuApp.modules.nik.toggleModal()"
+    title="呼出 NIK 全网/通用 AI 对话终端"
+    class="fixed bottom-6 right-6 z-40 w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-2xl cursor-pointer hover:scale-105 active:scale-95 transition-all nik-orb border border-blue-400"
+  >
+    <div class="relative flex items-center justify-center">
+      <span class="font-mono font-bold text-xs tracking-wider">NIK</span>
+      <span class="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-emerald-400"></span>
+    </div>
+  </div>
+
+  <!-- ================= NIK 全域独立 AI 对话浮窗 (通用对话终端) ================= -->
+  <div id="nikModal" class="fixed bottom-20 right-6 w-[420px] h-[520px] bg-white dark:bg-[#1a1a1a] border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl z-40 hidden flex flex-col overflow-hidden transition-all">
+    <!-- NIK 顶栏 -->
+    <div class="p-3 bg-zinc-900 text-white flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-2">
+        <div class="w-5 h-5 rounded bg-blue-500 text-white flex items-center justify-center font-bold text-[10px] font-mono">
+          N
+        </div>
+        <div>
+          <span class="text-xs font-semibold">NIK · 全域通用对话</span>
+          <span class="text-[10px] text-zinc-400 block -mt-0.5">通用 AI 对话终端</span>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button onclick="XiangKuApp.modules.nik.clearChat()" title="清空对话" class="text-zinc-400 hover:text-white text-xs">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+        </button>
+        <button onclick="XiangKuApp.modules.nik.toggleModal()" class="text-zinc-400 hover:text-white text-xs">✕</button>
+      </div>
+    </div>
+
+    <!-- 消息流展示区 -->
+    <div id="nikChatMessages" class="flex-1 overflow-y-auto p-3 space-y-3 text-xs">
+      <div class="flex gap-2">
+        <div class="w-5 h-5 rounded bg-blue-600 text-white font-mono text-[10px] flex items-center justify-center shrink-0 mt-0.5">N</div>
+        <div class="bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 p-2.5 rounded-lg rounded-tl-none leading-relaxed max-w-[85%] whitespace-pre-wrap">
+你好！我是 NIK。你可以向我咨询任何通用问题、技术方案、写作协助或日常推理。
+        </div>
+      </div>
+    </div>
+
+    <!-- 输入区 -->
+    <form onsubmit="XiangKuApp.modules.nik.sendMessage(event)" class="p-2 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 flex gap-1.5 items-center">
+      <input 
+        type="text" 
+        id="nikChatInput" 
+        placeholder="输入问题或对话，Enter 发送..." 
+        class="flex-1 text-xs px-2.5 py-2 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded focus:outline-none focus:border-blue-500 text-zinc-800 dark:text-zinc-100"
+      />
+      <button type="submit" class="bg-blue-600 text-white px-3 py-2 rounded text-xs hover:bg-blue-700 font-medium">发送</button>
+    </form>
   </div>
 
   <!-- ================= 设置中心弹窗 (SETTINGS MODAL) ================= -->
@@ -386,7 +423,7 @@
 
         <!-- 2. 用户信息 -->
         <section class="space-y-3">
-          <h3 class="font-semibold text-zinc-800 dark:text-zinc-200 border-b border-zinc-100 dark:border-zinc-800 pb-1">2. 用户身份 (用于 N Ik 上下文构建)</h3>
+          <h3 class="font-semibold text-zinc-800 dark:text-zinc-200 border-b border-zinc-100 dark:border-zinc-800 pb-1">2. 用户身份 (用于 工作助理 上下文构建)</h3>
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-zinc-500 dark:text-zinc-400 mb-1">用户姓名 / 称呼</label>
@@ -399,7 +436,7 @@
           </div>
           <div>
             <label class="block text-zinc-500 dark:text-zinc-400 mb-1">工作简介 / 职责描述</label>
-            <textarea id="settingUserBio" rows="2" class="w-full text-xs p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none focus:border-zinc-400 resize-none text-zinc-800 dark:text-zinc-100" placeholder="简述日常工作范畴，使 N Ik 输出更匹配你的语境..."></textarea>
+            <textarea id="settingUserBio" rows="2" class="w-full text-xs p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none focus:border-zinc-400 resize-none text-zinc-800 dark:text-zinc-100" placeholder="简述日常工作范畴，使 工作助理 输出更匹配你的语境..."></textarea>
           </div>
         </section>
 
@@ -415,9 +452,9 @@
           </div>
         </section>
 
-        <!-- 4. N Ik AI 模型与接口配置 -->
+        <!-- 4. AI 模型与接口配置 (同时赋能 工作助理 与 NIK 对话) -->
         <section class="space-y-3">
-          <h3 class="font-semibold text-zinc-800 dark:text-zinc-200 border-b border-zinc-100 dark:border-zinc-800 pb-1">4. N Ik 模型与接口配置 (OpenAI 标准兼容)</h3>
+          <h3 class="font-semibold text-zinc-800 dark:text-zinc-200 border-b border-zinc-100 dark:border-zinc-800 pb-1">4. AI 模型配置 (同时赋能 工作助理 与 NIK 对话)</h3>
           <div class="grid grid-cols-2 gap-3">
             <div>
               <label class="block text-zinc-500 dark:text-zinc-400 mb-1">模型提供方 / 预设</label>
@@ -507,7 +544,7 @@
   <!-- ================= 核心架构与业务逻辑脚本 ================= -->
   <script>
     /**
-     * 象库 · 轻工作台 (带 N Ik 助理与全域悬浮球引擎)
+     * 象库 · 轻工作台 (顶栏工作助理 + 右下角 NIK 通用对话终端)
      */
     window.XiangKuApp = {
       STORAGE_KEY: 'xiangku_workstation_db_v2',
@@ -533,7 +570,7 @@
         workspace: [],
         notes: [],
         assets: [],
-        plugins: []
+        nikMessages: [] // 保存 NIK 的通用对话历史
       },
 
       currentWorkspaceId: 'all',
@@ -557,7 +594,7 @@
             this.db.workspace = parsed.workspace || [];
             this.db.notes = parsed.notes || [];
             this.db.assets = parsed.assets || [];
-            this.db.plugins = parsed.plugins || [];
+            this.db.nikMessages = parsed.nikMessages || [];
           } catch (e) {
             console.error('存储读取错误，保持默认库', e);
           }
@@ -590,7 +627,6 @@
           if (icon) icon.setAttribute('data-lucide', 'moon');
         }
 
-        // 应用背景纹理
         const theme = this.db.settings.bgTheme || 'bg-theme-plain';
         body.className = body.className.replace(/bg-theme-\w+/g, '');
         body.classList.add(theme);
@@ -603,22 +639,13 @@
         document.getElementById('htmlTitle').innerText = appName || '象库 · 轻工作台';
         document.getElementById('topAppName').innerText = appName || '象库 · 轻工作台';
         document.getElementById('userBadgeRole').innerText = userRole || '个人用户';
-
-        const ai = this.db.settings.aiConfig || {};
-        const indicator = document.getElementById('aiModelIndicator');
-        if (ai.apiKey && ai.model) {
-          indicator.innerText = `${ai.model}`;
-          indicator.className = 'text-emerald-600 dark:text-emerald-400 font-semibold';
-        } else {
-          indicator.innerText = '未配置API(使用本地算法)';
-          indicator.className = 'text-zinc-500';
-        }
       },
 
       renderAll() {
         this.modules.workspace.render();
         this.modules.notes.render();
         this.modules.assets.render();
+        this.modules.nik.renderMessages();
         this.updateStats();
         lucide.createIcons();
       },
@@ -634,7 +661,6 @@
         this.modules.assets.render(kw);
       },
 
-      // 导出备份
       exportBackup() {
         const dataStr = JSON.stringify(this.db, null, 2);
         const blob = new Blob([dataStr], { type: 'application/json' });
@@ -646,7 +672,6 @@
         URL.revokeObjectURL(url);
       },
 
-      // 增量导入恢复（增加合并而不是覆盖）
       handleImportFile(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -709,8 +734,8 @@
         alert(`增量合并成功！\n- 新增工作空间: ${addedWorkspaces} 个\n- 新增工作记录: ${addedNotes} 条\n- 新增知识资产: ${addedAssets} 篇\n已有内容已完好保留。`);
       },
 
-      // 统一 N Ik AI 通讯引擎
-      async callAI(prompt, systemContext = '') {
+      // 统一大模型请求底层
+      async requestAI(messages, systemContext = '') {
         const ai = this.db.settings.aiConfig || {};
         if (!ai.apiKey || !ai.baseUrl) {
           throw new Error('MISSING_CONFIG');
@@ -722,12 +747,20 @@
           'Authorization': `Bearer ${ai.apiKey}`
         };
 
+        const payloadMessages = [];
+        if (systemContext) {
+          payloadMessages.push({ role: 'system', content: systemContext });
+        }
+
+        if (Array.isArray(messages)) {
+          payloadMessages.push(...messages);
+        } else {
+          payloadMessages.push({ role: 'user', content: String(messages) });
+        }
+
         const body = {
           model: ai.model || 'gpt-4o-mini',
-          messages: [
-            { role: 'system', content: systemContext || '你是 N Ik，一个专业高效的个人全域工作知识助理。' },
-            { role: 'user', content: prompt }
-          ],
+          messages: payloadMessages,
           temperature: parseFloat(ai.temperature) || 0.7
         };
 
@@ -746,7 +779,7 @@
         return resData.choices?.[0]?.message?.content || '未返回有效内容';
       },
 
-      // 模块化插件层
+      // 模块层
       modules: {
         // ========== 1. 设置中心模块 ==========
         settings: {
@@ -1214,10 +1247,10 @@
           }
         },
 
-        // ========== 6. N Ik 全域智能助理模块 ==========
-        ai: {
+        // ========== 6. 顶栏工作助理模块 (内部知识库专属分析) ==========
+        assistant: {
           toggleDrawer() {
-            const drawer = document.getElementById('aiDrawer');
+            const drawer = document.getElementById('assistantDrawer');
             drawer.classList.toggle('translate-x-full');
           },
 
@@ -1227,7 +1260,7 @@
             const assets = XiangKuApp.db.assets;
 
             return `
-用户背景信息:
+用户工作背景:
 - 姓名: ${user.userName || '未知'}
 - 岗位角色: ${user.userRole || '通用'}
 - 职责简介: ${user.userBio || '无'}
@@ -1241,8 +1274,8 @@ ${assets.map(a => `【${a.title}】(${a.category}):\n${a.content}`).join('\n---\
           },
 
           async runPrompt(type) {
-            const output = document.getElementById('aiOutput');
-            output.innerText = 'N Ik 正在提取工作台知识并进行深度分析...';
+            const output = document.getElementById('assistantOutput');
+            output.innerText = '工作助理正在提取内部工作台知识并进行分析...';
 
             const prompts = {
               summary: '请帮我总结今天的所有工作流记录，按推进进展、处理细节与后续建议输出一份清晰的今日工作总结。',
@@ -1255,60 +1288,171 @@ ${assets.map(a => `【${a.title}】(${a.category}):\n${a.content}`).join('\n---\
             const context = this.buildContext();
 
             try {
-              const res = await XiangKuApp.callAI(userPrompt, `你是 N Ik，象库知识系统的高级工作助理。请严格基于以下上下文回答用户问题：\n${context}`);
+              const res = await XiangKuApp.requestAI(userPrompt, `你是一个严谨的内部工作助理。请严格基于以下工作台内部上下文回答：\n${context}`);
               output.innerText = res;
             } catch (err) {
               if (err.message === 'MISSING_CONFIG') {
                 this.fallbackLocalAnalysis(type);
               } else {
-                output.innerText = `N Ik 调用失败: ${err.message}\n\n请在设置中心检查 API Key、Base URL 与 Model 配置。`;
+                output.innerText = `调用失败: ${err.message}\n\n请在设置中心检查 API Key、Base URL 与 Model 配置。`;
               }
             }
           },
 
           async handleCustomAsk(e) {
             e.preventDefault();
-            const input = document.getElementById('aiCustomInput');
+            const input = document.getElementById('assistantCustomInput');
             const q = input.value.trim();
             if (!q) return;
 
-            const output = document.getElementById('aiOutput');
-            output.innerText = `N Ik 正在思考: "${q}"...`;
+            const output = document.getElementById('assistantOutput');
+            output.innerText = `正在基于内部数据分析: "${q}"...`;
             const context = this.buildContext();
 
             try {
-              const res = await XiangKuApp.callAI(q, `你是 N Ik，嵌入在象库轻工作台中的全域个人知识助理。请基于以下工作台真实数据回答：\n${context}`);
+              const res = await XiangKuApp.requestAI(q, `你是象库轻工作台的专属内部工作助理。请基于以下工作台内部数据回答：\n${context}`);
               output.innerText = res;
               input.value = '';
             } catch (err) {
               if (err.message === 'MISSING_CONFIG') {
-                output.innerText = `提示：未配置 AI API Key。\n\n请点击右上角 [设置] -> [N Ik 模型配置] 填入你的大模型 API 即可激活实时对话。`;
+                output.innerText = `提示：未配置 AI API Key。请在设置中心填写后使用。`;
               } else {
-                output.innerText = `N Ik 调用异常: ${err.message}`;
+                output.innerText = `调用异常: ${err.message}`;
               }
             }
           },
 
           fallbackLocalAnalysis(type) {
             const notes = XiangKuApp.db.notes;
-            const output = document.getElementById('aiOutput');
+            const output = document.getElementById('assistantOutput');
 
             if (notes.length === 0) {
-              output.innerText = '当前暂无任何工作记录。请先在工作台中输入并沉淀工作流水后再试。';
+              output.innerText = '当前暂无任何工作记录。请先在工作台中沉淀工作流水后再试。';
               return;
             }
 
             if (type === 'summary') {
-              output.innerText = `【N Ik 本地结构化提取 - 今日工作总结】\n\n共捕获 ${notes.length} 条流水：\n` + 
+              output.innerText = `【本地结构化提取 - 今日工作总结】\n\n共捕获 ${notes.length} 条流水：\n` + 
                 notes.map((n, i) => `${i+1}. [${n.time || '--:--'}] ${n.content}`).join('\n') +
-                `\n\n提示：如需深度润色与智能建议，请在 [设置] 中配置大模型 API。`;
+                `\n\n提示：如需深度润色，请在 [设置] 中配置大模型 API。`;
             } else if (type === 'issues') {
               const issues = notes.filter(n => n.type === 'issue');
-              output.innerText = `【N Ik 异常筛选 - 共 ${issues.length} 项】\n\n` + 
+              output.innerText = `【本地异常筛选 - 共 ${issues.length} 项】\n\n` + 
                 (issues.length ? issues.map((n, i) => `${i+1}. [${n.time}] ${n.content}`).join('\n') : '暂无异常类型记录。');
             } else {
-              output.innerText = `N Ik 已读取当前 ${notes.length} 条记录与 ${XiangKuApp.db.assets.length} 篇资产。\n\n提示：请在右上角设置中心配置 API Key，即可开启完整的周报生成与知识问答。`;
+              output.innerText = `已读取当前 ${notes.length} 条记录与 ${XiangKuApp.db.assets.length} 篇资产。\n\n提示：在右上角设置中心配置 API Key 即可开启完整分析。`;
             }
+          }
+        },
+
+        // ========== 7. 右下角 NIK 全域通用 AI 对话终端模块 ==========
+        nik: {
+          toggleModal() {
+            const modal = document.getElementById('nikModal');
+            modal.classList.toggle('hidden');
+            if (!modal.classList.contains('hidden')) {
+              document.getElementById('nikChatInput').focus();
+              this.scrollToBottom();
+            }
+          },
+
+          renderMessages() {
+            const container = document.getElementById('nikChatMessages');
+            if (!XiangKuApp.db.nikMessages || XiangKuApp.db.nikMessages.length === 0) {
+              container.innerHTML = `
+                <div class="flex gap-2">
+                  <div class="w-5 h-5 rounded bg-blue-600 text-white font-mono text-[10px] flex items-center justify-center shrink-0 mt-0.5">N</div>
+                  <div class="bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 p-2.5 rounded-lg rounded-tl-none leading-relaxed max-w-[85%] whitespace-pre-wrap">
+你好！我是 NIK。作为全域通用 AI 对话终端，你可以向我提问任何问题、编写代码、探讨逻辑或日常闲聊。
+                  </div>
+                </div>
+              `;
+              return;
+            }
+
+            container.innerHTML = '';
+            XiangKuApp.db.nikMessages.forEach(msg => {
+              const isUser = msg.role === 'user';
+              const div = document.createElement('div');
+              div.className = `flex gap-2 ${isUser ? 'justify-end' : 'justify-start'}`;
+
+              if (isUser) {
+                div.innerHTML = `
+                  <div class="bg-blue-600 text-white p-2.5 rounded-lg rounded-tr-none leading-relaxed max-w-[85%] whitespace-pre-wrap">${msg.content}</div>
+                `;
+              } else {
+                div.innerHTML = `
+                  <div class="w-5 h-5 rounded bg-blue-600 text-white font-mono text-[10px] flex items-center justify-center shrink-0 mt-0.5">N</div>
+                  <div class="bg-zinc-100 dark:bg-zinc-800 text-zinc-800 dark:text-zinc-200 p-2.5 rounded-lg rounded-tl-none leading-relaxed max-w-[85%] whitespace-pre-wrap">${msg.content}</div>
+                `;
+              }
+              container.appendChild(div);
+            });
+            this.scrollToBottom();
+          },
+
+          async sendMessage(e) {
+            e.preventDefault();
+            const input = document.getElementById('nikChatInput');
+            const q = input.value.trim();
+            if (!q) return;
+
+            // 添加用户消息
+            XiangKuApp.db.nikMessages.push({ role: 'user', content: q });
+            input.value = '';
+            this.renderMessages();
+
+            // 构造占位中 AI 响应
+            const container = document.getElementById('nikChatMessages');
+            const loadingDiv = document.createElement('div');
+            loadingDiv.className = 'flex gap-2 justify-start';
+            loadingDiv.id = 'nikLoadingIndicator';
+            loadingDiv.innerHTML = `
+              <div class="w-5 h-5 rounded bg-blue-600 text-white font-mono text-[10px] flex items-center justify-center shrink-0 mt-0.5">N</div>
+              <div class="bg-zinc-100 dark:bg-zinc-800 text-zinc-400 p-2.5 rounded-lg rounded-tl-none text-xs italic">NIK 正在思考中...</div>
+            `;
+            container.appendChild(loadingDiv);
+            this.scrollToBottom();
+
+            try {
+              // 携带最近的几轮多轮对话历史
+              const historyPayload = XiangKuApp.db.nikMessages.slice(-8);
+              const systemPrompt = "你是 NIK，一个博学、敏锐、直接且高效的通用全域 AI 助手。请直接、清晰、专业地回答用户的提问。";
+
+              const reply = await XiangKuApp.requestAI(historyPayload, systemPrompt);
+
+              // 移除加载中
+              const loadingEl = document.getElementById('nikLoadingIndicator');
+              if (loadingEl) loadingEl.remove();
+
+              XiangKuApp.db.nikMessages.push({ role: 'assistant', content: reply });
+              XiangKuApp.saveStorage();
+              this.renderMessages();
+            } catch (err) {
+              const loadingEl = document.getElementById('nikLoadingIndicator');
+              if (loadingEl) loadingEl.remove();
+
+              let errMsg = `NIK 呼叫失败: ${err.message}`;
+              if (err.message === 'MISSING_CONFIG') {
+                errMsg = "提示：尚未配置大模型 API Key。请点击右上角 [设置] 填入你的大模型接口密钥。";
+              }
+              XiangKuApp.db.nikMessages.push({ role: 'assistant', content: errMsg });
+              XiangKuApp.saveStorage();
+              this.renderMessages();
+            }
+          },
+
+          clearChat() {
+            if (confirm('清空 NIK 的所有对话历史？')) {
+              XiangKuApp.db.nikMessages = [];
+              XiangKuApp.saveStorage();
+              this.renderMessages();
+            }
+          },
+
+          scrollToBottom() {
+            const container = document.getElementById('nikChatMessages');
+            container.scrollTop = container.scrollHeight;
           }
         }
       }
