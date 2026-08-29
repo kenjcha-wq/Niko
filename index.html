@@ -51,16 +51,9 @@
     .bg-theme-paper { background-color: #f4f1ea !important; }
     .dark .bg-theme-paper { background-color: #121314 !important; }
 
-    /* NIK 悬浮球 */
-    .nik-orb {
-      background: radial-gradient(circle at 30% 30%, #27272a, #09090b);
-      box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.3), inset 0 1px 1px 0 rgba(255, 255, 255, 0.15);
-      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-    }
-    .dark .nik-orb {
-      background: radial-gradient(circle at 30% 30%, #3f3f46, #18181b);
-      box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.7), inset 0 1px 1px 0 rgba(255, 255, 255, 0.25);
-    }
+    /* 移动端隐藏横向滚动条 */
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
   </style>
 </head>
 <body id="mainBody" class="bg-[#F8F9FA] dark:bg-[#121212] text-[#1A1A1A] dark:text-[#EDEDED] font-sans antialiased h-[100dvh] flex flex-col overflow-hidden select-none transition-colors duration-200 bg-theme-plain">
@@ -68,14 +61,14 @@
   <!-- 增量导入文件 input -->
   <input type="file" id="importFileInput" accept=".json" class="hidden" onchange="XiangKuApp.handleImportFile(event)" />
 
-  <!-- ================= 顶部状态栏 (TOP BAR) ================= -->
-  <header class="h-12 bg-white/95 dark:bg-[#181818]/95 backdrop-blur border-b border-zinc-200/80 dark:border-zinc-800 px-3 md:px-4 flex items-center justify-between shrink-0 z-20">
-    <div class="flex items-center gap-2">
+  <!-- ================= 顶部状态栏 (TOP BAR - 优化手机端防挤压防截断) ================= -->
+  <header class="h-12 bg-white/95 dark:bg-[#181818]/95 backdrop-blur border-b border-zinc-200/80 dark:border-zinc-800 px-3 md:px-4 flex items-center justify-between shrink-0 z-20 gap-2">
+    <div class="flex items-center gap-1.5 shrink-0">
       <div class="flex items-center gap-1.5 cursor-pointer" onclick="XiangKuApp.modules.workspace.select('all')">
         <div class="w-6 h-6 rounded bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 flex items-center justify-center font-bold text-xs tracking-tighter shrink-0">
           象
         </div>
-        <span id="topAppName" class="font-semibold text-xs tracking-wider text-zinc-900 dark:text-zinc-100 truncate max-w-[120px] md:max-w-none">象库 · 轻工作台</span>
+        <span id="topAppName" class="font-semibold text-xs tracking-wider text-zinc-900 dark:text-zinc-100 truncate">象库</span>
       </div>
       <div class="hidden sm:block h-3.5 w-px bg-zinc-200 dark:bg-zinc-700 mx-1"></div>
       <div class="hidden sm:flex items-center gap-1 text-[11px] text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-2 py-0.5 rounded">
@@ -84,25 +77,25 @@
       </div>
     </div>
 
-    <!-- 顶部快捷操作 (统一尺寸规范: h-7, text-xs) -->
-    <div class="flex items-center gap-1.5 md:gap-2">
+    <!-- 顶部快捷操作 (支持横向滑动，移动端不挤压) -->
+    <div class="flex items-center gap-1.5 md:gap-2 overflow-x-auto no-scrollbar py-1">
       <!-- 搜索 -->
-      <div class="relative flex items-center">
+      <div class="relative flex items-center shrink-0">
         <i data-lucide="search" class="w-3.5 h-3.5 absolute left-2 text-zinc-400"></i>
         <input 
           type="text" 
           id="globalSearchInput" 
           oninput="XiangKuApp.handleSearch()" 
-          placeholder="全局检索 (/) " 
-          class="w-24 md:w-40 h-7 pl-7 pr-2 text-xs bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none focus:border-zinc-400 text-zinc-800 dark:text-zinc-100 transition-all placeholder:text-zinc-400"
+          placeholder="搜索 (/) " 
+          class="w-20 sm:w-28 md:w-36 h-7 pl-6 pr-2 text-xs bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none focus:border-zinc-400 text-zinc-800 dark:text-zinc-100 transition-all placeholder:text-zinc-400"
         />
       </div>
 
-      <!-- 个人资料库 -->
+      <!-- 个人资料库入口 (PC端常驻显示，移动端在底部有独立Tab也可在此点击) -->
       <button 
         onclick="XiangKuApp.modules.profileVault.toggleDrawer()" 
-        title="打开个人资料库 (档案/能力/经验/方法)"
-        class="h-7 flex items-center gap-1.5 text-xs px-2.5 rounded border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium shrink-0 bg-white dark:bg-zinc-800 shadow-sm"
+        title="个人资料库"
+        class="hidden md:flex h-7 items-center gap-1 text-xs px-2.5 rounded border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium shrink-0 bg-white dark:bg-zinc-800 shadow-sm"
       >
         <i data-lucide="user-check" class="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400"></i>
         <span>个人资料库</span>
@@ -121,19 +114,19 @@
       <button 
         onclick="XiangKuApp.modules.feishu.syncToFeishu()" 
         title="同步飞书"
-        class="h-7 flex items-center gap-1 text-xs px-2.5 rounded border border-blue-200 dark:border-blue-900 bg-blue-50/50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 shrink-0 font-medium"
+        class="h-7 flex items-center gap-1 text-xs px-2 rounded border border-blue-200 dark:border-blue-900 bg-blue-50/50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 shrink-0 font-medium"
       >
         <i data-lucide="send" class="w-3.5 h-3.5 text-blue-600 dark:text-blue-400"></i>
-        <span class="hidden md:inline">同步</span>
+        <span class="hidden sm:inline">同步</span>
       </button>
 
       <!-- 工作助理 -->
       <button 
         onclick="XiangKuApp.modules.assistant.toggleDrawer()" 
-        class="h-7 flex items-center gap-1 text-xs px-2.5 rounded bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium shrink-0 shadow-sm"
+        class="h-7 flex items-center gap-1 text-xs px-2 rounded bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium shrink-0 shadow-sm"
       >
         <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-300 dark:text-amber-500"></i>
-        <span class="hidden md:inline">工作助理</span>
+        <span class="hidden sm:inline">工作助理</span>
       </button>
 
       <!-- 设置入口 -->
@@ -147,10 +140,10 @@
     </div>
   </header>
 
-  <!-- ================= 首页三大工作台 (标准 2 : 5 : 5 比例) ================= -->
+  <!-- ================= 主体工作驾驶舱 (PC 保持 2 : 5 : 5 比例，移动端全屏单 Tab) ================= -->
   <main class="flex-1 grid grid-cols-1 md:grid-cols-12 gap-0 overflow-hidden relative">
     
-    <!-- 1. 【工作空间 工作台】(窄侧边栏: 占 2 列) -->
+    <!-- 1. 【工作空间 工作台】(PC 占 2 列) -->
     <aside id="tabSectionWorkspace" class="mobile-tab-section hidden md:flex md:col-span-2 border-r border-zinc-200/80 dark:border-zinc-800 bg-[#FAFAFA]/95 dark:bg-[#141414]/95 flex-col justify-between overflow-hidden h-full">
       <div class="flex-1 flex flex-col overflow-hidden">
         <div class="p-3 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between text-xs font-semibold text-zinc-400 dark:text-zinc-500 tracking-wider">
@@ -177,7 +170,7 @@
       </div>
     </aside>
 
-    <!-- 2. 【工作流 工作台】(主干等宽: 占 5 列) -->
+    <!-- 2. 【工作流 工作台】(PC 占 5 列) -->
     <section id="tabSectionNotes" class="mobile-tab-section flex md:col-span-5 border-r border-zinc-200/80 dark:border-zinc-800 flex-col bg-white/95 dark:bg-[#181818]/95 overflow-hidden h-full">
       <div class="p-2.5 md:p-3 border-b border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-900/60 shrink-0">
         <div class="flex items-center justify-between mb-1.5">
@@ -225,13 +218,13 @@
           <span class="text-xs font-semibold text-zinc-500 dark:text-zinc-400 tracking-wider">今日工作流 (DAILY STREAM)</span>
           <span id="currentDateStr" class="text-[11px] font-mono text-zinc-400 dark:text-zinc-500">--</span>
         </div>
-        <div id="dailyLogStream" class="flex-1 overflow-y-auto p-3 md:p-4 space-y-3 pb-20 md:pb-4">
+        <div id="dailyLogStream" class="flex-1 overflow-y-auto p-3 md:p-4 space-y-3 pb-24 md:pb-4">
           <!-- 动态渲染工作流时间轴 -->
         </div>
       </div>
     </section>
 
-    <!-- 3. 【知识库 工作台】(主干等宽: 占 5 列，已扩充全部分区) -->
+    <!-- 3. 【知识库 工作台】(PC 占 5 列) -->
     <section id="tabSectionKnowledge" class="mobile-tab-section hidden md:flex md:col-span-5 flex-col bg-[#FAFAFA]/90 dark:bg-[#141414]/90 overflow-hidden h-full">
       <div class="p-2.5 md:p-3 border-b border-zinc-200/80 dark:border-zinc-800 bg-white/90 dark:bg-[#181818]/90 flex items-center justify-between shrink-0">
         <div>
@@ -250,8 +243,8 @@
         </button>
       </div>
 
-      <!-- 扩充分类过滤器 -->
-      <div class="px-2.5 md:px-3 py-1.5 bg-white/90 dark:bg-[#181818]/90 border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-1 text-[11px] overflow-x-auto shrink-0">
+      <!-- 分类过滤器 -->
+      <div class="px-2.5 md:px-3 py-1.5 bg-white/90 dark:bg-[#181818]/90 border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-1 text-[11px] overflow-x-auto shrink-0 no-scrollbar">
         <button onclick="XiangKuApp.modules.knowledge.filter('all')" class="knowledge-tab h-6 px-2.5 rounded bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium shrink-0 flex items-center" data-type="all">全部</button>
         <button onclick="XiangKuApp.modules.knowledge.filter('sop')" class="knowledge-tab h-6 px-2.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0 flex items-center" data-type="sop">流程规范</button>
         <button onclick="XiangKuApp.modules.knowledge.filter('policy')" class="knowledge-tab h-6 px-2.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0 flex items-center" data-type="policy">制度规章</button>
@@ -262,30 +255,67 @@
       </div>
 
       <!-- 知识库卡片列表 -->
-      <div id="knowledgeCardList" class="flex-1 overflow-y-auto p-2.5 md:p-3 space-y-2.5 pb-20 md:pb-4">
+      <div id="knowledgeCardList" class="flex-1 overflow-y-auto p-2.5 md:p-3 space-y-2.5 pb-24 md:pb-4">
         <!-- 动态渲染知识库卡片 -->
       </div>
     </section>
 
+    <!-- 4. 【手机端专属页面：NIK 全域通用对话】 -->
+    <section id="tabSectionNik" class="mobile-tab-section hidden flex-col bg-white dark:bg-[#181818] overflow-hidden h-full">
+      <div class="p-2.5 bg-zinc-900 text-white flex items-center justify-between shrink-0 border-b border-zinc-800">
+        <div class="flex items-center gap-2">
+          <div class="w-5 h-5 rounded bg-zinc-800 border border-zinc-700 flex items-center justify-center">
+            <i data-lucide="bot" class="w-3.5 h-3.5 text-zinc-200"></i>
+          </div>
+          <span class="text-xs font-semibold">NIK · 全域通用对话</span>
+        </div>
+        <button onclick="XiangKuApp.modules.nik.clearChat()" title="清空对话" class="w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-white text-xs">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+
+      <div id="nikChatMessages" class="flex-1 overflow-y-auto p-3 space-y-2.5 text-xs pb-6">
+        <!-- 动态渲染对话 -->
+      </div>
+
+      <form onsubmit="XiangKuApp.modules.nik.sendMessage(event)" class="p-2 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 flex gap-1.5 items-center shrink-0 mb-14 md:mb-0">
+        <input 
+          type="text" 
+          id="nikChatInput" 
+          placeholder="输入问题，Enter 发送..." 
+          class="flex-1 h-8 text-xs px-2.5 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded focus:outline-none focus:border-zinc-500 text-zinc-800 dark:text-zinc-100"
+        />
+        <button type="submit" class="h-8 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-3.5 rounded text-xs font-medium shadow-sm">发送</button>
+      </form>
+    </section>
+
   </main>
 
-  <!-- ================= 移动端底部三大工作台 Tab 导航栏 ================= -->
-  <nav class="md:hidden h-14 bg-white/95 dark:bg-[#181818]/95 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-around px-2 shrink-0 z-30">
-    <button onclick="XiangKuApp.switchMobileTab('workspace')" id="mobileNavWorkspace" class="flex flex-col items-center gap-0.5 text-zinc-400 dark:text-zinc-500 py-1 px-3">
+  <!-- ================= 移动端底部原生 5 栏 Tab (空间 / 工作流 / 知识库 / NIK / 个人资料) ================= -->
+  <nav class="md:hidden h-14 bg-white/95 dark:bg-[#181818]/95 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-around px-1 shrink-0 z-30">
+    <button onclick="XiangKuApp.switchMobileTab('workspace')" id="mobileNavWorkspace" class="flex flex-col items-center gap-0.5 text-zinc-400 dark:text-zinc-500 py-1 px-2">
       <i data-lucide="folder" class="w-4 h-4"></i>
       <span class="text-[10px]">空间</span>
     </button>
-    <button onclick="XiangKuApp.switchMobileTab('notes')" id="mobileNavNotes" class="flex flex-col items-center gap-0.5 text-zinc-900 dark:text-zinc-100 font-semibold py-1 px-3">
+    <button onclick="XiangKuApp.switchMobileTab('notes')" id="mobileNavNotes" class="flex flex-col items-center gap-0.5 text-zinc-900 dark:text-zinc-100 font-semibold py-1 px-2">
       <i data-lucide="edit-3" class="w-4 h-4"></i>
       <span class="text-[10px]">工作流</span>
     </button>
-    <button onclick="XiangKuApp.switchMobileTab('knowledge')" id="mobileNavKnowledge" class="flex flex-col items-center gap-0.5 text-zinc-400 dark:text-zinc-500 py-1 px-3">
+    <button onclick="XiangKuApp.switchMobileTab('knowledge')" id="mobileNavKnowledge" class="flex flex-col items-center gap-0.5 text-zinc-400 dark:text-zinc-500 py-1 px-2">
       <i data-lucide="layers" class="w-4 h-4"></i>
       <span class="text-[10px]">知识库</span>
     </button>
+    <button onclick="XiangKuApp.switchMobileTab('nik')" id="mobileNavNik" class="flex flex-col items-center gap-0.5 text-zinc-400 dark:text-zinc-500 py-1 px-2">
+      <i data-lucide="bot" class="w-4 h-4"></i>
+      <span class="text-[10px]">NIK</span>
+    </button>
+    <button onclick="XiangKuApp.modules.profileVault.toggleDrawer()" id="mobileNavProfile" class="flex flex-col items-center gap-0.5 text-zinc-400 dark:text-zinc-500 py-1 px-2">
+      <i data-lucide="user-check" class="w-4 h-4"></i>
+      <span class="text-[10px]">资料库</span>
+    </button>
   </nav>
 
-  <!-- ================= 【顶端呼出】个人资料库抽屉 ================= -->
+  <!-- ================= 个人资料库抽屉 (PC & 手机端通用呼出) ================= -->
   <div id="profileVaultDrawer" class="fixed inset-y-0 right-0 w-full sm:w-[500px] md:w-[560px] bg-white dark:bg-[#181818] border-l border-zinc-200 dark:border-zinc-800 shadow-2xl transform translate-x-full transition-transform duration-200 z-50 flex flex-col">
     <!-- 顶栏 -->
     <div class="p-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between bg-zinc-50 dark:bg-zinc-900">
@@ -315,7 +345,7 @@
     </div>
 
     <!-- 7 维度切换 Tab -->
-    <div class="px-3 py-2 bg-white dark:bg-[#181818] border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-1 text-[11px] overflow-x-auto shrink-0">
+    <div class="px-3 py-2 bg-white dark:bg-[#181818] border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-1 text-[11px] overflow-x-auto shrink-0 no-scrollbar">
       <button onclick="XiangKuApp.modules.profileVault.switchSection('profile')" class="pv-tab h-6 px-2.5 rounded bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium shrink-0 flex items-center" data-sec="profile">个人档案</button>
       <button onclick="XiangKuApp.modules.profileVault.switchSection('skills')" class="pv-tab h-6 px-2.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0 flex items-center" data-sec="skills">能力库</button>
       <button onclick="XiangKuApp.modules.profileVault.switchSection('experiences')" class="pv-tab h-6 px-2.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0 flex items-center" data-sec="experiences">经验库</button>
@@ -367,58 +397,6 @@
 工作助理已就绪。已自动读取你的工作流记录、知识库以及顶端的个人资料库作为分析上下文。
       </div>
     </div>
-  </div>
-
-  <!-- ================= 右下角 NIK 全域 AI 悬浮球 ================= -->
-  <div 
-    id="nikFloatingOrb" 
-    onclick="XiangKuApp.modules.nik.toggleModal()"
-    title="呼出 NIK 全域通用 AI 对话终端"
-    class="fixed bottom-16 md:bottom-6 right-4 md:right-6 z-40 w-11 h-11 rounded-full text-zinc-100 flex items-center justify-center cursor-pointer nik-orb border border-zinc-700/60 select-none"
-  >
-    <div class="relative flex items-center justify-center">
-      <i data-lucide="bot" class="w-5 h-5 text-zinc-300"></i>
-      <span class="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></span>
-    </div>
-  </div>
-
-  <!-- ================= NIK 全域 AI 对话浮窗 ================= -->
-  <div id="nikModal" class="fixed inset-x-2 bottom-16 md:inset-x-auto md:bottom-20 md:right-6 md:w-[400px] h-[70vh] md:h-[500px] bg-white dark:bg-[#1a1a1a] border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl z-40 hidden flex flex-col overflow-hidden">
-    <div class="p-2.5 bg-zinc-900 text-white flex items-center justify-between shrink-0 border-b border-zinc-800">
-      <div class="flex items-center gap-2">
-        <div class="w-5 h-5 rounded bg-zinc-800 border border-zinc-700 flex items-center justify-center">
-          <i data-lucide="bot" class="w-3.5 h-3.5 text-zinc-200"></i>
-        </div>
-        <span class="text-xs font-semibold">NIK · 全域通用对话</span>
-      </div>
-      <div class="flex items-center gap-2">
-        <button onclick="XiangKuApp.modules.nik.clearChat()" title="清空对话" class="w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-white text-xs">
-          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
-        </button>
-        <button onclick="XiangKuApp.modules.nik.toggleModal()" class="w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-white text-xs">✕</button>
-      </div>
-    </div>
-
-    <div id="nikChatMessages" class="flex-1 overflow-y-auto p-3 space-y-2.5 text-xs">
-      <div class="flex gap-2">
-        <div class="w-5 h-5 rounded bg-zinc-900 dark:bg-zinc-800 border border-zinc-700 text-zinc-300 font-mono text-[10px] flex items-center justify-center shrink-0 mt-0.5">
-          <i data-lucide="bot" class="w-3.5 h-3.5 text-zinc-300"></i>
-        </div>
-        <div class="bg-zinc-100 dark:bg-zinc-800/80 text-zinc-800 dark:text-zinc-200 p-2.5 rounded-lg rounded-tl-none leading-relaxed max-w-[85%] whitespace-pre-wrap">
-你好！我是 NIK。你可以向我咨询任何通用知识、编码方案、逻辑推理或日常灵感探讨。
-        </div>
-      </div>
-    </div>
-
-    <form onsubmit="XiangKuApp.modules.nik.sendMessage(event)" class="p-2 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 flex gap-1.5 items-center shrink-0">
-      <input 
-        type="text" 
-        id="nikChatInput" 
-        placeholder="输入问题，Enter 发送..." 
-        class="flex-1 h-8 text-xs px-2.5 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded focus:outline-none focus:border-zinc-500 text-zinc-800 dark:text-zinc-100"
-      />
-      <button type="submit" class="h-8 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-3.5 rounded text-xs font-medium shadow-sm">发送</button>
-    </form>
   </div>
 
   <!-- ================= 设置中心弹窗 ================= -->
@@ -494,7 +472,7 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
               <label class="block text-zinc-500 dark:text-zinc-400 mb-1">AI 预设</label>
-              <select id="settingAiProvider" onchange="XiangKuApp.modules.settings.handleProviderChange()" class="w-full h-8 text-xs px-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100">
+              <select id="settingAiProvider" onchange="XiangKuApp.modules.settings.handleProviderChange()" class="w-full text-xs p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100">
                 <option value="custom">自定义模型</option>
                 <option value="openai">OpenAI</option>
                 <option value="deepseek">DeepSeek</option>
@@ -527,7 +505,7 @@
     </div>
   </div>
 
-  <!-- ================= 知识库新建/编辑弹窗 (涵盖扩充分区) ================= -->
+  <!-- ================= 知识库新建/编辑弹窗 ================= -->
   <div id="knowledgeModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-2 sm:p-4">
     <div class="bg-white dark:bg-[#1a1a1a] border border-zinc-200 dark:border-zinc-800 rounded-lg w-full max-w-[480px] shadow-2xl overflow-hidden">
       <div class="p-3 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
@@ -595,7 +573,7 @@
   <!-- ================= 核心架构与业务逻辑脚本 ================= -->
   <script>
     /**
-     * 象库 · 轻工作台 (统一比例三大工作台 + 全分区知识库)
+     * 象库 · 轻工作台 (彻底去除悬浮球 + 手机端专属平整导航版)
      */
     window.XiangKuApp = {
       STORAGE_KEY: 'xiangku_workstation_db_v3',
@@ -617,7 +595,6 @@
         workspace: [],
         notes: [],
         knowledge: [],
-        // 个人资料库 7 大维度
         profile: {
           name: '',
           role: '',
@@ -648,6 +625,7 @@
         document.getElementById('currentDateStr').innerText = new Date().toISOString().slice(0, 10).replace(/-/g, '.');
       },
 
+      // 移动端 5 栏平整导航切换
       switchMobileTab(tabName) {
         this.activeMobileTab = tabName;
         document.querySelectorAll('.mobile-tab-section').forEach(el => el.classList.add('hidden'));
@@ -661,15 +639,19 @@
         } else if (tabName === 'knowledge') {
           const kEl = document.getElementById('tabSectionKnowledge');
           kEl.classList.remove('hidden'); kEl.classList.add('flex');
+        } else if (tabName === 'nik') {
+          const nikEl = document.getElementById('tabSectionNik');
+          nikEl.classList.remove('hidden'); nikEl.classList.add('flex');
+          this.modules.nik.scrollToBottom();
         }
 
-        ['workspace', 'notes', 'knowledge'].forEach(t => {
+        ['workspace', 'notes', 'knowledge', 'nik'].forEach(t => {
           const btn = document.getElementById('mobileNav' + t.charAt(0).toUpperCase() + t.slice(1));
           if (btn) {
             if (t === tabName) {
-              btn.className = 'flex flex-col items-center gap-0.5 text-zinc-900 dark:text-zinc-100 font-semibold py-1 px-3';
+              btn.className = 'flex flex-col items-center gap-0.5 text-zinc-900 dark:text-zinc-100 font-semibold py-1 px-2';
             } else {
-              btn.className = 'flex flex-col items-center gap-0.5 text-zinc-400 dark:text-zinc-500 py-1 px-3';
+              btn.className = 'flex flex-col items-center gap-0.5 text-zinc-400 dark:text-zinc-500 py-1 px-2';
             }
           }
         });
@@ -685,7 +667,7 @@
             this.db.settings = { ...this.db.settings, ...(parsed.settings || {}) };
             this.db.workspace = parsed.workspace || [];
             this.db.notes = parsed.notes || [];
-            // 合并旧版 assets 和 library 到知识库
+            
             const combinedKnowledge = parsed.knowledge || parsed.assets || [];
             if (Array.isArray(parsed.library)) {
               parsed.library.forEach(lib => {
@@ -1165,7 +1147,6 @@
           }
         },
 
-        // ========== 知识库 工作台 (已扩充全部分区) ==========
         knowledge: {
           render(filterKw = '') {
             const container = document.getElementById('knowledgeCardList');
@@ -1301,7 +1282,6 @@
           }
         },
 
-        // ========== 顶端抽屉：个人资料库模块 (7大维度 + AI画像) ==========
         profileVault: {
           toggleDrawer() {
             document.getElementById('profileVaultDrawer').classList.toggle('translate-x-full');
@@ -1325,7 +1305,6 @@
             container.innerHTML = '';
             const sec = XiangKuApp.currentProfileSection;
 
-            // 1. 【个人档案】
             if (sec === 'profile') {
               const p = XiangKuApp.db.profile;
               container.innerHTML = `
@@ -1367,7 +1346,6 @@
               return;
             }
 
-            // 2. 【能力库】
             if (sec === 'skills') {
               this.renderCardList(XiangKuApp.db.skills, filterKw, (item) => `
                 <div class="flex items-center justify-between">
@@ -1380,10 +1358,7 @@
                 <p class="text-[11px] text-zinc-600 dark:text-zinc-300 leading-relaxed">${item.desc || ''}</p>
                 ${item.learning ? `<div class="text-[10px] text-zinc-400 bg-zinc-50 dark:bg-zinc-900 p-1.5 rounded">学习记录: ${item.learning}</div>` : ''}
               `);
-            }
-
-            // 3. 【经验库】
-            else if (sec === 'experiences') {
+            } else if (sec === 'experiences') {
               this.renderCardList(XiangKuApp.db.experiences, filterKw, (item) => `
                 <div class="flex items-center justify-between">
                   <h3 class="text-xs font-semibold text-zinc-900 dark:text-zinc-100">${item.title}</h3>
@@ -1395,10 +1370,7 @@
                   <div><strong class="text-zinc-700 dark:text-zinc-200">经验总结:</strong> ${item.summary || ''}</div>
                 </div>
               `);
-            }
-
-            // 4. 【模板库】
-            else if (sec === 'templates') {
+            } else if (sec === 'templates') {
               this.renderCardList(XiangKuApp.db.templates, filterKw, (item) => `
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-1.5">
@@ -1409,10 +1381,7 @@
                 </div>
                 <pre class="text-[11px] text-zinc-600 dark:text-zinc-300 bg-zinc-50 dark:bg-zinc-900 p-2 rounded font-mono whitespace-pre-wrap leading-relaxed max-h-28 overflow-y-auto">${item.content}</pre>
               `);
-            }
-
-            // 5. 【联系人】
-            else if (sec === 'contacts') {
+            } else if (sec === 'contacts') {
               this.renderCardList(XiangKuApp.db.contacts, filterKw, (item) => `
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-1.5">
@@ -1427,10 +1396,7 @@
                   ${item.notes ? `<div class="text-[10px] text-zinc-400">备注: ${item.notes}</div>` : ''}
                 </div>
               `);
-            }
-
-            // 6. 【方法库】
-            else if (sec === 'methods') {
+            } else if (sec === 'methods') {
               this.renderCardList(XiangKuApp.db.methods, filterKw, (item) => `
                 <div class="flex items-center justify-between">
                   <h3 class="text-xs font-semibold text-zinc-900 dark:text-zinc-100">${item.title}</h3>
@@ -1438,10 +1404,7 @@
                 </div>
                 <pre class="text-[11px] text-zinc-600 dark:text-zinc-300 bg-zinc-50 dark:bg-zinc-900 p-2 rounded font-mono whitespace-pre-wrap leading-relaxed">${item.content}</pre>
               `);
-            }
-
-            // 7. 【成长轨迹】
-            else if (sec === 'growth') {
+            } else if (sec === 'growth') {
               this.renderCardList(XiangKuApp.db.growth, filterKw, (item) => `
                 <div class="flex items-center justify-between">
                   <span class="font-mono text-[10px] text-zinc-400">${item.date || '--'}</span>
@@ -1751,7 +1714,6 @@
             }
           },
 
-          // AI 个人画像生成
           async generateAiPortrait() {
             XiangKuApp.modules.assistant.toggleDrawer();
             const output = document.getElementById('assistantOutput');
@@ -1800,7 +1762,6 @@ ${XiangKuApp.db.growth.map(g => `- [${g.date}] ${g.event} -> 认知: ${g.insight
           }
         },
 
-        // ========== 工作助理模块 ==========
         assistant: {
           toggleDrawer() {
             document.getElementById('assistantDrawer').classList.toggle('translate-x-full');
@@ -1859,17 +1820,7 @@ ${XiangKuApp.db.growth.map(g => `- [${g.date}] ${g.event} -> 认知: ${g.insight
           }
         },
 
-        // ========== NIK 全域通用 AI 对话终端 ==========
         nik: {
-          toggleModal() {
-            const modal = document.getElementById('nikModal');
-            modal.classList.toggle('hidden');
-            if (!modal.classList.contains('hidden')) {
-              document.getElementById('nikChatInput').focus();
-              this.scrollToBottom();
-            }
-          },
-
           renderMessages() {
             const container = document.getElementById('nikChatMessages');
             if (!XiangKuApp.db.nikMessages || XiangKuApp.db.nikMessages.length === 0) {
@@ -1943,7 +1894,7 @@ ${XiangKuApp.db.growth.map(g => `- [${g.date}] ${g.event} -> 认知: ${g.insight
 
           scrollToBottom() {
             const container = document.getElementById('nikChatMessages');
-            container.scrollTop = container.scrollHeight;
+            if (container) container.scrollTop = container.scrollHeight;
           }
         }
       }
