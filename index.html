@@ -2,9 +2,9 @@
 <html lang="zh-CN">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title id="htmlTitle">象库 · 轻工作台</title>
-  <!-- Tailwind CSS CDN (开启 class 暗黑模式支持) -->
+  <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
@@ -16,6 +16,7 @@
   <style>
     body {
       font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+      -webkit-tap-highlight-color: transparent;
     }
     ::-webkit-scrollbar {
       width: 4px;
@@ -28,14 +29,9 @@
       background: rgba(156, 163, 175, 0.4);
       border-radius: 2px;
     }
-    ::-webkit-scrollbar-thumb:hover {
-      background: rgba(156, 163, 175, 0.7);
-    }
 
     /* 背景纹理支持 */
-    .bg-theme-plain {
-      background-image: none;
-    }
+    .bg-theme-plain { background-image: none; }
     .bg-theme-grid {
       background-size: 20px 20px;
       background-image: linear-gradient(to right, rgba(120, 120, 120, 0.08) 1px, transparent 1px),
@@ -52,14 +48,10 @@
     .dark .bg-theme-dots {
       background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
     }
-    .bg-theme-paper {
-      background-color: #f4f1ea !important;
-    }
-    .dark .bg-theme-paper {
-      background-color: #121314 !important;
-    }
+    .bg-theme-paper { background-color: #f4f1ea !important; }
+    .dark .bg-theme-paper { background-color: #121314 !important; }
 
-    /* NIK 高级质感悬浮球 */
+    /* NIK 悬浮球质感 */
     .nik-orb {
       background: radial-gradient(circle at 30% 30%, #27272a, #09090b);
       box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.3), inset 0 1px 1px 0 rgba(255, 255, 255, 0.15);
@@ -69,127 +61,101 @@
       background: radial-gradient(circle at 30% 30%, #3f3f46, #18181b);
       box-shadow: 0 4px 24px -2px rgba(0, 0, 0, 0.7), inset 0 1px 1px 0 rgba(255, 255, 255, 0.25);
     }
-    .nik-orb:hover {
-      box-shadow: 0 6px 28px rgba(0, 0, 0, 0.45), 0 0 12px rgba(255, 255, 255, 0.12), inset 0 1px 1px 0 rgba(255, 255, 255, 0.3);
-      transform: translateY(-2px) scale(1.04);
-    }
   </style>
 </head>
-<body id="mainBody" class="bg-[#F8F9FA] dark:bg-[#121212] text-[#1A1A1A] dark:text-[#EDEDED] font-sans antialiased h-screen flex flex-col overflow-hidden select-none transition-colors duration-200 bg-theme-plain">
+<body id="mainBody" class="bg-[#F8F9FA] dark:bg-[#121212] text-[#1A1A1A] dark:text-[#EDEDED] font-sans antialiased h-[100dvh] flex flex-col overflow-hidden select-none transition-colors duration-200 bg-theme-plain">
 
   <!-- 隐藏的文件上传 input 用于增量导入 -->
   <input type="file" id="importFileInput" accept=".json" class="hidden" onchange="XiangKuApp.handleImportFile(event)" />
 
-  <!-- ================= 顶部驾驶舱状态栏 (TOP BAR) ================= -->
-  <header class="h-12 bg-white/90 dark:bg-[#181818]/90 backdrop-blur border-b border-zinc-200/80 dark:border-zinc-800 px-4 flex items-center justify-between shrink-0 z-10 transition-colors">
-    <div class="flex items-center gap-3">
-      <div class="flex items-center gap-2 cursor-pointer" onclick="XiangKuApp.modules.workspace.select('all')">
-        <div class="w-6 h-6 rounded bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 flex items-center justify-center font-bold text-xs tracking-tighter">
+  <!-- ================= 顶部状态栏 (TOP BAR) ================= -->
+  <header class="h-12 bg-white/95 dark:bg-[#181818]/95 backdrop-blur border-b border-zinc-200/80 dark:border-zinc-800 px-3 md:px-4 flex items-center justify-between shrink-0 z-20">
+    <div class="flex items-center gap-2">
+      <div class="flex items-center gap-1.5 cursor-pointer" onclick="XiangKuApp.modules.workspace.select('all')">
+        <div class="w-6 h-6 rounded bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 flex items-center justify-center font-bold text-xs tracking-tighter shrink-0">
           象
         </div>
-        <span id="topAppName" class="font-semibold text-xs tracking-wider text-zinc-900 dark:text-zinc-100">象库 · 轻工作台</span>
+        <span id="topAppName" class="font-semibold text-xs tracking-wider text-zinc-900 dark:text-zinc-100 truncate max-w-[120px] md:max-w-none">象库 · 轻工作台</span>
       </div>
-      <div class="h-3.5 w-px bg-zinc-200 dark:bg-zinc-700 mx-1"></div>
-      <!-- 当前工作空间指示器 -->
-      <div class="flex items-center gap-1.5 text-xs text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-2 py-0.5 rounded">
+      <div class="hidden sm:block h-3.5 w-px bg-zinc-200 dark:bg-zinc-700 mx-1"></div>
+      <!-- 空间指示器 -->
+      <div class="hidden sm:flex items-center gap-1 text-[11px] text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-2 py-0.5 rounded">
         <i data-lucide="folder" class="w-3 h-3 text-zinc-400"></i>
-        <span id="currentWorkspaceBadge" class="font-medium text-zinc-700 dark:text-zinc-200">全部工作域</span>
+        <span id="currentWorkspaceBadge" class="font-medium text-zinc-700 dark:text-zinc-200 truncate max-w-[90px]">全部工作域</span>
       </div>
     </div>
 
-    <!-- 全局快捷检索、夜晚切换、飞书联动与 工作助理 -->
-    <div class="flex items-center gap-2">
+    <!-- 顶部快捷操作 -->
+    <div class="flex items-center gap-1.5 md:gap-2">
+      <!-- 移动端搜索折叠，PC 展开 -->
       <div class="relative flex items-center">
-        <i data-lucide="search" class="w-3.5 h-3.5 absolute left-2.5 text-zinc-400"></i>
+        <i data-lucide="search" class="w-3.5 h-3.5 absolute left-2 text-zinc-400"></i>
         <input 
           type="text" 
           id="globalSearchInput" 
           oninput="XiangKuApp.handleSearch()" 
-          placeholder="全局检索记录、知识、资产 (/) " 
-          class="w-48 pl-8 pr-3 py-1 text-xs bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 focus:bg-white dark:focus:bg-zinc-800 text-zinc-800 dark:text-zinc-100 transition-all placeholder:text-zinc-400"
+          placeholder="搜索 (/) " 
+          class="w-24 md:w-44 pl-7 pr-2 py-1 text-xs bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none focus:border-zinc-400 text-zinc-800 dark:text-zinc-100 transition-all placeholder:text-zinc-400"
         />
       </div>
 
-      <div class="h-3.5 w-px bg-zinc-200 dark:bg-zinc-700 mx-1"></div>
-
-      <!-- 昼夜模式切换按钮 -->
+      <!-- 昼夜模式 -->
       <button 
         onclick="XiangKuApp.toggleDarkMode()" 
-        id="darkModeToggleBtn"
         title="切换夜晚/日间模式"
-        class="text-xs p-1.5 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded transition-colors flex items-center"
+        class="text-xs p-1.5 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded flex items-center shrink-0"
       >
         <i data-lucide="moon" id="darkModeIcon" class="w-3.5 h-3.5"></i>
       </button>
 
-      <!-- 飞书同步联动按钮 -->
+      <!-- 飞书同步 -->
       <button 
         onclick="XiangKuApp.modules.feishu.syncToFeishu()" 
-        title="将当前工作内容推送到飞书"
-        class="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded border border-blue-200 dark:border-blue-900 bg-blue-50/50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/50 transition-colors font-medium"
+        title="同步飞书"
+        class="flex items-center gap-1 text-xs px-2 py-1 rounded border border-blue-200 dark:border-blue-900 bg-blue-50/50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 shrink-0"
       >
         <i data-lucide="send" class="w-3 h-3 text-blue-600 dark:text-blue-400"></i>
-        <span>同步飞书</span>
+        <span class="hidden md:inline font-medium">同步</span>
       </button>
 
-      <!-- 工作助理快捷开关（仅分析本工作台数据） -->
+      <!-- 工作助理 -->
       <button 
         onclick="XiangKuApp.modules.assistant.toggleDrawer()" 
-        class="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-zinc-800 dark:hover:bg-white transition-colors font-medium shadow-sm"
+        class="flex items-center gap-1 text-xs px-2 py-1 rounded bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium shrink-0 shadow-sm"
       >
         <i data-lucide="sparkles" class="w-3 h-3 text-amber-300 dark:text-amber-500"></i>
-        <span>工作助理</span>
+        <span class="hidden md:inline">工作助理</span>
       </button>
 
-      <!-- 增量导入恢复 -->
-      <button 
-        onclick="document.getElementById('importFileInput').click()" 
-        title="导入备份（增量合并，不覆盖已有内容）"
-        class="text-xs px-2 py-1 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded transition-colors flex items-center gap-1"
-      >
-        <i data-lucide="upload" class="w-3 h-3"></i>
-        <span>导入</span>
-      </button>
-
-      <!-- 数据备份导出 -->
-      <button 
-        onclick="XiangKuApp.exportBackup()" 
-        title="导出本地 JSON 数据库"
-        class="text-xs px-2 py-1 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded transition-colors flex items-center gap-1"
-      >
-        <i data-lucide="download" class="w-3 h-3"></i>
-        <span>导出</span>
-      </button>
-
-      <!-- 设置中心入口 -->
+      <!-- 设置入口 -->
       <button 
         onclick="XiangKuApp.modules.settings.openModal()" 
-        title="设置中心"
-        class="text-xs p-1.5 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded transition-colors flex items-center gap-1"
+        title="设置"
+        class="text-xs p-1.5 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded flex items-center shrink-0"
       >
         <i data-lucide="settings" class="w-3.5 h-3.5"></i>
       </button>
     </div>
   </header>
 
-  <!-- ================= 主体工作驾驶舱 (4 栏布局) ================= -->
-  <main class="flex-1 grid grid-cols-12 gap-0 overflow-hidden bg-white/70 dark:bg-[#181818]/70 backdrop-blur">
+  <!-- ================= 主体工作驾驶舱 (响应式布局) ================= -->
+  <main class="flex-1 grid grid-cols-1 md:grid-cols-12 gap-0 overflow-hidden relative">
     
-    <!-- 1. 【工作空间】(WORKSPACE NAVIGATOR) - 2 列 -->
-    <aside class="col-span-2 border-r border-zinc-200/80 dark:border-zinc-800 bg-[#FAFAFA]/90 dark:bg-[#141414]/90 flex flex-col justify-between overflow-hidden">
+    <!-- 1. 【工作空间】(移动端根据 Tab 切换显示，桌面端占 2 列) -->
+    <aside id="tabSectionWorkspace" class="mobile-tab-section hidden md:flex md:col-span-2 border-r border-zinc-200/80 dark:border-zinc-800 bg-[#FAFAFA]/95 dark:bg-[#141414]/95 flex-col justify-between overflow-hidden h-full">
       <div class="flex-1 flex flex-col overflow-hidden">
         <div class="p-3 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between text-xs font-semibold text-zinc-400 dark:text-zinc-500 tracking-wider">
           <span>工作空间 / 目录</span>
-          <button onclick="XiangKuApp.modules.workspace.openCreateModal()" class="hover:text-zinc-800 dark:hover:text-zinc-200 text-zinc-400 p-0.5 rounded hover:bg-zinc-200/50 dark:hover:bg-zinc-800" title="新建工作空间">
+          <button onclick="XiangKuApp.modules.workspace.openCreateModal()" class="hover:text-zinc-800 dark:hover:text-zinc-200 text-zinc-400 p-1 rounded hover:bg-zinc-200/50 dark:hover:bg-zinc-800" title="新建工作空间">
             <i data-lucide="plus" class="w-3.5 h-3.5"></i>
           </button>
         </div>
-        <div id="workspaceList" class="flex-1 overflow-y-auto p-2 space-y-0.5">
+        <div id="workspaceList" class="flex-1 overflow-y-auto p-2 space-y-1">
           <!-- 动态渲染空间列表 -->
         </div>
       </div>
 
-      <!-- 底部系统指标沉淀 -->
+      <!-- 底部系统指标 -->
       <div class="p-3 border-t border-zinc-200/80 dark:border-zinc-800 bg-white/80 dark:bg-[#181818]/80 text-[11px] text-zinc-400 dark:text-zinc-500 flex flex-col gap-1">
         <div class="flex justify-between">
           <span>工作记录</span>
@@ -199,35 +165,31 @@
           <span>沉淀资产</span>
           <span id="statAssetsCount" class="font-mono text-zinc-700 dark:text-zinc-300 font-medium">0</span>
         </div>
-        <div class="flex justify-between items-center pt-1 border-t border-zinc-100 dark:border-zinc-800">
-          <span id="userBadgeRole" class="truncate max-w-[90px]">个人用户</span>
-          <span class="font-mono text-emerald-600 dark:text-emerald-400 text-[10px]">● 本地就绪</span>
-        </div>
       </div>
     </aside>
 
-    <!-- 2. 【快速记录】与【工作流 (Daily Log)】- 5 列 -->
-    <section class="col-span-5 border-r border-zinc-200/80 dark:border-zinc-800 flex flex-col bg-white/90 dark:bg-[#181818]/90 overflow-hidden">
-      <!-- 快速捕获输入器 -->
-      <div class="p-3 border-b border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-900/60">
-        <div class="flex items-center justify-between mb-2">
-          <span class="text-xs font-semibold text-zinc-600 dark:text-zinc-300 tracking-wide flex items-center gap-1.5">
+    <!-- 2. 【快速记录与工作流】(移动端默认显示，桌面端占 5 列) -->
+    <section id="tabSectionNotes" class="mobile-tab-section flex md:col-span-5 border-r border-zinc-200/80 dark:border-zinc-800 flex-col bg-white/95 dark:bg-[#181818]/95 overflow-hidden h-full">
+      <!-- 快速捕获 -->
+      <div class="p-2.5 md:p-3 border-b border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-900/60 shrink-0">
+        <div class="flex items-center justify-between mb-1.5">
+          <span class="text-xs font-semibold text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5">
             <i data-lucide="zap" class="w-3.5 h-3.5 text-zinc-400"></i>
-            快速知识捕获
+            快速捕获
           </span>
           <select id="quickTypeSelect" class="text-[11px] bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded px-1.5 py-0.5 text-zinc-600 dark:text-zinc-300 focus:outline-none">
-            <option value="log">工作流水</option>
-            <option value="progress">阶段进展</option>
-            <option value="issue">异常/问题</option>
-            <option value="insight">经验/心得</option>
+            <option value="log">流水</option>
+            <option value="progress">进展</option>
+            <option value="issue">异常</option>
+            <option value="insight">心得</option>
           </select>
         </div>
-        <form onsubmit="XiangKuApp.modules.notes.handleSubmit(event)" class="space-y-2">
+        <form onsubmit="XiangKuApp.modules.notes.handleSubmit(event)" class="space-y-1.5">
           <textarea 
             id="quickInputContent" 
             rows="2" 
-            placeholder="随时捕获：正在处理的事、新发现的问题、参数或现场记录 (Ctrl+Enter 提交)..." 
-            class="w-full text-xs p-2.5 bg-white dark:bg-zinc-800/90 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 transition-all resize-none leading-relaxed placeholder:text-zinc-400 dark:placeholder:text-zinc-500 text-zinc-800 dark:text-zinc-100"
+            placeholder="随时记录现场、异常或心得..." 
+            class="w-full text-xs p-2 bg-white dark:bg-zinc-800/90 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 transition-all resize-none leading-relaxed placeholder:text-zinc-400 dark:placeholder:text-zinc-500 text-zinc-800 dark:text-zinc-100"
             required
             onkeydown="if((event.ctrlKey||event.metaKey)&&event.keyCode===13){XiangKuApp.modules.notes.handleSubmit(event);}"
           ></textarea>
@@ -235,12 +197,12 @@
             <input 
               type="text" 
               id="quickInputTags" 
-              placeholder="#标签 (例如: #巡检 #采购)" 
-              class="text-[11px] bg-transparent border-none focus:outline-none text-zinc-600 dark:text-zinc-400 w-48 placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
+              placeholder="#标签 (例如: #巡检)" 
+              class="text-[11px] bg-transparent border-none focus:outline-none text-zinc-600 dark:text-zinc-400 w-32 md:w-48 placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
             />
             <button 
               type="submit" 
-              class="text-xs bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-3 py-1 rounded hover:bg-zinc-800 dark:hover:bg-white transition-colors flex items-center gap-1 font-medium"
+              class="text-xs bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-3 py-1 rounded hover:bg-zinc-800 dark:hover:bg-white font-medium flex items-center gap-1"
             >
               <span>沉淀记录</span>
               <i data-lucide="corner-down-left" class="w-3 h-3 text-zinc-400 dark:text-zinc-600"></i>
@@ -249,31 +211,31 @@
         </form>
       </div>
 
-      <!-- 工作流时间轴 (Daily Notes Stream) -->
+      <!-- 工作流时间轴 -->
       <div class="flex-1 flex flex-col overflow-hidden">
-        <div class="px-4 py-2 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between bg-[#FAFAFA]/70 dark:bg-[#151515]/70">
+        <div class="px-3 md:px-4 py-1.5 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between bg-[#FAFAFA]/70 dark:bg-[#151515]/70 shrink-0">
           <span class="text-xs font-semibold text-zinc-500 dark:text-zinc-400 tracking-wider">今日工作流 (DAILY STREAM)</span>
           <span id="currentDateStr" class="text-[11px] font-mono text-zinc-400 dark:text-zinc-500">--</span>
         </div>
-        <div id="dailyLogStream" class="flex-1 overflow-y-auto p-4 space-y-4">
+        <div id="dailyLogStream" class="flex-1 overflow-y-auto p-3 md:p-4 space-y-3 pb-20 md:pb-4">
           <!-- 动态渲染工作流时间轴 -->
         </div>
       </div>
     </section>
 
-    <!-- 3. 【个人工作资产库】(ASSET & SOP VAULT) - 5 列 -->
-    <section class="col-span-5 flex flex-col bg-[#FAFAFA]/80 dark:bg-[#141414]/80 overflow-hidden">
-      <div class="p-3 border-b border-zinc-200/80 dark:border-zinc-800 bg-white/90 dark:bg-[#181818]/90 flex items-center justify-between">
+    <!-- 3. 【个人工作资产库】(移动端根据 Tab 切换显示，桌面端占 5 列) -->
+    <section id="tabSectionAssets" class="mobile-tab-section hidden md:flex md:col-span-5 flex-col bg-[#FAFAFA]/90 dark:bg-[#141414]/90 overflow-hidden h-full">
+      <div class="p-2.5 md:p-3 border-b border-zinc-200/80 dark:border-zinc-800 bg-white/90 dark:bg-[#181818]/90 flex items-center justify-between shrink-0">
         <div>
-          <h2 class="text-xs font-semibold text-zinc-800 dark:text-zinc-200 tracking-wide flex items-center gap-1.5">
+          <h2 class="text-xs font-semibold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
             <i data-lucide="archive" class="w-3.5 h-3.5 text-zinc-500"></i>
             个人工作资产库
           </h2>
-          <p class="text-[10px] text-zinc-400 dark:text-zinc-500 mt-0.5">沉淀长期有效的规范、模板、关键联系与工作经验</p>
+          <p class="text-[10px] text-zinc-400 dark:text-zinc-500">长期有效规范、模板与经验</p>
         </div>
         <button 
           onclick="XiangKuApp.modules.assets.openModal()" 
-          class="text-xs border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 px-2.5 py-1 rounded text-zinc-700 dark:text-zinc-300 transition-colors flex items-center gap-1 font-medium bg-white dark:bg-zinc-800"
+          class="text-xs border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 px-2 py-1 rounded text-zinc-700 dark:text-zinc-300 font-medium bg-white dark:bg-zinc-800 flex items-center gap-1"
         >
           <i data-lucide="plus" class="w-3 h-3"></i>
           <span>新建资产</span>
@@ -281,45 +243,58 @@
       </div>
 
       <!-- 资产分类过滤器 -->
-      <div class="px-3 py-2 bg-white/90 dark:bg-[#181818]/90 border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-1 text-[11px]">
-        <button onclick="XiangKuApp.modules.assets.filter('all')" class="asset-tab px-2 py-0.5 rounded bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium" data-type="all">全部</button>
-        <button onclick="XiangKuApp.modules.assets.filter('sop')" class="asset-tab px-2 py-0.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400" data-type="sop">流程规范</button>
-        <button onclick="XiangKuApp.modules.assets.filter('template')" class="asset-tab px-2 py-0.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400" data-type="template">工作模板</button>
-        <button onclick="XiangKuApp.modules.assets.filter('contact')" class="asset-tab px-2 py-0.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400" data-type="contact">常用联系</button>
-        <button onclick="XiangKuApp.modules.assets.filter('experience')" class="asset-tab px-2 py-0.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400" data-type="experience">经验总结</button>
+      <div class="px-2.5 md:px-3 py-1.5 bg-white/90 dark:bg-[#181818]/90 border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-1 text-[11px] overflow-x-auto shrink-0">
+        <button onclick="XiangKuApp.modules.assets.filter('all')" class="asset-tab px-2 py-0.5 rounded bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium shrink-0" data-type="all">全部</button>
+        <button onclick="XiangKuApp.modules.assets.filter('sop')" class="asset-tab px-2 py-0.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0" data-type="sop">流程规范</button>
+        <button onclick="XiangKuApp.modules.assets.filter('template')" class="asset-tab px-2 py-0.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0" data-type="template">工作模板</button>
+        <button onclick="XiangKuApp.modules.assets.filter('contact')" class="asset-tab px-2 py-0.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0" data-type="contact">常用联系</button>
+        <button onclick="XiangKuApp.modules.assets.filter('experience')" class="asset-tab px-2 py-0.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0" data-type="experience">经验总结</button>
       </div>
 
       <!-- 资产卡片网格 -->
-      <div id="assetCardList" class="flex-1 overflow-y-auto p-3 space-y-2.5">
+      <div id="assetCardList" class="flex-1 overflow-y-auto p-3 space-y-2.5 pb-20 md:pb-4">
         <!-- 动态渲染长效资产卡片 -->
       </div>
     </section>
 
   </main>
 
-  <!-- ================= 顶栏唤出的「工作助理」抽屉 (内部知识库专属分析) ================= -->
-  <div id="assistantDrawer" class="fixed top-12 right-0 bottom-0 w-[450px] bg-white dark:bg-[#181818] border-l border-zinc-200 dark:border-zinc-800 shadow-2xl transform translate-x-full transition-transform duration-200 z-30 flex flex-col">
+  <!-- ================= 移动端底部原生 Tab 导航栏 (仅在手机端显示) ================= -->
+  <nav class="md:hidden h-14 bg-white/95 dark:bg-[#181818]/95 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-around px-2 shrink-0 z-30">
+    <button onclick="XiangKuApp.switchMobileTab('workspace')" id="mobileNavWorkspace" class="flex flex-col items-center gap-0.5 text-zinc-400 dark:text-zinc-500 py-1 px-3">
+      <i data-lucide="folder" class="w-4 h-4"></i>
+      <span class="text-[10px]">空间</span>
+    </button>
+    <button onclick="XiangKuApp.switchMobileTab('notes')" id="mobileNavNotes" class="flex flex-col items-center gap-0.5 text-zinc-900 dark:text-zinc-100 font-semibold py-1 px-3">
+      <i data-lucide="edit-3" class="w-4 h-4"></i>
+      <span class="text-[10px]">工作流</span>
+    </button>
+    <button onclick="XiangKuApp.switchMobileTab('assets')" id="mobileNavAssets" class="flex flex-col items-center gap-0.5 text-zinc-400 dark:text-zinc-500 py-1 px-3">
+      <i data-lucide="archive" class="w-4 h-4"></i>
+      <span class="text-[10px]">资产库</span>
+    </button>
+  </nav>
+
+  <!-- ================= 顶栏工作助理抽屉 ================= -->
+  <div id="assistantDrawer" class="fixed inset-y-0 right-0 w-full sm:w-[420px] bg-white dark:bg-[#181818] border-l border-zinc-200 dark:border-zinc-800 shadow-2xl transform translate-x-full transition-transform duration-200 z-50 flex flex-col">
     <div class="p-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between bg-zinc-50 dark:bg-zinc-900">
       <div class="flex items-center gap-2">
         <i data-lucide="sparkles" class="w-4 h-4 text-amber-500"></i>
-        <span class="text-xs font-semibold text-zinc-800 dark:text-zinc-100">本台工作助理 (内部上下文)</span>
+        <span class="text-xs font-semibold text-zinc-800 dark:text-zinc-100">工作助理 (内部上下文)</span>
       </div>
       <button onclick="XiangKuApp.modules.assistant.toggleDrawer()" class="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 text-xs p-1">✕</button>
     </div>
 
-    <!-- 快捷分析指令 -->
-    <div class="p-3 bg-zinc-50/50 dark:bg-zinc-900/50 border-b border-zinc-100 dark:border-zinc-800 space-y-1.5">
-      <div class="text-[11px] text-zinc-400 dark:text-zinc-500">本台数据结构化指令:</div>
+    <div class="p-2.5 bg-zinc-50/50 dark:bg-zinc-900/50 border-b border-zinc-100 dark:border-zinc-800 space-y-1.5">
       <div class="grid grid-cols-2 gap-1.5">
-        <button onclick="XiangKuApp.modules.assistant.runPrompt('summary')" class="text-xs p-1.5 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-500 rounded text-left text-zinc-700 dark:text-zinc-200 font-medium truncate">📋 总结今日工作记录</button>
-        <button onclick="XiangKuApp.modules.assistant.runPrompt('weekly')" class="text-xs p-1.5 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-500 rounded text-left text-zinc-700 dark:text-zinc-200 font-medium truncate">📊 生成结构化周报</button>
-        <button onclick="XiangKuApp.modules.assistant.runPrompt('issues')" class="text-xs p-1.5 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-500 rounded text-left text-zinc-700 dark:text-zinc-200 font-medium truncate">🔍 未决异常与风险梳理</button>
-        <button onclick="XiangKuApp.modules.assistant.runPrompt('extract_asset')" class="text-xs p-1.5 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 hover:border-zinc-400 dark:hover:border-zinc-500 rounded text-left text-zinc-700 dark:text-zinc-200 font-medium truncate">💡 提炼为经验资产</button>
+        <button onclick="XiangKuApp.modules.assistant.runPrompt('summary')" class="text-xs p-1.5 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded text-left text-zinc-700 dark:text-zinc-200 font-medium truncate">📋 今日总结</button>
+        <button onclick="XiangKuApp.modules.assistant.runPrompt('weekly')" class="text-xs p-1.5 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded text-left text-zinc-700 dark:text-zinc-200 font-medium truncate">📊 生成周报</button>
+        <button onclick="XiangKuApp.modules.assistant.runPrompt('issues')" class="text-xs p-1.5 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded text-left text-zinc-700 dark:text-zinc-200 font-medium truncate">🔍 异常梳理</button>
+        <button onclick="XiangKuApp.modules.assistant.runPrompt('extract_asset')" class="text-xs p-1.5 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded text-left text-zinc-700 dark:text-zinc-200 font-medium truncate">💡 提炼资产</button>
       </div>
     </div>
 
-    <!-- 本台数据问答 -->
-    <div class="p-3 border-b border-zinc-100 dark:border-zinc-800">
+    <div class="p-2.5 border-b border-zinc-100 dark:border-zinc-800">
       <form onsubmit="XiangKuApp.modules.assistant.handleCustomAsk(event)" class="flex gap-1.5">
         <input 
           type="text" 
@@ -327,45 +302,38 @@
           placeholder="基于本工作台数据查询、写总结..." 
           class="flex-1 text-xs px-2.5 py-1.5 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded focus:outline-none focus:border-zinc-400 text-zinc-800 dark:text-zinc-100"
         />
-        <button type="submit" class="text-xs bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-3 py-1.5 rounded hover:bg-zinc-800 dark:hover:bg-white font-medium shrink-0">执行</button>
+        <button type="submit" class="text-xs bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-3 py-1.5 rounded font-medium shrink-0">执行</button>
       </form>
     </div>
 
-    <!-- 输出区 -->
-    <div class="flex-1 overflow-y-auto p-4 space-y-3 font-mono text-xs">
+    <div class="flex-1 overflow-y-auto p-3 font-mono text-xs">
       <div id="assistantOutput" class="bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 rounded p-3 text-zinc-800 dark:text-zinc-200 leading-relaxed whitespace-pre-wrap">
 工作助理已就绪。点击上方指令或输入要求，我将基于你的工作流记录与长效资产库为你提供针对性的总结与分析。
       </div>
     </div>
   </div>
 
-  <!-- ================= 右下角 NIK 全域 AI 极简质感悬浮球 ================= -->
+  <!-- ================= 右下角 NIK 全域 AI 悬浮球 (移动端抬高防遮挡) ================= -->
   <div 
     id="nikFloatingOrb" 
     onclick="XiangKuApp.modules.nik.toggleModal()"
     title="呼出 NIK 全域通用 AI 对话终端"
-    class="fixed bottom-6 right-6 z-40 w-11 h-11 rounded-full text-zinc-100 flex items-center justify-center cursor-pointer nik-orb border border-zinc-700/60 dark:border-zinc-600/60 select-none group"
+    class="fixed bottom-16 md:bottom-6 right-4 md:right-6 z-40 w-11 h-11 rounded-full text-zinc-100 flex items-center justify-center cursor-pointer nik-orb border border-zinc-700/60 select-none"
   >
     <div class="relative flex items-center justify-center">
-      <!-- 极简核心图标 -->
-      <i data-lucide="bot" class="w-5 h-5 text-zinc-300 group-hover:text-white group-hover:scale-110 transition-all stroke-[1.75]"></i>
-      <!-- 微光在线状态指示 -->
+      <i data-lucide="bot" class="w-5 h-5 text-zinc-300"></i>
       <span class="absolute -top-1 -right-1 w-2 h-2 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]"></span>
     </div>
   </div>
 
-  <!-- ================= NIK 全域独立 AI 对话浮窗 (通用对话终端) ================= -->
-  <div id="nikModal" class="fixed bottom-20 right-6 w-[420px] h-[520px] bg-white dark:bg-[#1a1a1a] border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl z-40 hidden flex flex-col overflow-hidden transition-all">
-    <!-- NIK 顶栏 -->
-    <div class="p-3 bg-zinc-900 text-white flex items-center justify-between shrink-0 border-b border-zinc-800">
+  <!-- ================= NIK 全域 AI 对话浮窗 (手机端自适应全屏/抽屉) ================= -->
+  <div id="nikModal" class="fixed inset-x-2 bottom-16 md:inset-x-auto md:bottom-20 md:right-6 md:w-[400px] h-[70vh] md:h-[500px] bg-white dark:bg-[#1a1a1a] border border-zinc-200 dark:border-zinc-800 rounded-xl shadow-2xl z-40 hidden flex flex-col overflow-hidden">
+    <div class="p-2.5 bg-zinc-900 text-white flex items-center justify-between shrink-0 border-b border-zinc-800">
       <div class="flex items-center gap-2">
-        <div class="w-6 h-6 rounded bg-zinc-800 border border-zinc-700 text-zinc-200 flex items-center justify-center">
+        <div class="w-5 h-5 rounded bg-zinc-800 border border-zinc-700 flex items-center justify-center">
           <i data-lucide="bot" class="w-3.5 h-3.5 text-zinc-200"></i>
         </div>
-        <div>
-          <span class="text-xs font-semibold tracking-wide">NIK · 全域通用对话</span>
-          <span class="text-[10px] text-zinc-400 block -mt-0.5">通用 AI 对话终端 (独立上下文)</span>
-        </div>
+        <span class="text-xs font-semibold">NIK · 全域通用对话</span>
       </div>
       <div class="flex items-center gap-2">
         <button onclick="XiangKuApp.modules.nik.clearChat()" title="清空对话" class="text-zinc-400 hover:text-white text-xs p-1">
@@ -375,33 +343,31 @@
       </div>
     </div>
 
-    <!-- 消息流展示区 -->
-    <div id="nikChatMessages" class="flex-1 overflow-y-auto p-3 space-y-3 text-xs">
+    <div id="nikChatMessages" class="flex-1 overflow-y-auto p-3 space-y-2.5 text-xs">
       <div class="flex gap-2">
-        <div class="w-6 h-6 rounded bg-zinc-900 dark:bg-zinc-800 border border-zinc-700 text-zinc-300 font-mono text-[10px] flex items-center justify-center shrink-0 mt-0.5">
+        <div class="w-5 h-5 rounded bg-zinc-900 dark:bg-zinc-800 border border-zinc-700 text-zinc-300 font-mono text-[10px] flex items-center justify-center shrink-0 mt-0.5">
           <i data-lucide="bot" class="w-3.5 h-3.5 text-zinc-300"></i>
         </div>
-        <div class="bg-zinc-100 dark:bg-zinc-800/80 text-zinc-800 dark:text-zinc-200 p-2.5 rounded-lg rounded-tl-none leading-relaxed max-w-[85%] whitespace-pre-wrap border border-zinc-200/50 dark:border-zinc-700/50">
+        <div class="bg-zinc-100 dark:bg-zinc-800/80 text-zinc-800 dark:text-zinc-200 p-2.5 rounded-lg rounded-tl-none leading-relaxed max-w-[85%] whitespace-pre-wrap">
 你好！我是 NIK。你可以向我咨询任何通用知识、编码方案、逻辑推理或日常灵感探讨。
         </div>
       </div>
     </div>
 
-    <!-- 输入区 -->
-    <form onsubmit="XiangKuApp.modules.nik.sendMessage(event)" class="p-2 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 flex gap-1.5 items-center">
+    <form onsubmit="XiangKuApp.modules.nik.sendMessage(event)" class="p-2 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 flex gap-1.5 items-center shrink-0">
       <input 
         type="text" 
         id="nikChatInput" 
-        placeholder="输入问题或对话，Enter 发送..." 
+        placeholder="输入问题，Enter 发送..." 
         class="flex-1 text-xs px-2.5 py-2 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded focus:outline-none focus:border-zinc-500 text-zinc-800 dark:text-zinc-100"
       />
-      <button type="submit" class="bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-3 py-2 rounded text-xs hover:bg-zinc-800 dark:hover:bg-white font-medium">发送</button>
+      <button type="submit" class="bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-3 py-2 rounded text-xs font-medium">发送</button>
     </form>
   </div>
 
-  <!-- ================= 设置中心弹窗 (SETTINGS MODAL) ================= -->
-  <div id="settingsModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 hidden flex items-center justify-center">
-    <div class="bg-white dark:bg-[#1a1a1a] border border-zinc-200 dark:border-zinc-800 rounded-lg w-[580px] shadow-2xl overflow-hidden flex flex-col max-h-[88vh]">
+  <!-- ================= 设置中心弹窗 (手机端适配全宽) ================= -->
+  <div id="settingsModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-2 sm:p-4">
+    <div class="bg-white dark:bg-[#1a1a1a] border border-zinc-200 dark:border-zinc-800 rounded-lg w-full max-w-[560px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
       <div class="p-3 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
         <div class="flex items-center gap-2">
           <i data-lucide="settings" class="w-4 h-4 text-zinc-600 dark:text-zinc-400"></i>
@@ -410,200 +376,150 @@
         <button onclick="XiangKuApp.modules.settings.closeModal()" class="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 text-xs p-1">✕</button>
       </div>
 
-      <div class="p-4 overflow-y-auto space-y-5 text-xs">
+      <div class="p-3 sm:p-4 overflow-y-auto space-y-4 text-xs">
         
-        <!-- 【象库矩阵导航模块】 -->
+        <!-- 象库矩阵 -->
         <section class="space-y-2">
           <div class="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-1">
-            <h3 class="font-semibold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
-              <i data-lucide="compass" class="w-3.5 h-3.5 text-zinc-400"></i>
-              <span>象库矩阵 (XiangKu Matrix)</span>
-            </h3>
+            <h3 class="font-semibold text-zinc-800 dark:text-zinc-200">象库矩阵 (XiangKu Matrix)</h3>
             <span class="text-[10px] text-zinc-400">跨系统互联</span>
           </div>
           <div class="grid grid-cols-3 gap-2 pt-1">
-            <!-- 象语 -->
-            <a href="https://nik-pro.pages.dev/" target="_blank" class="p-2.5 bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/80 dark:border-zinc-700/80 rounded hover:border-zinc-400 dark:hover:border-zinc-500 transition-all flex flex-col justify-between group">
-              <div>
-                <div class="flex items-center justify-between mb-1">
-                  <span class="font-semibold text-zinc-800 dark:text-zinc-100 group-hover:text-zinc-950 dark:group-hover:text-white">象语</span>
-                  <i data-lucide="external-link" class="w-3 h-3 text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-200"></i>
-                </div>
-                <p class="text-[10px] text-zinc-400 leading-tight">自然语言与心智表达</p>
-              </div>
+            <a href="https://nik-pro.pages.dev/" target="_blank" class="p-2 bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/80 dark:border-zinc-700/80 rounded hover:border-zinc-400 transition-all flex flex-col justify-between">
+              <span class="font-semibold text-zinc-800 dark:text-zinc-100 truncate">象语</span>
+              <p class="text-[9px] text-zinc-400 truncate">心智表达</p>
             </a>
-            <!-- 象库 -->
-            <a href="https://nik-pro.pages.dev/" target="_blank" class="p-2.5 bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/80 dark:border-zinc-700/80 rounded hover:border-zinc-400 dark:hover:border-zinc-500 transition-all flex flex-col justify-between group">
-              <div>
-                <div class="flex items-center justify-between mb-1">
-                  <span class="font-semibold text-zinc-800 dark:text-zinc-100 group-hover:text-zinc-950 dark:group-hover:text-white">象库</span>
-                  <i data-lucide="external-link" class="w-3 h-3 text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-200"></i>
-                </div>
-                <p class="text-[10px] text-zinc-400 leading-tight">总知识库与资料中心</p>
-              </div>
+            <a href="https://nik-pro.pages.dev/" target="_blank" class="p-2 bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/80 dark:border-zinc-700/80 rounded hover:border-zinc-400 transition-all flex flex-col justify-between">
+              <span class="font-semibold text-zinc-800 dark:text-zinc-100 truncate">象库</span>
+              <p class="text-[9px] text-zinc-400 truncate">资料中心</p>
             </a>
-            <!-- 象库 写字台 -->
-            <a href="https://logosnik.pages.dev/" target="_blank" class="p-2.5 bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/80 dark:border-zinc-700/80 rounded hover:border-zinc-400 dark:hover:border-zinc-500 transition-all flex flex-col justify-between group">
-              <div>
-                <div class="flex items-center justify-between mb-1">
-                  <span class="font-semibold text-zinc-800 dark:text-zinc-100 group-hover:text-zinc-950 dark:group-hover:text-white">象库 · 写字台</span>
-                  <i data-lucide="external-link" class="w-3 h-3 text-zinc-400 group-hover:text-zinc-600 dark:group-hover:text-zinc-200"></i>
-                </div>
-                <p class="text-[10px] text-zinc-400 leading-tight">专注长文创作空间</p>
-              </div>
+            <a href="https://logosnik.pages.dev/" target="_blank" class="p-2 bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/80 dark:border-zinc-700/80 rounded hover:border-zinc-400 transition-all flex flex-col justify-between">
+              <span class="font-semibold text-zinc-800 dark:text-zinc-100 truncate">写字台</span>
+              <p class="text-[9px] text-zinc-400 truncate">创作空间</p>
             </a>
           </div>
         </section>
 
-        <!-- 1. 基础与背景外观设置 -->
-        <section class="space-y-3">
-          <h3 class="font-semibold text-zinc-800 dark:text-zinc-200 border-b border-zinc-100 dark:border-zinc-800 pb-1">1. 基础与外观设置</h3>
-          <div class="grid grid-cols-2 gap-3">
+        <!-- 基础设置 -->
+        <section class="space-y-2">
+          <h3 class="font-semibold text-zinc-800 dark:text-zinc-200 border-b border-zinc-100 dark:border-zinc-800 pb-1">1. 基础与外观</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
               <label class="block text-zinc-500 dark:text-zinc-400 mb-1">工作台名称</label>
-              <input type="text" id="settingAppName" class="w-full text-xs p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none focus:border-zinc-400 text-zinc-800 dark:text-zinc-100" placeholder="例如：象库 · 轻工作台" />
+              <input type="text" id="settingAppName" class="w-full text-xs p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100" />
             </div>
             <div>
-              <label class="block text-zinc-500 dark:text-zinc-400 mb-1">工作底板背景风格</label>
+              <label class="block text-zinc-500 dark:text-zinc-400 mb-1">底板风格</label>
               <select id="settingBgTheme" class="w-full text-xs p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100">
                 <option value="bg-theme-plain">极简纯白 / 纯黑</option>
-                <option value="bg-theme-grid">工程细线网格 (Grid Plate)</option>
-                <option value="bg-theme-dots">极简点阵 (Dot Matrix)</option>
-                <option value="bg-theme-paper">工作纸纹暖调 (Paper)</option>
+                <option value="bg-theme-grid">工程细线网格</option>
+                <option value="bg-theme-dots">极简点阵</option>
+                <option value="bg-theme-paper">工作纸纹暖调</option>
               </select>
             </div>
           </div>
         </section>
 
-        <!-- 2. 用户信息 -->
-        <section class="space-y-3">
-          <h3 class="font-semibold text-zinc-800 dark:text-zinc-200 border-b border-zinc-100 dark:border-zinc-800 pb-1">2. 用户身份 (用于 工作助理 上下文构建)</h3>
-          <div class="grid grid-cols-2 gap-3">
-            <div>
-              <label class="block text-zinc-500 dark:text-zinc-400 mb-1">用户姓名 / 称呼</label>
-              <input type="text" id="settingUserName" class="w-full text-xs p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none focus:border-zinc-400 text-zinc-800 dark:text-zinc-100" placeholder="例如：乌鸦" />
-            </div>
-            <div>
-              <label class="block text-zinc-500 dark:text-zinc-400 mb-1">工作身份 / 岗位角色</label>
-              <input type="text" id="settingUserRole" class="w-full text-xs p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none focus:border-zinc-400 text-zinc-800 dark:text-zinc-100" placeholder="例如：系统运维 / 独立开发者" />
-            </div>
-          </div>
-          <div>
-            <label class="block text-zinc-500 dark:text-zinc-400 mb-1">工作简介 / 职责描述</label>
-            <textarea id="settingUserBio" rows="2" class="w-full text-xs p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none focus:border-zinc-400 resize-none text-zinc-800 dark:text-zinc-100" placeholder="简述日常工作范畴，使 工作助理 输出更匹配你的语境..."></textarea>
+        <!-- 数据备份导入 -->
+        <section class="space-y-2">
+          <h3 class="font-semibold text-zinc-800 dark:text-zinc-200 border-b border-zinc-100 dark:border-zinc-800 pb-1">2. 数据管理</h3>
+          <div class="flex gap-2">
+            <button onclick="document.getElementById('importFileInput').click()" class="flex-1 py-1.5 border border-zinc-200 dark:border-zinc-700 rounded hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300">导入备份 (增量)</button>
+            <button onclick="XiangKuApp.exportBackup()" class="flex-1 py-1.5 border border-zinc-200 dark:border-zinc-700 rounded hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300">导出数据文件</button>
           </div>
         </section>
 
-        <!-- 3. 飞书联动配置 -->
-        <section class="space-y-3">
-          <h3 class="font-semibold text-zinc-800 dark:text-zinc-200 border-b border-zinc-100 dark:border-zinc-800 pb-1 flex items-center justify-between">
-            <span>3. 飞书联动配置 (Webhook)</span>
-            <span class="text-[10px] text-blue-600 dark:text-blue-400 font-normal">支持群自定义机器人</span>
-          </h3>
+        <!-- 飞书与 AI 配置 -->
+        <section class="space-y-2">
+          <h3 class="font-semibold text-zinc-800 dark:text-zinc-200 border-b border-zinc-100 dark:border-zinc-800 pb-1">3. 飞书与 AI 配置</h3>
           <div>
-            <label class="block text-zinc-500 dark:text-zinc-400 mb-1">飞书自定义机器人 Webhook 地址</label>
-            <input type="text" id="settingFeishuWebhook" class="w-full text-xs p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none focus:border-zinc-400 font-mono text-[11px] text-zinc-800 dark:text-zinc-100" placeholder="https://open.feishu.cn/open-apis/bot/v2/hook/xxxxxxx" />
+            <label class="block text-zinc-500 dark:text-zinc-400 mb-1">飞书 Webhook</label>
+            <input type="text" id="settingFeishuWebhook" class="w-full text-xs p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100 font-mono text-[10px]" />
           </div>
-        </section>
-
-        <!-- 4. AI 模型与接口配置 (同时赋能 工作助理 与 NIK 对话) -->
-        <section class="space-y-3">
-          <h3 class="font-semibold text-zinc-800 dark:text-zinc-200 border-b border-zinc-100 dark:border-zinc-800 pb-1">4. AI 模型配置 (赋能 工作助理 & NIK)</h3>
-          <div class="grid grid-cols-2 gap-3">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
-              <label class="block text-zinc-500 dark:text-zinc-400 mb-1">模型提供方 / 预设</label>
+              <label class="block text-zinc-500 dark:text-zinc-400 mb-1">AI 预设</label>
               <select id="settingAiProvider" onchange="XiangKuApp.modules.settings.handleProviderChange()" class="w-full text-xs p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100">
-                <option value="custom">自定义模型 (OpenAI API 兼容)</option>
-                <option value="openai">OpenAI (GPT-4o / 3.5)</option>
-                <option value="deepseek">DeepSeek (V3 / R1)</option>
-                <option value="qwen">通义千问 (DashScope)</option>
-                <option value="gemini">Google Gemini (OpenAI 兼容端点)</option>
-                <option value="claude">Claude (第三方代理端点)</option>
+                <option value="custom">自定义模型</option>
+                <option value="openai">OpenAI</option>
+                <option value="deepseek">DeepSeek</option>
+                <option value="qwen">通义千问</option>
               </select>
             </div>
             <div>
-              <label class="block text-zinc-500 dark:text-zinc-400 mb-1">模型名称 (Model Name)</label>
-              <input type="text" id="settingAiModel" class="w-full text-xs p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none focus:border-zinc-400 text-zinc-800 dark:text-zinc-100" placeholder="例如：gpt-4o-mini / deepseek-chat" />
+              <label class="block text-zinc-500 dark:text-zinc-400 mb-1">模型名称</label>
+              <input type="text" id="settingAiModel" class="w-full text-xs p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100" />
             </div>
           </div>
-
           <div>
-            <label class="block text-zinc-500 dark:text-zinc-400 mb-1">API 接口地址 (Base URL)</label>
-            <input type="text" id="settingAiBaseUrl" class="w-full text-xs p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none focus:border-zinc-400 font-mono text-[11px] text-zinc-800 dark:text-zinc-100" placeholder="例如：https://api.openai.com/v1" />
+            <label class="block text-zinc-500 dark:text-zinc-400 mb-1">Base URL</label>
+            <input type="text" id="settingAiBaseUrl" class="w-full text-xs p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100 font-mono text-[10px]" />
           </div>
-
-          <div class="grid grid-cols-3 gap-3">
-            <div class="col-span-2">
-              <label class="block text-zinc-500 dark:text-zinc-400 mb-1">API Key</label>
-              <input type="password" id="settingAiApiKey" class="w-full text-xs p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none focus:border-zinc-400 font-mono text-zinc-800 dark:text-zinc-100" placeholder="sk-..." />
-            </div>
-            <div>
-              <label class="block text-zinc-500 dark:text-zinc-400 mb-1">温度参数 (Temperature)</label>
-              <input type="number" id="settingAiTemp" step="0.1" min="0" max="2" class="w-full text-xs p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none focus:border-zinc-400 text-zinc-800 dark:text-zinc-100" placeholder="0.7" />
-            </div>
+          <div>
+            <label class="block text-zinc-500 dark:text-zinc-400 mb-1">API Key</label>
+            <input type="password" id="settingAiApiKey" class="w-full text-xs p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100 font-mono" placeholder="sk-..." />
           </div>
         </section>
       </div>
 
-      <div class="p-3 border-t border-zinc-100 dark:border-zinc-800 flex justify-between items-center bg-zinc-50 dark:bg-zinc-900">
-        <button onclick="XiangKuApp.modules.settings.resetToDefault()" class="text-xs text-red-500 hover:underline">清空并重置全部数据</button>
+      <div class="p-3 border-t border-zinc-100 dark:border-zinc-800 flex justify-between items-center bg-zinc-50 dark:bg-zinc-900 shrink-0">
+        <button onclick="XiangKuApp.modules.settings.resetToDefault()" class="text-xs text-red-500 hover:underline">清空重置</button>
         <div class="flex gap-2">
-          <button onclick="XiangKuApp.modules.settings.closeModal()" class="text-xs px-3 py-1.5 border border-zinc-200 dark:border-zinc-700 rounded text-zinc-600 dark:text-zinc-300 hover:bg-white dark:hover:bg-zinc-800">取消</button>
-          <button onclick="XiangKuApp.modules.settings.saveFromUI()" class="text-xs px-4 py-1.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded hover:bg-zinc-800 dark:hover:bg-white font-medium">保存设置</button>
+          <button onclick="XiangKuApp.modules.settings.closeModal()" class="text-xs px-3 py-1.5 border border-zinc-200 dark:border-zinc-700 rounded text-zinc-600 dark:text-zinc-300">取消</button>
+          <button onclick="XiangKuApp.modules.settings.saveFromUI()" class="text-xs px-4 py-1.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded font-medium">保存</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ================= 资产卡片新建/编辑弹窗 (ASSET MODAL) ================= -->
-  <div id="assetModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 hidden flex items-center justify-center">
-    <div class="bg-white dark:bg-[#1a1a1a] border border-zinc-200 dark:border-zinc-800 rounded-lg w-[500px] shadow-2xl overflow-hidden">
+  <!-- ================= 资产卡片新建/编辑弹窗 ================= -->
+  <div id="assetModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-2 sm:p-4">
+    <div class="bg-white dark:bg-[#1a1a1a] border border-zinc-200 dark:border-zinc-800 rounded-lg w-full max-w-[480px] shadow-2xl overflow-hidden">
       <div class="p-3 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
         <span id="assetModalTitle" class="text-xs font-semibold text-zinc-800 dark:text-zinc-100">新建工作资产</span>
         <button onclick="XiangKuApp.modules.assets.closeModal()" class="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 text-xs p-1">✕</button>
       </div>
-      <form onsubmit="XiangKuApp.modules.assets.handleSubmit(event)" class="p-4 space-y-3">
+      <form onsubmit="XiangKuApp.modules.assets.handleSubmit(event)" class="p-3 sm:p-4 space-y-3">
         <input type="hidden" id="assetFormId" value="" />
         <div>
-          <label class="block text-[11px] text-zinc-500 dark:text-zinc-400 mb-1">资产标题 / 规范名称</label>
-          <input type="text" id="assetFormTitle" placeholder="例如：主设备巡检操作标准 (SOP)" class="w-full text-xs p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none focus:border-zinc-400 text-zinc-800 dark:text-zinc-100" required />
+          <label class="block text-[11px] text-zinc-500 dark:text-zinc-400 mb-1">资产标题</label>
+          <input type="text" id="assetFormTitle" placeholder="例如：主设备巡检操作标准" class="w-full text-xs p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100" required />
         </div>
         <div class="grid grid-cols-2 gap-2">
           <div>
             <label class="block text-[11px] text-zinc-500 dark:text-zinc-400 mb-1">类型</label>
             <select id="assetFormCategory" class="w-full text-xs p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100">
-              <option value="sop">流程规范 (SOP)</option>
+              <option value="sop">流程规范</option>
               <option value="template">常用模板</option>
               <option value="contact">常用联系</option>
               <option value="experience">经验总结</option>
             </select>
           </div>
           <div>
-            <label class="block text-[11px] text-zinc-500 dark:text-zinc-400 mb-1">所属工作空间</label>
-            <select id="assetFormWorkspace" class="w-full text-xs p-2 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100"></select>
+            <label class="block text-[11px] text-zinc-500 dark:text-zinc-400 mb-1">所属空间</label>
+            <select id="assetFormWorkspace" class="w-full text-xs p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100"></select>
           </div>
         </div>
         <div>
-          <label class="block text-[11px] text-zinc-500 dark:text-zinc-400 mb-1">资产正文 / 核心内容</label>
-          <textarea id="assetFormContent" rows="6" placeholder="输入具体规程步骤、表格模板、参数或联系方式..." class="w-full text-xs p-2 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none focus:border-zinc-400 resize-none font-mono leading-relaxed text-zinc-800 dark:text-zinc-100" required></textarea>
+          <label class="block text-[11px] text-zinc-500 dark:text-zinc-400 mb-1">资产正文</label>
+          <textarea id="assetFormContent" rows="5" placeholder="输入具体流程、模板或联系方式..." class="w-full text-xs p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none resize-none font-mono text-zinc-800 dark:text-zinc-100" required></textarea>
         </div>
-        <div class="flex justify-end gap-2 pt-2">
-          <button type="button" onclick="XiangKuApp.modules.assets.closeModal()" class="text-xs px-3 py-1.5 border border-zinc-200 dark:border-zinc-700 rounded text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800">取消</button>
-          <button type="submit" class="text-xs px-3 py-1.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded hover:bg-zinc-800 dark:hover:bg-white font-medium">沉淀在库</button>
+        <div class="flex justify-end gap-2 pt-1">
+          <button type="button" onclick="XiangKuApp.modules.assets.closeModal()" class="text-xs px-3 py-1.5 border border-zinc-200 dark:border-zinc-700 rounded text-zinc-600 dark:text-zinc-300">取消</button>
+          <button type="submit" class="text-xs px-3 py-1.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded font-medium">沉淀在库</button>
         </div>
       </form>
     </div>
   </div>
 
-  <!-- ================= 核心架构与业务逻辑脚本 ================= -->
+  <!-- ================= 核心架构与移动端适配脚本 ================= -->
   <script>
     /**
-     * 象库 · 轻工作台 (顶栏工作助理 + NIK 极简悬浮球终端 + 象库矩阵互联)
+     * 象库 · 轻工作台 (全端响应式版)
      */
     window.XiangKuApp = {
       STORAGE_KEY: 'xiangku_workstation_db_v2',
 
-      // 数据结构 Schema
       db: {
         settings: {
           appName: '象库 · 轻工作台',
@@ -629,14 +545,48 @@
 
       currentWorkspaceId: 'all',
       currentAssetCategory: 'all',
+      activeMobileTab: 'notes',
 
-      // 核心初始化
       init() {
         this.loadStorage();
         this.applyThemeAndBg();
         this.applySettingsUI();
         this.renderAll();
         document.getElementById('currentDateStr').innerText = new Date().toISOString().slice(0, 10).replace(/-/g, '.');
+      },
+
+      // 移动端 Tab 切换引擎
+      switchMobileTab(tabName) {
+        this.activeMobileTab = tabName;
+        
+        // 隐藏所有模块，只显示当前 Tab
+        document.querySelectorAll('.mobile-tab-section').forEach(el => el.classList.add('hidden'));
+        
+        if (tabName === 'workspace') {
+          const wsEl = document.getElementById('tabSectionWorkspace');
+          wsEl.classList.remove('hidden');
+          wsEl.classList.add('flex');
+        } else if (tabName === 'notes') {
+          const notesEl = document.getElementById('tabSectionNotes');
+          notesEl.classList.remove('hidden');
+          notesEl.classList.add('flex');
+        } else if (tabName === 'assets') {
+          const assetsEl = document.getElementById('tabSectionAssets');
+          assetsEl.classList.remove('hidden');
+          assetsEl.classList.add('flex');
+        }
+
+        // 底部按钮高亮切换
+        ['workspace', 'notes', 'assets'].forEach(t => {
+          const btn = document.getElementById('mobileNav' + t.charAt(0).toUpperCase() + t.slice(1));
+          if (t === tabName) {
+            btn.className = 'flex flex-col items-center gap-0.5 text-zinc-900 dark:text-zinc-100 font-semibold py-1 px-3';
+          } else {
+            btn.className = 'flex flex-col items-center gap-0.5 text-zinc-400 dark:text-zinc-500 py-1 px-3';
+          }
+        });
+
+        lucide.createIcons();
       },
 
       loadStorage() {
@@ -650,7 +600,7 @@
             this.db.assets = parsed.assets || [];
             this.db.nikMessages = parsed.nikMessages || [];
           } catch (e) {
-            console.error('存储读取错误，保持默认库', e);
+            console.error('存储解析异常', e);
           }
         }
       },
@@ -688,10 +638,9 @@
       },
 
       applySettingsUI() {
-        const { appName, userRole } = this.db.settings;
+        const { appName } = this.db.settings;
         document.getElementById('htmlTitle').innerText = appName || '象库 · 轻工作台';
         document.getElementById('topAppName').innerText = appName || '象库 · 轻工作台';
-        document.getElementById('userBadgeRole').innerText = userRole || '个人用户';
       },
 
       renderAll() {
@@ -743,9 +692,7 @@
       },
 
       mergeDatabase(imported) {
-        let addedWorkspaces = 0;
-        let addedNotes = 0;
-        let addedAssets = 0;
+        let addedWorkspaces = 0, addedNotes = 0, addedAssets = 0;
 
         if (Array.isArray(imported.workspace)) {
           imported.workspace.forEach(ws => {
@@ -777,17 +724,11 @@
           });
         }
 
-        if (imported.settings) {
-          if (!this.db.settings.userBio && imported.settings.userBio) this.db.settings.userBio = imported.settings.userBio;
-          if (!this.db.settings.feishuWebhook && imported.settings.feishuWebhook) this.db.settings.feishuWebhook = imported.settings.feishuWebhook;
-        }
-
         this.saveStorage();
         this.renderAll();
-        alert(`增量合并成功！\n- 新增工作空间: ${addedWorkspaces} 个\n- 新增工作记录: ${addedNotes} 条\n- 新增知识资产: ${addedAssets} 篇\n已有内容已完好保留。`);
+        alert(`增量合并成功！新增空间 ${addedWorkspaces} 个，记录 ${addedNotes} 条，资产 ${addedAssets} 篇。`);
       },
 
-      // 统一大模型请求底层
       async requestAI(messages, systemContext = '') {
         const ai = this.db.settings.aiConfig || {};
         if (!ai.apiKey || !ai.baseUrl) {
@@ -795,54 +736,40 @@
         }
 
         const url = ai.baseUrl.replace(/\/+$/, '') + '/chat/completions';
-        const headers = {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${ai.apiKey}`
-        };
-
         const payloadMessages = [];
-        if (systemContext) {
-          payloadMessages.push({ role: 'system', content: systemContext });
-        }
+        if (systemContext) payloadMessages.push({ role: 'system', content: systemContext });
 
-        if (Array.isArray(messages)) {
-          payloadMessages.push(...messages);
-        } else {
-          payloadMessages.push({ role: 'user', content: String(messages) });
-        }
-
-        const body = {
-          model: ai.model || 'gpt-4o-mini',
-          messages: payloadMessages,
-          temperature: parseFloat(ai.temperature) || 0.7
-        };
+        if (Array.isArray(messages)) payloadMessages.push(...messages);
+        else payloadMessages.push({ role: 'user', content: String(messages) });
 
         const response = await fetch(url, {
           method: 'POST',
-          headers: headers,
-          body: JSON.stringify(body)
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${ai.apiKey}`
+          },
+          body: JSON.stringify({
+            model: ai.model || 'gpt-4o-mini',
+            messages: payloadMessages,
+            temperature: parseFloat(ai.temperature) || 0.7
+          })
         });
 
         if (!response.ok) {
           const errText = await response.text();
-          throw new Error(`API 响应错误 (${response.status}): ${errText}`);
+          throw new Error(`API 响应错误: ${errText}`);
         }
 
         const resData = await response.json();
         return resData.choices?.[0]?.message?.content || '未返回有效内容';
       },
 
-      // 模块层
       modules: {
-        // ========== 1. 设置中心模块 ==========
         settings: {
           openModal() {
             const s = XiangKuApp.db.settings;
             document.getElementById('settingAppName').value = s.appName || '';
             document.getElementById('settingBgTheme').value = s.bgTheme || 'bg-theme-plain';
-            document.getElementById('settingUserName').value = s.userName || '';
-            document.getElementById('settingUserRole').value = s.userRole || '';
-            document.getElementById('settingUserBio').value = s.userBio || '';
             document.getElementById('settingFeishuWebhook').value = s.feishuWebhook || '';
 
             const ai = s.aiConfig || {};
@@ -850,7 +777,6 @@
             document.getElementById('settingAiModel').value = ai.model || '';
             document.getElementById('settingAiBaseUrl').value = ai.baseUrl || '';
             document.getElementById('settingAiApiKey').value = ai.apiKey || '';
-            document.getElementById('settingAiTemp').value = ai.temperature ?? 0.7;
 
             document.getElementById('settingsModal').classList.remove('hidden');
           },
@@ -868,8 +794,6 @@
               openai: { url: 'https://api.openai.com/v1', model: 'gpt-4o-mini' },
               deepseek: { url: 'https://api.deepseek.com/v1', model: 'deepseek-chat' },
               qwen: { url: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-turbo' },
-              gemini: { url: 'https://generativelanguage.googleapis.com/v1beta/openai/', model: 'gemini-1.5-flash' },
-              claude: { url: 'https://api.anthropic.com/v1', model: 'claude-3-5-sonnet-20240620' },
               custom: { url: '', model: '' }
             };
 
@@ -882,9 +806,6 @@
           saveFromUI() {
             XiangKuApp.db.settings.appName = document.getElementById('settingAppName').value.trim() || '象库 · 轻工作台';
             XiangKuApp.db.settings.bgTheme = document.getElementById('settingBgTheme').value;
-            XiangKuApp.db.settings.userName = document.getElementById('settingUserName').value.trim() || '工作者';
-            XiangKuApp.db.settings.userRole = document.getElementById('settingUserRole').value.trim() || '日常运维';
-            XiangKuApp.db.settings.userBio = document.getElementById('settingUserBio').value.trim();
             XiangKuApp.db.settings.feishuWebhook = document.getElementById('settingFeishuWebhook').value.trim();
 
             XiangKuApp.db.settings.aiConfig = {
@@ -892,7 +813,7 @@
               model: document.getElementById('settingAiModel').value.trim(),
               baseUrl: document.getElementById('settingAiBaseUrl').value.trim(),
               apiKey: document.getElementById('settingAiApiKey').value.trim(),
-              temperature: parseFloat(document.getElementById('settingAiTemp').value) || 0.7
+              temperature: 0.7
             };
 
             XiangKuApp.saveStorage();
@@ -902,65 +823,48 @@
           },
 
           resetToDefault() {
-            if (confirm('警告：这将清空当前所有数据并重置为空白状态。确定继续？')) {
+            if (confirm('确定清空并重置所有数据？')) {
               localStorage.removeItem(XiangKuApp.STORAGE_KEY);
               location.reload();
             }
           }
         },
 
-        // ========== 2. 飞书联动模块 ==========
         feishu: {
           async syncToFeishu() {
             const webhookUrl = XiangKuApp.db.settings.feishuWebhook;
             if (!webhookUrl) {
-              if (confirm('尚未配置飞书 Webhook 地址，是否前往设置中心填写？')) {
-                XiangKuApp.modules.settings.openModal();
-              }
+              alert('请先在设置中填写飞书 Webhook 地址');
+              XiangKuApp.modules.settings.openModal();
               return;
             }
 
             const notes = XiangKuApp.db.notes;
-            const assets = XiangKuApp.db.assets;
-            const user = XiangKuApp.db.settings;
-
-            if (notes.length === 0 && assets.length === 0) {
-              alert('当前没有记录或资产，暂无需同步的内容。');
+            if (notes.length === 0) {
+              alert('暂无工作记录可同步');
               return;
             }
 
-            const noteContentText = notes.slice(0, 10).map((n, i) => `${i+1}. [${n.time || '--:--'}] ${n.content}`).join('\n');
-            const summaryText = `【${user.appName} · 工作流同步】\n` +
-              `👤 操作人: ${user.userName} (${user.userRole})\n` +
+            const noteContentText = notes.slice(0, 8).map((n, i) => `${i+1}. [${n.time || '--:--'}] ${n.content}`).join('\n');
+            const summaryText = `【${XiangKuApp.db.settings.appName} · 工作记录】\n` +
               `📅 同步日期: ${new Date().toLocaleDateString()}\n\n` +
-              `📝 今日工作记录 (${notes.length}条):\n` +
-              (noteContentText || '暂无记录') +
-              `\n\n📚 资产沉淀库共计: ${assets.length} 篇`;
-
-            const payload = {
-              msg_type: "text",
-              content: { text: summaryText }
-            };
+              `📝 今日记录 (${notes.length}条):\n` + noteContentText;
 
             try {
               const res = await fetch(webhookUrl, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(payload)
+                body: JSON.stringify({ msg_type: "text", content: { text: summaryText } })
               });
 
-              if (res.ok) {
-                alert('✅ 已成功推送至飞书群机器人！');
-              } else {
-                alert(`推送飞书失败，响应状态码: ${res.status}`);
-              }
+              if (res.ok) alert('✅ 已成功推送至飞书！');
+              else alert('推送失败，请检查网络或 Webhook 状态');
             } catch (err) {
-              alert(`推送飞书遇到网络或跨域问题: ${err.message}\n请检查 Webhook 链接是否正确。`);
+              alert(`推送失败: ${err.message}`);
             }
           }
         },
 
-        // ========== 3. 工作空间模块 ==========
         workspace: {
           render() {
             const container = document.getElementById('workspaceList');
@@ -968,41 +872,47 @@
 
             const allBtn = document.createElement('button');
             const isAllActive = XiangKuApp.currentWorkspaceId === 'all';
-            allBtn.className = `w-full flex items-center justify-between px-2.5 py-1.5 rounded text-xs transition-colors ${
+            allBtn.className = `w-full flex items-center justify-between p-2 rounded text-xs transition-colors ${
               isAllActive ? 'bg-zinc-200/70 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/60'
             }`;
-            allBtn.onclick = () => this.select('all');
+            allBtn.onclick = () => {
+              this.select('all');
+              if (window.innerWidth < 768) XiangKuApp.switchMobileTab('notes');
+            };
             allBtn.innerHTML = `
               <div class="flex items-center gap-2 truncate">
                 <i data-lucide="layers" class="w-3.5 h-3.5 text-zinc-400"></i>
                 <span>全部工作域</span>
               </div>
-              <span class="text-[10px] font-mono text-zinc-400 dark:text-zinc-500">${XiangKuApp.db.notes.length}</span>
+              <span class="text-[10px] font-mono text-zinc-400">${XiangKuApp.db.notes.length}</span>
             `;
             container.appendChild(allBtn);
 
             if (XiangKuApp.db.workspace.length === 0) {
               const emptyTip = document.createElement('div');
-              emptyTip.className = 'p-3 text-[11px] text-zinc-400 dark:text-zinc-500 text-center leading-relaxed';
-              emptyTip.innerHTML = '暂无工作空间<br><button onclick="XiangKuApp.modules.workspace.openCreateModal()" class="text-zinc-700 dark:text-zinc-300 underline mt-1">+ 创建首个项目</button>';
+              emptyTip.className = 'p-3 text-[11px] text-zinc-400 text-center leading-relaxed';
+              emptyTip.innerHTML = '暂无工作空间<br><button onclick="XiangKuApp.modules.workspace.openCreateModal()" class="text-zinc-700 dark:text-zinc-300 underline mt-1">+ 创建新空间</button>';
               container.appendChild(emptyTip);
             } else {
               XiangKuApp.db.workspace.forEach(ws => {
                 const isActive = XiangKuApp.currentWorkspaceId === ws.id;
                 const count = XiangKuApp.db.notes.filter(n => n.workspaceId === ws.id).length;
                 const item = document.createElement('div');
-                item.className = `group flex items-center justify-between px-2.5 py-1.5 rounded text-xs transition-colors cursor-pointer ${
+                item.className = `group flex items-center justify-between p-2 rounded text-xs transition-colors cursor-pointer ${
                   isActive ? 'bg-zinc-200/70 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/60'
                 }`;
-                item.onclick = () => this.select(ws.id);
+                item.onclick = () => {
+                  this.select(ws.id);
+                  if (window.innerWidth < 768) XiangKuApp.switchMobileTab('notes');
+                };
                 item.innerHTML = `
                   <div class="flex items-center gap-2 truncate">
                     <i data-lucide="folder" class="w-3.5 h-3.5 text-zinc-400 shrink-0"></i>
                     <span class="truncate">${ws.name}</span>
                   </div>
                   <div class="flex items-center gap-1">
-                    <span class="text-[10px] font-mono text-zinc-400 dark:text-zinc-500">${count}</span>
-                    <button onclick="event.stopPropagation(); XiangKuApp.modules.workspace.delete('${ws.id}')" class="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-red-500 text-xs px-1">✕</button>
+                    <span class="text-[10px] font-mono text-zinc-400">${count}</span>
+                    <button onclick="event.stopPropagation(); XiangKuApp.modules.workspace.delete('${ws.id}')" class="text-zinc-400 hover:text-red-500 text-xs px-1">✕</button>
                   </div>
                 `;
                 container.appendChild(item);
@@ -1033,30 +943,22 @@
           openCreateModal() {
             const name = prompt('请输入新工作空间 / 项目名称:');
             if (!name || !name.trim()) return;
-            const desc = prompt('请输入工作空间描述 (选填):') || '';
-            const newWs = {
-              id: 'ws_' + Date.now(),
-              name: name.trim(),
-              description: desc.trim()
-            };
+            const newWs = { id: 'ws_' + Date.now(), name: name.trim(), description: '' };
             XiangKuApp.db.workspace.push(newWs);
             XiangKuApp.saveStorage();
             this.select(newWs.id);
           },
 
           delete(id) {
-            if (confirm('删除该工作空间不会删除已有记录，确认删除？')) {
+            if (confirm('确认删除该空间？')) {
               XiangKuApp.db.workspace = XiangKuApp.db.workspace.filter(w => w.id !== id);
-              if (XiangKuApp.currentWorkspaceId === id) {
-                XiangKuApp.currentWorkspaceId = 'all';
-              }
+              if (XiangKuApp.currentWorkspaceId === id) XiangKuApp.currentWorkspaceId = 'all';
               XiangKuApp.saveStorage();
               XiangKuApp.renderAll();
             }
           }
         },
 
-        // ========== 4. 工作流记录模块 (Daily Notes) ==========
         notes: {
           render(filterKw = '') {
             const container = document.getElementById('dailyLogStream');
@@ -1064,18 +966,15 @@
 
             let list = XiangKuApp.db.notes.filter(n => {
               const matchWs = (XiangKuApp.currentWorkspaceId === 'all' || n.workspaceId === XiangKuApp.currentWorkspaceId);
-              const matchKw = !filterKw || 
-                n.content.toLowerCase().includes(filterKw.toLowerCase()) ||
-                (n.title && n.title.toLowerCase().includes(filterKw.toLowerCase()));
+              const matchKw = !filterKw || n.content.toLowerCase().includes(filterKw.toLowerCase());
               return matchWs && matchKw;
             });
 
             if (list.length === 0) {
               container.innerHTML = `
-                <div class="h-64 flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-600 text-xs gap-1.5">
-                  <i data-lucide="edit-3" class="w-6 h-6 text-zinc-300 dark:text-zinc-700 stroke-1"></i>
+                <div class="h-48 flex flex-col items-center justify-center text-zinc-400 text-xs gap-1">
+                  <i data-lucide="edit-3" class="w-5 h-5 text-zinc-300 dark:text-zinc-700 stroke-1"></i>
                   <span>暂无工作记录</span>
-                  <p class="text-[11px] text-zinc-400 dark:text-zinc-600">在上方快速捕获第一条工作流水或现场心得</p>
                 </div>
               `;
               lucide.createIcons();
@@ -1091,20 +990,19 @@
 
             list.forEach(note => {
               const item = document.createElement('div');
-              item.className = 'relative pl-5 border-l-2 border-zinc-200 dark:border-zinc-800 group transition-all';
-
+              item.className = 'relative pl-4 border-l-2 border-zinc-200 dark:border-zinc-800 group transition-all';
               const conf = typeConfig[note.type] || typeConfig.log;
 
               item.innerHTML = `
-                <div class="absolute -left-[5px] top-1 w-2 h-2 rounded-full bg-zinc-300 dark:bg-zinc-700 group-hover:bg-zinc-900 dark:group-hover:bg-zinc-100 transition-colors"></div>
+                <div class="absolute -left-[5px] top-1 w-2 h-2 rounded-full bg-zinc-300 dark:bg-zinc-700 group-hover:bg-zinc-900 dark:group-hover:bg-zinc-100"></div>
                 <div class="flex items-center justify-between text-[11px] mb-1">
                   <div class="flex items-center gap-1.5">
                     <span class="font-mono text-zinc-400 dark:text-zinc-500">${note.time || '--:--'}</span>
                     <span class="text-[10px] px-1.5 py-0.2 rounded border ${conf.class}">${conf.label}</span>
                   </div>
-                  <button onclick="XiangKuApp.modules.notes.delete('${note.id}')" class="opacity-0 group-hover:opacity-100 text-zinc-300 hover:text-red-500 text-xs px-1">删除</button>
+                  <button onclick="XiangKuApp.modules.notes.delete('${note.id}')" class="text-zinc-300 hover:text-red-500 text-xs px-1">删除</button>
                 </div>
-                <p class="text-xs text-zinc-800 dark:text-zinc-200 leading-relaxed font-sans whitespace-pre-wrap">${note.content}</p>
+                <p class="text-xs text-zinc-800 dark:text-zinc-200 leading-relaxed whitespace-pre-wrap">${note.content}</p>
               `;
               container.appendChild(item);
             });
@@ -1124,18 +1022,15 @@
             const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
             const tags = tagsEl.value.trim();
 
-            const fullContent = tags ? `${content}\n${tags}` : content;
-
-            const newNote = {
+            XiangKuApp.db.notes.unshift({
               id: 'n_' + Date.now(),
               title: content.slice(0, 16),
-              content: fullContent,
+              content: tags ? `${content}\n${tags}` : content,
               time: timeStr,
               type: typeEl.value,
               workspaceId: XiangKuApp.currentWorkspaceId === 'all' ? 'general' : XiangKuApp.currentWorkspaceId
-            };
+            });
 
-            XiangKuApp.db.notes.unshift(newNote);
             contentEl.value = '';
             tagsEl.value = '';
             XiangKuApp.saveStorage();
@@ -1143,7 +1038,7 @@
           },
 
           delete(id) {
-            if (confirm('确认删除该条记录？')) {
+            if (confirm('确认删除记录？')) {
               XiangKuApp.db.notes = XiangKuApp.db.notes.filter(n => n.id !== id);
               XiangKuApp.saveStorage();
               XiangKuApp.renderAll();
@@ -1151,7 +1046,6 @@
           }
         },
 
-        // ========== 5. 工作资产库模块 ==========
         assets: {
           render(filterKw = '') {
             const container = document.getElementById('assetCardList');
@@ -1160,52 +1054,40 @@
             let list = XiangKuApp.db.assets.filter(a => {
               const matchWs = (XiangKuApp.currentWorkspaceId === 'all' || a.workspaceId === XiangKuApp.currentWorkspaceId);
               const matchCat = (XiangKuApp.currentAssetCategory === 'all' || a.category === XiangKuApp.currentAssetCategory);
-              const matchKw = !filterKw || 
-                a.title.toLowerCase().includes(filterKw.toLowerCase()) ||
-                a.content.toLowerCase().includes(filterKw.toLowerCase());
+              const matchKw = !filterKw || a.title.toLowerCase().includes(filterKw.toLowerCase()) || a.content.toLowerCase().includes(filterKw.toLowerCase());
               return matchWs && matchCat && matchKw;
             });
 
             if (list.length === 0) {
               container.innerHTML = `
-                <div class="h-64 flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-600 text-xs gap-1.5">
-                  <i data-lucide="inbox" class="w-6 h-6 text-zinc-300 dark:text-zinc-700 stroke-1"></i>
-                  <span>暂无沉淀资料 / 资产</span>
-                  <p class="text-[11px] text-zinc-400 dark:text-zinc-600">点击右上角「新建资产」沉淀 SOP 或规范</p>
+                <div class="h-48 flex flex-col items-center justify-center text-zinc-400 text-xs gap-1">
+                  <i data-lucide="inbox" class="w-5 h-5 text-zinc-300 dark:text-zinc-700 stroke-1"></i>
+                  <span>暂无知识资产</span>
                 </div>
               `;
               lucide.createIcons();
               return;
             }
 
-            const catBadgeMap = {
-              sop: '流程规范',
-              template: '工作模板',
-              contact: '常用联系',
-              experience: '经验总结'
-            };
+            const catBadgeMap = { sop: '流程规范', template: '工作模板', contact: '常用联系', experience: '经验总结' };
 
             list.forEach(asset => {
               const card = document.createElement('div');
-              card.className = 'p-3 bg-white dark:bg-[#181818] border border-zinc-200/80 dark:border-zinc-800 rounded hover:border-zinc-400 dark:hover:border-zinc-600 transition-all shadow-[0_1px_2px_rgba(0,0,0,0.02)] flex flex-col gap-2 group';
-
+              card.className = 'p-2.5 sm:p-3 bg-white dark:bg-[#181818] border border-zinc-200/80 dark:border-zinc-800 rounded flex flex-col gap-1.5 shadow-sm';
               card.innerHTML = `
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-1.5 min-w-0">
-                    <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 shrink-0">
-                      ${catBadgeMap[asset.category] || '资料'}
-                    </span>
+                    <span class="text-[9px] font-mono px-1 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 shrink-0">${catBadgeMap[asset.category] || '资料'}</span>
                     <h3 class="text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate">${asset.title}</h3>
                   </div>
-                  <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onclick="XiangKuApp.modules.assets.openModal('${asset.id}')" class="text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 text-xs p-1" title="编辑">✎</button>
-                    <button onclick="XiangKuApp.modules.assets.delete('${asset.id}')" class="text-zinc-400 hover:text-red-500 text-xs p-1" title="删除">✕</button>
+                  <div class="flex items-center gap-1">
+                    <button onclick="XiangKuApp.modules.assets.openModal('${asset.id}')" class="text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 text-xs p-1">✎</button>
+                    <button onclick="XiangKuApp.modules.assets.delete('${asset.id}')" class="text-zinc-400 hover:text-red-500 text-xs p-1">✕</button>
                   </div>
                 </div>
-                <pre class="text-[11px] text-zinc-600 dark:text-zinc-300 bg-[#FAFAFA] dark:bg-[#121212] p-2 rounded border border-zinc-100 dark:border-zinc-800 font-mono whitespace-pre-wrap leading-relaxed max-h-36 overflow-y-auto">${asset.content}</pre>
-                <div class="flex items-center justify-between text-[10px] text-zinc-400 dark:text-zinc-500 pt-0.5">
-                  <span>长效资料</span>
-                  <button onclick="XiangKuApp.modules.assets.copy('${asset.id}')" class="text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:underline">复制内容</button>
+                <pre class="text-[11px] text-zinc-600 dark:text-zinc-300 bg-[#FAFAFA] dark:bg-[#121212] p-2 rounded border border-zinc-100 dark:border-zinc-800 font-mono whitespace-pre-wrap leading-relaxed max-h-28 overflow-y-auto">${asset.content}</pre>
+                <div class="flex items-center justify-end text-[10px] pt-0.5">
+                  <button onclick="XiangKuApp.modules.assets.copy('${asset.id}')" class="text-zinc-500 dark:text-zinc-400 hover:underline">复制内容</button>
                 </div>
               `;
               container.appendChild(card);
@@ -1217,9 +1099,9 @@
             XiangKuApp.currentAssetCategory = cat;
             document.querySelectorAll('.asset-tab').forEach(btn => {
               if (btn.dataset.type === cat) {
-                btn.className = 'asset-tab px-2 py-0.5 rounded bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium';
+                btn.className = 'asset-tab px-2 py-0.5 rounded bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium shrink-0';
               } else {
-                btn.className = 'asset-tab px-2 py-0.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400';
+                btn.className = 'asset-tab px-2 py-0.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0';
               }
             });
             this.render();
@@ -1232,14 +1114,12 @@
             if (editId) {
               const item = XiangKuApp.db.assets.find(a => a.id === editId);
               if (!item) return;
-              document.getElementById('assetModalTitle').innerText = '编辑工作资产';
               document.getElementById('assetFormId').value = item.id;
               document.getElementById('assetFormTitle').value = item.title;
               document.getElementById('assetFormCategory').value = item.category;
               document.getElementById('assetFormWorkspace').value = item.workspaceId || 'general';
               document.getElementById('assetFormContent').value = item.content;
             } else {
-              document.getElementById('assetModalTitle').innerText = '新建工作资产';
               document.getElementById('assetFormId').value = '';
               document.getElementById('assetFormTitle').value = '';
               document.getElementById('assetFormContent').value = '';
@@ -1269,13 +1149,7 @@
                 target.content = content;
               }
             } else {
-              XiangKuApp.db.assets.unshift({
-                id: 'ast_' + Date.now(),
-                title: title,
-                content: content,
-                category: category,
-                workspaceId: workspaceId
-              });
+              XiangKuApp.db.assets.unshift({ id: 'ast_' + Date.now(), title, content, category, workspaceId });
             }
 
             XiangKuApp.saveStorage();
@@ -1284,7 +1158,7 @@
           },
 
           delete(id) {
-            if (confirm('确认删除该工作资产？')) {
+            if (confirm('确认删除资产？')) {
               XiangKuApp.db.assets = XiangKuApp.db.assets.filter(a => a.id !== id);
               XiangKuApp.saveStorage();
               XiangKuApp.renderAll();
@@ -1294,61 +1168,37 @@
           copy(id) {
             const item = XiangKuApp.db.assets.find(a => a.id === id);
             if (!item) return;
-            navigator.clipboard.writeText(item.content).then(() => {
-              alert('资产正文已复制到剪贴板');
-            });
+            navigator.clipboard.writeText(item.content).then(() => alert('资产已复制'));
           }
         },
 
-        // ========== 6. 顶栏工作助理模块 (内部知识库专属分析) ==========
         assistant: {
           toggleDrawer() {
-            const drawer = document.getElementById('assistantDrawer');
-            drawer.classList.toggle('translate-x-full');
+            document.getElementById('assistantDrawer').classList.toggle('translate-x-full');
           },
 
           buildContext() {
-            const user = XiangKuApp.db.settings;
             const notes = XiangKuApp.db.notes;
             const assets = XiangKuApp.db.assets;
-
-            return `
-用户工作背景:
-- 姓名: ${user.userName || '未知'}
-- 岗位角色: ${user.userRole || '通用'}
-- 职责简介: ${user.userBio || '无'}
-
-当前已沉淀的工作流记录 (${notes.length}条):
-${notes.map(n => `[${n.time || ''}][${n.type}] ${n.content}`).join('\n')}
-
-当前长期知识资产库 (${assets.length}篇):
-${assets.map(a => `【${a.title}】(${a.category}):\n${a.content}`).join('\n---\n')}
-`;
+            return `工作流记录:\n${notes.map(n => `[${n.time}][${n.type}] ${n.content}`).join('\n')}\n\n资产库:\n${assets.map(a => `【${a.title}】:\n${a.content}`).join('\n---\n')}`;
           },
 
           async runPrompt(type) {
             const output = document.getElementById('assistantOutput');
-            output.innerText = '工作助理正在提取内部工作台知识并进行分析...';
+            output.innerText = '正在分析处理...';
 
             const prompts = {
-              summary: '请帮我总结今天的所有工作流记录，按推进进展、处理细节与后续建议输出一份清晰的今日工作总结。',
-              weekly: '请基于当前已有的工作流水记录，提炼并生成一份结构化的工作周报草稿（包含本周完成、重点突破、问题与下周规划）。',
-              issues: '请全面梳理记录中的 [异常/问题] 以及潜在风险，并给出优先排错建议。',
-              extract_asset: '请分析当前的工作流记录，找出值得沉淀为长期 SOP 规范或经验总结的内容，并格式化为标准资产卡片形式。'
+              summary: '请总结今天的工作流记录，输出今日工作总结。',
+              weekly: '请基于当前记录，生成结构化周报。',
+              issues: '请梳理记录中的异常与未决问题。',
+              extract_asset: '请提炼有价值的经验为资产卡片。'
             };
 
-            const userPrompt = prompts[type] || '请分析当前工作台内容。';
-            const context = this.buildContext();
-
             try {
-              const res = await XiangKuApp.requestAI(userPrompt, `你是一个严谨的内部工作助理。请严格基于以下工作台内部上下文回答：\n${context}`);
+              const res = await XiangKuApp.requestAI(prompts[type], `你是工作助理。基于以下工作台数据回答：\n${this.buildContext()}`);
               output.innerText = res;
             } catch (err) {
-              if (err.message === 'MISSING_CONFIG') {
-                this.fallbackLocalAnalysis(type);
-              } else {
-                output.innerText = `调用失败: ${err.message}\n\n请在设置中心检查 API Key、Base URL 与 Model 配置。`;
-              }
+              output.innerText = err.message === 'MISSING_CONFIG' ? '未配置 API Key，请在设置中配置大模型。' : `调用失败: ${err.message}`;
             }
           },
 
@@ -1359,46 +1209,18 @@ ${assets.map(a => `【${a.title}】(${a.category}):\n${a.content}`).join('\n---\
             if (!q) return;
 
             const output = document.getElementById('assistantOutput');
-            output.innerText = `正在基于内部数据分析: "${q}"...`;
-            const context = this.buildContext();
+            output.innerText = '正在分析...';
 
             try {
-              const res = await XiangKuApp.requestAI(q, `你是象库轻工作台的专属内部工作助理。请基于以下工作台内部数据回答：\n${context}`);
+              const res = await XiangKuApp.requestAI(q, `你是专属工作助理。基于以下数据回答：\n${this.buildContext()}`);
               output.innerText = res;
               input.value = '';
             } catch (err) {
-              if (err.message === 'MISSING_CONFIG') {
-                output.innerText = `提示：未配置 AI API Key。请在设置中心填写后使用。`;
-              } else {
-                output.innerText = `调用异常: ${err.message}`;
-              }
-            }
-          },
-
-          fallbackLocalAnalysis(type) {
-            const notes = XiangKuApp.db.notes;
-            const output = document.getElementById('assistantOutput');
-
-            if (notes.length === 0) {
-              output.innerText = '当前暂无任何工作记录。请先在工作台中沉淀工作流水后再试。';
-              return;
-            }
-
-            if (type === 'summary') {
-              output.innerText = `【本地结构化提取 - 今日工作总结】\n\n共捕获 ${notes.length} 条流水：\n` + 
-                notes.map((n, i) => `${i+1}. [${n.time || '--:--'}] ${n.content}`).join('\n') +
-                `\n\n提示：如需深度润色，请在 [设置] 中配置大模型 API。`;
-            } else if (type === 'issues') {
-              const issues = notes.filter(n => n.type === 'issue');
-              output.innerText = `【本地异常筛选 - 共 ${issues.length} 项】\n\n` + 
-                (issues.length ? issues.map((n, i) => `${i+1}. [${n.time}] ${n.content}`).join('\n') : '暂无异常类型记录。');
-            } else {
-              output.innerText = `已读取当前 ${notes.length} 条记录与 ${XiangKuApp.db.assets.length} 篇资产。\n\n提示：在右上角设置中心配置 API Key 即可开启完整分析。`;
+              output.innerText = `异常: ${err.message}`;
             }
           }
         },
 
-        // ========== 7. 右下角 NIK 全域通用 AI 对话终端模块 ==========
         nik: {
           toggleModal() {
             const modal = document.getElementById('nikModal');
@@ -1414,10 +1236,10 @@ ${assets.map(a => `【${a.title}】(${a.category}):\n${a.content}`).join('\n---\
             if (!XiangKuApp.db.nikMessages || XiangKuApp.db.nikMessages.length === 0) {
               container.innerHTML = `
                 <div class="flex gap-2">
-                  <div class="w-6 h-6 rounded bg-zinc-900 dark:bg-zinc-800 border border-zinc-700 text-zinc-300 font-mono text-[10px] flex items-center justify-center shrink-0 mt-0.5">
+                  <div class="w-5 h-5 rounded bg-zinc-900 dark:bg-zinc-800 border border-zinc-700 text-zinc-300 font-mono text-[10px] flex items-center justify-center shrink-0 mt-0.5">
                     <i data-lucide="bot" class="w-3.5 h-3.5 text-zinc-300"></i>
                   </div>
-                  <div class="bg-zinc-100 dark:bg-zinc-800/80 text-zinc-800 dark:text-zinc-200 p-2.5 rounded-lg rounded-tl-none leading-relaxed max-w-[85%] whitespace-pre-wrap border border-zinc-200/50 dark:border-zinc-700/50">
+                  <div class="bg-zinc-100 dark:bg-zinc-800/80 text-zinc-800 dark:text-zinc-200 p-2.5 rounded-lg rounded-tl-none leading-relaxed max-w-[85%] whitespace-pre-wrap">
 你好！我是 NIK。你可以向我咨询任何通用知识、编码方案、逻辑推理或日常灵感探讨。
                   </div>
                 </div>
@@ -1433,15 +1255,13 @@ ${assets.map(a => `【${a.title}】(${a.category}):\n${a.content}`).join('\n---\
               div.className = `flex gap-2 ${isUser ? 'justify-end' : 'justify-start'}`;
 
               if (isUser) {
-                div.innerHTML = `
-                  <div class="bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 p-2.5 rounded-lg rounded-tr-none leading-relaxed max-w-[85%] whitespace-pre-wrap font-sans">${msg.content}</div>
-                `;
+                div.innerHTML = `<div class="bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 p-2 rounded-lg rounded-tr-none leading-relaxed max-w-[85%] whitespace-pre-wrap">${msg.content}</div>`;
               } else {
                 div.innerHTML = `
-                  <div class="w-6 h-6 rounded bg-zinc-900 dark:bg-zinc-800 border border-zinc-700 text-zinc-300 font-mono text-[10px] flex items-center justify-center shrink-0 mt-0.5">
+                  <div class="w-5 h-5 rounded bg-zinc-900 dark:bg-zinc-800 border border-zinc-700 text-zinc-300 flex items-center justify-center shrink-0 mt-0.5">
                     <i data-lucide="bot" class="w-3.5 h-3.5 text-zinc-300"></i>
                   </div>
-                  <div class="bg-zinc-100 dark:bg-zinc-800/80 text-zinc-800 dark:text-zinc-200 p-2.5 rounded-lg rounded-tl-none leading-relaxed max-w-[85%] whitespace-pre-wrap border border-zinc-200/50 dark:border-zinc-700/50">${msg.content}</div>
+                  <div class="bg-zinc-100 dark:bg-zinc-800/80 text-zinc-800 dark:text-zinc-200 p-2 rounded-lg rounded-tl-none leading-relaxed max-w-[85%] whitespace-pre-wrap">${msg.content}</div>
                 `;
               }
               container.appendChild(div);
@@ -1460,40 +1280,14 @@ ${assets.map(a => `【${a.title}】(${a.category}):\n${a.content}`).join('\n---\
             input.value = '';
             this.renderMessages();
 
-            const container = document.getElementById('nikChatMessages');
-            const loadingDiv = document.createElement('div');
-            loadingDiv.className = 'flex gap-2 justify-start';
-            loadingDiv.id = 'nikLoadingIndicator';
-            loadingDiv.innerHTML = `
-              <div class="w-6 h-6 rounded bg-zinc-900 dark:bg-zinc-800 border border-zinc-700 text-zinc-300 font-mono text-[10px] flex items-center justify-center shrink-0 mt-0.5">
-                <i data-lucide="bot" class="w-3.5 h-3.5 text-zinc-300"></i>
-              </div>
-              <div class="bg-zinc-100 dark:bg-zinc-800 text-zinc-400 p-2.5 rounded-lg rounded-tl-none text-xs italic">NIK 正在思考中...</div>
-            `;
-            container.appendChild(loadingDiv);
-            lucide.createIcons();
-            this.scrollToBottom();
-
             try {
-              const historyPayload = XiangKuApp.db.nikMessages.slice(-8);
-              const systemPrompt = "你是 NIK，一个博学、敏锐、直接且高效的通用全域 AI 助手。请直接、清晰、专业地回答用户的提问。";
-
-              const reply = await XiangKuApp.requestAI(historyPayload, systemPrompt);
-
-              const loadingEl = document.getElementById('nikLoadingIndicator');
-              if (loadingEl) loadingEl.remove();
-
+              const historyPayload = XiangKuApp.db.nikMessages.slice(-6);
+              const reply = await XiangKuApp.requestAI(historyPayload, "你是 NIK，一个博学、敏锐、直接且高效的通用全域 AI 助手。");
               XiangKuApp.db.nikMessages.push({ role: 'assistant', content: reply });
               XiangKuApp.saveStorage();
               this.renderMessages();
             } catch (err) {
-              const loadingEl = document.getElementById('nikLoadingIndicator');
-              if (loadingEl) loadingEl.remove();
-
-              let errMsg = `NIK 呼叫失败: ${err.message}`;
-              if (err.message === 'MISSING_CONFIG') {
-                errMsg = "提示：尚未配置大模型 API Key。请点击右上角 [设置] 填入你的大模型接口密钥。";
-              }
+              const errMsg = err.message === 'MISSING_CONFIG' ? "提示：尚未配置大模型 API Key，请在设置中填写。" : `调用失败: ${err.message}`;
               XiangKuApp.db.nikMessages.push({ role: 'assistant', content: errMsg });
               XiangKuApp.saveStorage();
               this.renderMessages();
@@ -1501,7 +1295,7 @@ ${assets.map(a => `【${a.title}】(${a.category}):\n${a.content}`).join('\n---\
           },
 
           clearChat() {
-            if (confirm('清空 NIK 的所有对话历史？')) {
+            if (confirm('清空 NIK 对话？')) {
               XiangKuApp.db.nikMessages = [];
               XiangKuApp.saveStorage();
               this.renderMessages();
@@ -1516,7 +1310,6 @@ ${assets.map(a => `【${a.title}】(${a.category}):\n${a.content}`).join('\n---\
       }
     };
 
-    // 页面加载自动启动
     window.addEventListener('DOMContentLoaded', () => {
       XiangKuApp.init();
     });
