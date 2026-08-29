@@ -84,7 +84,7 @@
       </div>
     </div>
 
-    <!-- 顶部快捷操作 (加入顶端个人资料库入口) -->
+    <!-- 顶部快捷操作 (统一尺寸规范: h-7, text-xs) -->
     <div class="flex items-center gap-1.5 md:gap-2">
       <!-- 搜索 -->
       <div class="relative flex items-center">
@@ -94,15 +94,15 @@
           id="globalSearchInput" 
           oninput="XiangKuApp.handleSearch()" 
           placeholder="全局检索 (/) " 
-          class="w-24 md:w-40 pl-7 pr-2 py-1 text-xs bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none focus:border-zinc-400 text-zinc-800 dark:text-zinc-100 transition-all placeholder:text-zinc-400"
+          class="w-24 md:w-40 h-7 pl-7 pr-2 text-xs bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none focus:border-zinc-400 text-zinc-800 dark:text-zinc-100 transition-all placeholder:text-zinc-400"
         />
       </div>
 
-      <!-- 【顶端入口】个人资料库 -->
+      <!-- 个人资料库 -->
       <button 
         onclick="XiangKuApp.modules.profileVault.toggleDrawer()" 
         title="打开个人资料库 (档案/能力/经验/方法)"
-        class="flex items-center gap-1.5 text-xs px-2.5 py-1 rounded border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium shrink-0 bg-white dark:bg-zinc-800 shadow-sm"
+        class="h-7 flex items-center gap-1.5 text-xs px-2.5 rounded border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium shrink-0 bg-white dark:bg-zinc-800 shadow-sm"
       >
         <i data-lucide="user-check" class="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400"></i>
         <span>个人资料库</span>
@@ -112,7 +112,7 @@
       <button 
         onclick="XiangKuApp.toggleDarkMode()" 
         title="切换夜晚/日间模式"
-        class="text-xs p-1.5 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded flex items-center shrink-0"
+        class="w-7 h-7 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded flex items-center justify-center shrink-0"
       >
         <i data-lucide="moon" id="darkModeIcon" class="w-3.5 h-3.5"></i>
       </button>
@@ -121,18 +121,18 @@
       <button 
         onclick="XiangKuApp.modules.feishu.syncToFeishu()" 
         title="同步飞书"
-        class="flex items-center gap-1 text-xs px-2 py-1 rounded border border-blue-200 dark:border-blue-900 bg-blue-50/50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 shrink-0"
+        class="h-7 flex items-center gap-1 text-xs px-2.5 rounded border border-blue-200 dark:border-blue-900 bg-blue-50/50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 shrink-0 font-medium"
       >
-        <i data-lucide="send" class="w-3 h-3 text-blue-600 dark:text-blue-400"></i>
-        <span class="hidden md:inline font-medium">同步</span>
+        <i data-lucide="send" class="w-3.5 h-3.5 text-blue-600 dark:text-blue-400"></i>
+        <span class="hidden md:inline">同步</span>
       </button>
 
       <!-- 工作助理 -->
       <button 
         onclick="XiangKuApp.modules.assistant.toggleDrawer()" 
-        class="flex items-center gap-1 text-xs px-2 py-1 rounded bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium shrink-0 shadow-sm"
+        class="h-7 flex items-center gap-1 text-xs px-2.5 rounded bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium shrink-0 shadow-sm"
       >
-        <i data-lucide="sparkles" class="w-3 h-3 text-amber-300 dark:text-amber-500"></i>
+        <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-300 dark:text-amber-500"></i>
         <span class="hidden md:inline">工作助理</span>
       </button>
 
@@ -140,22 +140,22 @@
       <button 
         onclick="XiangKuApp.modules.settings.openModal()" 
         title="设置"
-        class="text-xs p-1.5 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded flex items-center shrink-0"
+        class="w-7 h-7 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded flex items-center justify-center shrink-0"
       >
         <i data-lucide="settings" class="w-3.5 h-3.5"></i>
       </button>
     </div>
   </header>
 
-  <!-- ================= 首页：纯粹三大工作台 (3 栏自适应布局) ================= -->
+  <!-- ================= 首页三大工作台 (标准 2 : 5 : 5 比例) ================= -->
   <main class="flex-1 grid grid-cols-1 md:grid-cols-12 gap-0 overflow-hidden relative">
     
-    <!-- 1. 【工作空间 工作台】(桌面占 2 列) -->
+    <!-- 1. 【工作空间 工作台】(窄侧边栏: 占 2 列) -->
     <aside id="tabSectionWorkspace" class="mobile-tab-section hidden md:flex md:col-span-2 border-r border-zinc-200/80 dark:border-zinc-800 bg-[#FAFAFA]/95 dark:bg-[#141414]/95 flex-col justify-between overflow-hidden h-full">
       <div class="flex-1 flex flex-col overflow-hidden">
         <div class="p-3 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between text-xs font-semibold text-zinc-400 dark:text-zinc-500 tracking-wider">
           <span>工作空间 / 目录</span>
-          <button onclick="XiangKuApp.modules.workspace.openCreateModal()" class="hover:text-zinc-800 dark:hover:text-zinc-200 text-zinc-400 p-1 rounded hover:bg-zinc-200/50 dark:hover:bg-zinc-800" title="新建工作空间">
+          <button onclick="XiangKuApp.modules.workspace.openCreateModal()" class="w-6 h-6 flex items-center justify-center hover:text-zinc-800 dark:hover:text-zinc-200 text-zinc-400 rounded hover:bg-zinc-200/50 dark:hover:bg-zinc-800" title="新建工作空间">
             <i data-lucide="plus" class="w-3.5 h-3.5"></i>
           </button>
         </div>
@@ -177,15 +177,15 @@
       </div>
     </aside>
 
-    <!-- 2. 【工作流 工作台】(桌面占 6 列) -->
-    <section id="tabSectionNotes" class="mobile-tab-section flex md:col-span-6 border-r border-zinc-200/80 dark:border-zinc-800 flex-col bg-white/95 dark:bg-[#181818]/95 overflow-hidden h-full">
+    <!-- 2. 【工作流 工作台】(主干等宽: 占 5 列) -->
+    <section id="tabSectionNotes" class="mobile-tab-section flex md:col-span-5 border-r border-zinc-200/80 dark:border-zinc-800 flex-col bg-white/95 dark:bg-[#181818]/95 overflow-hidden h-full">
       <div class="p-2.5 md:p-3 border-b border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-900/60 shrink-0">
         <div class="flex items-center justify-between mb-1.5">
           <span class="text-xs font-semibold text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5">
             <i data-lucide="zap" class="w-3.5 h-3.5 text-zinc-400"></i>
             快速知识捕获
           </span>
-          <select id="quickTypeSelect" class="text-[11px] bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded px-1.5 py-0.5 text-zinc-600 dark:text-zinc-300 focus:outline-none">
+          <select id="quickTypeSelect" class="h-6 text-[11px] bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded px-1.5 text-zinc-600 dark:text-zinc-300 focus:outline-none">
             <option value="log">流水</option>
             <option value="progress">进展</option>
             <option value="issue">异常</option>
@@ -197,7 +197,7 @@
             id="quickInputContent" 
             rows="2" 
             placeholder="随时记录正在推进的事、异常、参数或现场心得..." 
-            class="w-full text-xs p-2.5 bg-white dark:bg-zinc-800/90 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 transition-all resize-none leading-relaxed placeholder:text-zinc-400 dark:placeholder:text-zinc-500 text-zinc-800 dark:text-zinc-100"
+            class="w-full text-xs p-2 bg-white dark:bg-zinc-800/90 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 transition-all resize-none leading-relaxed placeholder:text-zinc-400 dark:placeholder:text-zinc-500 text-zinc-800 dark:text-zinc-100"
             required
             onkeydown="if((event.ctrlKey||event.metaKey)&&event.keyCode===13){XiangKuApp.modules.notes.handleSubmit(event);}"
           ></textarea>
@@ -210,7 +210,7 @@
             />
             <button 
               type="submit" 
-              class="text-xs bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-3.5 py-1 rounded hover:bg-zinc-800 dark:hover:bg-white font-medium flex items-center gap-1 shadow-sm"
+              class="h-7 text-xs bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-3 rounded hover:bg-zinc-800 dark:hover:bg-white font-medium flex items-center gap-1 shadow-sm"
             >
               <span>沉淀记录</span>
               <i data-lucide="corner-down-left" class="w-3 h-3 text-zinc-400 dark:text-zinc-600"></i>
@@ -221,7 +221,7 @@
 
       <!-- 工作流时间轴 -->
       <div class="flex-1 flex flex-col overflow-hidden">
-        <div class="px-3 md:px-4 py-1.5 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between bg-[#FAFAFA]/70 dark:bg-[#151515]/70 shrink-0">
+        <div class="px-3 md:px-4 py-2 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between bg-[#FAFAFA]/70 dark:bg-[#151515]/70 shrink-0">
           <span class="text-xs font-semibold text-zinc-500 dark:text-zinc-400 tracking-wider">今日工作流 (DAILY STREAM)</span>
           <span id="currentDateStr" class="text-[11px] font-mono text-zinc-400 dark:text-zinc-500">--</span>
         </div>
@@ -231,31 +231,34 @@
       </div>
     </section>
 
-    <!-- 3. 【知识库 工作台】(桌面占 4 列) -->
-    <section id="tabSectionKnowledge" class="mobile-tab-section hidden md:flex md:col-span-4 flex-col bg-[#FAFAFA]/90 dark:bg-[#141414]/90 overflow-hidden h-full">
+    <!-- 3. 【知识库 工作台】(主干等宽: 占 5 列，已扩充全部分区) -->
+    <section id="tabSectionKnowledge" class="mobile-tab-section hidden md:flex md:col-span-5 flex-col bg-[#FAFAFA]/90 dark:bg-[#141414]/90 overflow-hidden h-full">
       <div class="p-2.5 md:p-3 border-b border-zinc-200/80 dark:border-zinc-800 bg-white/90 dark:bg-[#181818]/90 flex items-center justify-between shrink-0">
         <div>
           <h2 class="text-xs font-semibold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
             <i data-lucide="layers" class="w-3.5 h-3.5 text-zinc-500"></i>
             知识库
           </h2>
-          <p class="text-[10px] text-zinc-400 dark:text-zinc-500">工作流程规范与业务沉淀</p>
+          <p class="text-[10px] text-zinc-400 dark:text-zinc-500">规程规范、制度文件、技术文档与项目沉淀</p>
         </div>
         <button 
           onclick="XiangKuApp.modules.knowledge.openModal()" 
-          class="text-xs border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 px-2.5 py-1 rounded text-zinc-700 dark:text-zinc-300 font-medium bg-white dark:bg-zinc-800 flex items-center gap-1 shadow-sm"
+          class="h-7 text-xs border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 px-2.5 rounded text-zinc-700 dark:text-zinc-300 font-medium bg-white dark:bg-zinc-800 flex items-center gap-1 shadow-sm"
         >
-          <i data-lucide="plus" class="w-3 h-3"></i>
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i>
           <span>新建知识</span>
         </button>
       </div>
 
-      <!-- 分类过滤器 -->
+      <!-- 扩充分类过滤器 -->
       <div class="px-2.5 md:px-3 py-1.5 bg-white/90 dark:bg-[#181818]/90 border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-1 text-[11px] overflow-x-auto shrink-0">
-        <button onclick="XiangKuApp.modules.knowledge.filter('all')" class="knowledge-tab px-2 py-0.5 rounded bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium shrink-0" data-type="all">全部</button>
-        <button onclick="XiangKuApp.modules.knowledge.filter('sop')" class="knowledge-tab px-2 py-0.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0" data-type="sop">流程规范</button>
-        <button onclick="XiangKuApp.modules.knowledge.filter('project_doc')" class="knowledge-tab px-2 py-0.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0" data-type="project_doc">项目资料</button>
-        <button onclick="XiangKuApp.modules.knowledge.filter('note_archive')" class="knowledge-tab px-2 py-0.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0" data-type="note_archive">工作笔记</button>
+        <button onclick="XiangKuApp.modules.knowledge.filter('all')" class="knowledge-tab h-6 px-2.5 rounded bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium shrink-0 flex items-center" data-type="all">全部</button>
+        <button onclick="XiangKuApp.modules.knowledge.filter('sop')" class="knowledge-tab h-6 px-2.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0 flex items-center" data-type="sop">流程规范</button>
+        <button onclick="XiangKuApp.modules.knowledge.filter('policy')" class="knowledge-tab h-6 px-2.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0 flex items-center" data-type="policy">制度规章</button>
+        <button onclick="XiangKuApp.modules.knowledge.filter('tech')" class="knowledge-tab h-6 px-2.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0 flex items-center" data-type="tech">技术文档</button>
+        <button onclick="XiangKuApp.modules.knowledge.filter('reading')" class="knowledge-tab h-6 px-2.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0 flex items-center" data-type="reading">摘录文献</button>
+        <button onclick="XiangKuApp.modules.knowledge.filter('project_doc')" class="knowledge-tab h-6 px-2.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0 flex items-center" data-type="project_doc">项目资料</button>
+        <button onclick="XiangKuApp.modules.knowledge.filter('note_archive')" class="knowledge-tab h-6 px-2.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0 flex items-center" data-type="note_archive">工作笔记</button>
       </div>
 
       <!-- 知识库卡片列表 -->
@@ -282,7 +285,7 @@
     </button>
   </nav>
 
-  <!-- ================= 【顶端呼出】个人资料库抽屉 (完整保留7大维度与AI画像) ================= -->
+  <!-- ================= 【顶端呼出】个人资料库抽屉 ================= -->
   <div id="profileVaultDrawer" class="fixed inset-y-0 right-0 w-full sm:w-[500px] md:w-[560px] bg-white dark:bg-[#181818] border-l border-zinc-200 dark:border-zinc-800 shadow-2xl transform translate-x-full transition-transform duration-200 z-50 flex flex-col">
     <!-- 顶栏 -->
     <div class="p-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between bg-zinc-50 dark:bg-zinc-900">
@@ -295,31 +298,31 @@
         <button 
           onclick="XiangKuApp.modules.profileVault.generateAiPortrait()" 
           title="生成 AI 个人画像报告"
-          class="text-[11px] px-2.5 py-1 border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 rounded font-medium flex items-center gap-1 shadow-sm"
+          class="h-7 text-[11px] px-2.5 border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 rounded font-medium flex items-center gap-1 shadow-sm"
         >
-          <i data-lucide="sparkles" class="w-3 h-3 text-amber-500"></i>
+          <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-500"></i>
           <span>AI 画像</span>
         </button>
         <button 
           onclick="XiangKuApp.modules.profileVault.openItemModal()" 
-          class="text-xs border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 px-2 py-1 rounded text-zinc-700 dark:text-zinc-300 font-medium bg-white dark:bg-zinc-800 flex items-center gap-1"
+          class="h-7 text-xs border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 px-2.5 rounded text-zinc-700 dark:text-zinc-300 font-medium bg-white dark:bg-zinc-800 flex items-center gap-1 shadow-sm"
         >
-          <i data-lucide="plus" class="w-3 h-3"></i>
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i>
           <span>记录</span>
         </button>
-        <button onclick="XiangKuApp.modules.profileVault.toggleDrawer()" class="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 text-xs p-1">✕</button>
+        <button onclick="XiangKuApp.modules.profileVault.toggleDrawer()" class="w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 text-xs">✕</button>
       </div>
     </div>
 
     <!-- 7 维度切换 Tab -->
     <div class="px-3 py-2 bg-white dark:bg-[#181818] border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-1 text-[11px] overflow-x-auto shrink-0">
-      <button onclick="XiangKuApp.modules.profileVault.switchSection('profile')" class="pv-tab px-2.5 py-1 rounded bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium shrink-0" data-sec="profile">个人档案</button>
-      <button onclick="XiangKuApp.modules.profileVault.switchSection('skills')" class="pv-tab px-2.5 py-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0" data-sec="skills">能力库</button>
-      <button onclick="XiangKuApp.modules.profileVault.switchSection('experiences')" class="pv-tab px-2.5 py-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0" data-sec="experiences">经验库</button>
-      <button onclick="XiangKuApp.modules.profileVault.switchSection('templates')" class="pv-tab px-2.5 py-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0" data-sec="templates">模板库</button>
-      <button onclick="XiangKuApp.modules.profileVault.switchSection('contacts')" class="pv-tab px-2.5 py-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0" data-sec="contacts">联系人</button>
-      <button onclick="XiangKuApp.modules.profileVault.switchSection('methods')" class="pv-tab px-2.5 py-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0" data-sec="methods">方法库</button>
-      <button onclick="XiangKuApp.modules.profileVault.switchSection('growth')" class="pv-tab px-2.5 py-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0" data-sec="growth">成长轨迹</button>
+      <button onclick="XiangKuApp.modules.profileVault.switchSection('profile')" class="pv-tab h-6 px-2.5 rounded bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium shrink-0 flex items-center" data-sec="profile">个人档案</button>
+      <button onclick="XiangKuApp.modules.profileVault.switchSection('skills')" class="pv-tab h-6 px-2.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0 flex items-center" data-sec="skills">能力库</button>
+      <button onclick="XiangKuApp.modules.profileVault.switchSection('experiences')" class="pv-tab h-6 px-2.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0 flex items-center" data-sec="experiences">经验库</button>
+      <button onclick="XiangKuApp.modules.profileVault.switchSection('templates')" class="pv-tab h-6 px-2.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0 flex items-center" data-sec="templates">模板库</button>
+      <button onclick="XiangKuApp.modules.profileVault.switchSection('contacts')" class="pv-tab h-6 px-2.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0 flex items-center" data-sec="contacts">联系人</button>
+      <button onclick="XiangKuApp.modules.profileVault.switchSection('methods')" class="pv-tab h-6 px-2.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0 flex items-center" data-sec="methods">方法库</button>
+      <button onclick="XiangKuApp.modules.profileVault.switchSection('growth')" class="pv-tab h-6 px-2.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0 flex items-center" data-sec="growth">成长轨迹</button>
     </div>
 
     <!-- 资料库主内容区 -->
@@ -335,15 +338,15 @@
         <i data-lucide="sparkles" class="w-4 h-4 text-amber-500"></i>
         <span class="text-xs font-semibold text-zinc-800 dark:text-zinc-100">工作助理 (内部上下文)</span>
       </div>
-      <button onclick="XiangKuApp.modules.assistant.toggleDrawer()" class="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 text-xs p-1">✕</button>
+      <button onclick="XiangKuApp.modules.assistant.toggleDrawer()" class="w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 text-xs">✕</button>
     </div>
 
     <div class="p-2.5 bg-zinc-50/50 dark:bg-zinc-900/50 border-b border-zinc-100 dark:border-zinc-800 space-y-1.5">
       <div class="grid grid-cols-2 gap-1.5">
-        <button onclick="XiangKuApp.modules.assistant.runPrompt('summary')" class="text-xs p-1.5 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded text-left text-zinc-700 dark:text-zinc-200 font-medium truncate">📋 今日总结</button>
-        <button onclick="XiangKuApp.modules.assistant.runPrompt('weekly')" class="text-xs p-1.5 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded text-left text-zinc-700 dark:text-zinc-200 font-medium truncate">📊 生成周报</button>
-        <button onclick="XiangKuApp.modules.assistant.runPrompt('issues')" class="text-xs p-1.5 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded text-left text-zinc-700 dark:text-zinc-200 font-medium truncate">🔍 异常梳理</button>
-        <button onclick="XiangKuApp.modules.assistant.runPrompt('portrait')" class="text-xs p-1.5 border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 rounded text-left text-amber-800 dark:text-amber-200 font-medium truncate">👤 综合个人画像</button>
+        <button onclick="XiangKuApp.modules.assistant.runPrompt('summary')" class="h-8 text-xs p-1.5 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded text-left text-zinc-700 dark:text-zinc-200 font-medium truncate">📋 今日总结</button>
+        <button onclick="XiangKuApp.modules.assistant.runPrompt('weekly')" class="h-8 text-xs p-1.5 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded text-left text-zinc-700 dark:text-zinc-200 font-medium truncate">📊 生成周报</button>
+        <button onclick="XiangKuApp.modules.assistant.runPrompt('issues')" class="h-8 text-xs p-1.5 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded text-left text-zinc-700 dark:text-zinc-200 font-medium truncate">🔍 异常梳理</button>
+        <button onclick="XiangKuApp.modules.assistant.runPrompt('portrait')" class="h-8 text-xs p-1.5 border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 rounded text-left text-amber-800 dark:text-amber-200 font-medium truncate">👤 综合个人画像</button>
       </div>
     </div>
 
@@ -353,9 +356,9 @@
           type="text" 
           id="assistantCustomInput" 
           placeholder="基于工作台与个人资料库提问、写汇报..." 
-          class="flex-1 text-xs px-2.5 py-1.5 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded focus:outline-none focus:border-zinc-400 text-zinc-800 dark:text-zinc-100"
+          class="flex-1 h-7 text-xs px-2.5 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded focus:outline-none focus:border-zinc-400 text-zinc-800 dark:text-zinc-100"
         />
-        <button type="submit" class="text-xs bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-3 py-1.5 rounded font-medium shrink-0">执行</button>
+        <button type="submit" class="h-7 text-xs bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-3 rounded font-medium shrink-0 shadow-sm">执行</button>
       </form>
     </div>
 
@@ -389,10 +392,10 @@
         <span class="text-xs font-semibold">NIK · 全域通用对话</span>
       </div>
       <div class="flex items-center gap-2">
-        <button onclick="XiangKuApp.modules.nik.clearChat()" title="清空对话" class="text-zinc-400 hover:text-white text-xs p-1">
+        <button onclick="XiangKuApp.modules.nik.clearChat()" title="清空对话" class="w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-white text-xs">
           <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
         </button>
-        <button onclick="XiangKuApp.modules.nik.toggleModal()" class="text-zinc-400 hover:text-white text-xs p-1">✕</button>
+        <button onclick="XiangKuApp.modules.nik.toggleModal()" class="w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-white text-xs">✕</button>
       </div>
     </div>
 
@@ -412,9 +415,9 @@
         type="text" 
         id="nikChatInput" 
         placeholder="输入问题，Enter 发送..." 
-        class="flex-1 text-xs px-2.5 py-2 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded focus:outline-none focus:border-zinc-500 text-zinc-800 dark:text-zinc-100"
+        class="flex-1 h-8 text-xs px-2.5 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded focus:outline-none focus:border-zinc-500 text-zinc-800 dark:text-zinc-100"
       />
-      <button type="submit" class="bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-3 py-2 rounded text-xs font-medium">发送</button>
+      <button type="submit" class="h-8 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-3.5 rounded text-xs font-medium shadow-sm">发送</button>
     </form>
   </div>
 
@@ -426,7 +429,7 @@
           <i data-lucide="settings" class="w-4 h-4 text-zinc-600 dark:text-zinc-400"></i>
           <span class="text-xs font-semibold text-zinc-800 dark:text-zinc-100">设置中心</span>
         </div>
-        <button onclick="XiangKuApp.modules.settings.closeModal()" class="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 text-xs p-1">✕</button>
+        <button onclick="XiangKuApp.modules.settings.closeModal()" class="w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 text-xs">✕</button>
       </div>
 
       <div class="p-3 sm:p-4 overflow-y-auto space-y-4 text-xs">
@@ -458,11 +461,11 @@
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
               <label class="block text-zinc-500 dark:text-zinc-400 mb-1">工作台名称</label>
-              <input type="text" id="settingAppName" class="w-full text-xs p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100" />
+              <input type="text" id="settingAppName" class="w-full h-8 text-xs px-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100" />
             </div>
             <div>
               <label class="block text-zinc-500 dark:text-zinc-400 mb-1">底板风格</label>
-              <select id="settingBgTheme" class="w-full text-xs p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100">
+              <select id="settingBgTheme" class="w-full h-8 text-xs px-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100">
                 <option value="bg-theme-plain">极简纯白 / 纯黑</option>
                 <option value="bg-theme-grid">工程细线网格</option>
                 <option value="bg-theme-dots">极简点阵</option>
@@ -476,8 +479,8 @@
         <section class="space-y-2">
           <h3 class="font-semibold text-zinc-800 dark:text-zinc-200 border-b border-zinc-100 dark:border-zinc-800 pb-1">2. 数据管理</h3>
           <div class="flex gap-2">
-            <button onclick="document.getElementById('importFileInput').click()" class="flex-1 py-1.5 border border-zinc-200 dark:border-zinc-700 rounded hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300">导入备份 (增量)</button>
-            <button onclick="XiangKuApp.exportBackup()" class="flex-1 py-1.5 border border-zinc-200 dark:border-zinc-700 rounded hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300">导出全量数据</button>
+            <button onclick="document.getElementById('importFileInput').click()" class="flex-1 h-8 border border-zinc-200 dark:border-zinc-700 rounded hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium">导入备份 (增量)</button>
+            <button onclick="XiangKuApp.exportBackup()" class="flex-1 h-8 border border-zinc-200 dark:border-zinc-700 rounded hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium">导出全量数据</button>
           </div>
         </section>
 
@@ -486,12 +489,12 @@
           <h3 class="font-semibold text-zinc-800 dark:text-zinc-200 border-b border-zinc-100 dark:border-zinc-800 pb-1">3. 飞书与 AI 配置</h3>
           <div>
             <label class="block text-zinc-500 dark:text-zinc-400 mb-1">飞书 Webhook</label>
-            <input type="text" id="settingFeishuWebhook" class="w-full text-xs p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100 font-mono text-[10px]" />
+            <input type="text" id="settingFeishuWebhook" class="w-full h-8 text-xs px-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100 font-mono text-[10px]" />
           </div>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div>
               <label class="block text-zinc-500 dark:text-zinc-400 mb-1">AI 预设</label>
-              <select id="settingAiProvider" onchange="XiangKuApp.modules.settings.handleProviderChange()" class="w-full text-xs p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100">
+              <select id="settingAiProvider" onchange="XiangKuApp.modules.settings.handleProviderChange()" class="w-full h-8 text-xs px-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100">
                 <option value="custom">自定义模型</option>
                 <option value="openai">OpenAI</option>
                 <option value="deepseek">DeepSeek</option>
@@ -500,16 +503,16 @@
             </div>
             <div>
               <label class="block text-zinc-500 dark:text-zinc-400 mb-1">模型名称</label>
-              <input type="text" id="settingAiModel" class="w-full text-xs p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100" />
+              <input type="text" id="settingAiModel" class="w-full h-8 text-xs px-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100" />
             </div>
           </div>
           <div>
             <label class="block text-zinc-500 dark:text-zinc-400 mb-1">Base URL</label>
-            <input type="text" id="settingAiBaseUrl" class="w-full text-xs p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100 font-mono text-[10px]" />
+            <input type="text" id="settingAiBaseUrl" class="w-full h-8 text-xs px-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100 font-mono text-[10px]" />
           </div>
           <div>
             <label class="block text-zinc-500 dark:text-zinc-400 mb-1">API Key</label>
-            <input type="password" id="settingAiApiKey" class="w-full text-xs p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100 font-mono" placeholder="sk-..." />
+            <input type="password" id="settingAiApiKey" class="w-full h-8 text-xs px-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100 font-mono" placeholder="sk-..." />
           </div>
         </section>
       </div>
@@ -517,47 +520,50 @@
       <div class="p-3 border-t border-zinc-100 dark:border-zinc-800 flex justify-between items-center bg-zinc-50 dark:bg-zinc-900 shrink-0">
         <button onclick="XiangKuApp.modules.settings.resetToDefault()" class="text-xs text-red-500 hover:underline">清空重置</button>
         <div class="flex gap-2">
-          <button onclick="XiangKuApp.modules.settings.closeModal()" class="text-xs px-3 py-1.5 border border-zinc-200 dark:border-zinc-700 rounded text-zinc-600 dark:text-zinc-300">取消</button>
-          <button onclick="XiangKuApp.modules.settings.saveFromUI()" class="text-xs px-4 py-1.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded font-medium">保存</button>
+          <button onclick="XiangKuApp.modules.settings.closeModal()" class="h-8 text-xs px-3.5 border border-zinc-200 dark:border-zinc-700 rounded text-zinc-600 dark:text-zinc-300">取消</button>
+          <button onclick="XiangKuApp.modules.settings.saveFromUI()" class="h-8 text-xs px-4 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded font-medium shadow-sm">保存</button>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- ================= 知识库新建/编辑弹窗 ================= -->
+  <!-- ================= 知识库新建/编辑弹窗 (涵盖扩充分区) ================= -->
   <div id="knowledgeModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-2 sm:p-4">
     <div class="bg-white dark:bg-[#1a1a1a] border border-zinc-200 dark:border-zinc-800 rounded-lg w-full max-w-[480px] shadow-2xl overflow-hidden">
       <div class="p-3 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
         <span id="knowledgeModalTitle" class="text-xs font-semibold text-zinc-800 dark:text-zinc-100">新建知识条目</span>
-        <button onclick="XiangKuApp.modules.knowledge.closeModal()" class="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 text-xs p-1">✕</button>
+        <button onclick="XiangKuApp.modules.knowledge.closeModal()" class="w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 text-xs">✕</button>
       </div>
       <form onsubmit="XiangKuApp.modules.knowledge.handleSubmit(event)" class="p-3 sm:p-4 space-y-3">
         <input type="hidden" id="knowledgeFormId" value="" />
         <div>
           <label class="block text-[11px] text-zinc-500 dark:text-zinc-400 mb-1">知识标题 / 条目名称</label>
-          <input type="text" id="knowledgeFormTitle" placeholder="例如：主设备巡检操作标准 (SOP)" class="w-full text-xs p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100" required />
+          <input type="text" id="knowledgeFormTitle" placeholder="例如：设备应急维保操作规范 (SOP-01)" class="w-full h-8 text-xs px-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100" required />
         </div>
         <div class="grid grid-cols-2 gap-2">
           <div>
-            <label class="block text-[11px] text-zinc-500 dark:text-zinc-400 mb-1">类型</label>
-            <select id="knowledgeFormCategory" class="w-full text-xs p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100">
+            <label class="block text-[11px] text-zinc-500 dark:text-zinc-400 mb-1">资料与知识分区</label>
+            <select id="knowledgeFormCategory" class="w-full h-8 text-xs px-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100">
               <option value="sop">流程规范 (SOP)</option>
+              <option value="policy">制度规章</option>
+              <option value="tech">技术文档</option>
+              <option value="reading">摘录文献</option>
               <option value="project_doc">项目资料</option>
               <option value="note_archive">工作笔记</option>
             </select>
           </div>
           <div>
-            <label class="block text-[11px] text-zinc-500 dark:text-zinc-400 mb-1">所属空间</label>
-            <select id="knowledgeFormWorkspace" class="w-full text-xs p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100"></select>
+            <label class="block text-[11px] text-zinc-500 dark:text-zinc-400 mb-1">所属工作空间</label>
+            <select id="knowledgeFormWorkspace" class="w-full h-8 text-xs px-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100"></select>
           </div>
         </div>
         <div>
-          <label class="block text-[11px] text-zinc-500 dark:text-zinc-400 mb-1">知识正文 / 流程内容</label>
-          <textarea id="knowledgeFormContent" rows="5" placeholder="输入具体规程步骤、参数或工作知识内容..." class="w-full text-xs p-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none resize-none font-mono text-zinc-800 dark:text-zinc-100" required></textarea>
+          <label class="block text-[11px] text-zinc-500 dark:text-zinc-400 mb-1">知识正文 / 条目内容</label>
+          <textarea id="knowledgeFormContent" rows="6" placeholder="输入具体规程步骤、制度条款、技术参数或资料摘抄..." class="w-full p-2 text-xs bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none resize-none font-mono leading-relaxed text-zinc-800 dark:text-zinc-100" required></textarea>
         </div>
         <div class="flex justify-end gap-2 pt-1">
-          <button type="button" onclick="XiangKuApp.modules.knowledge.closeModal()" class="text-xs px-3 py-1.5 border border-zinc-200 dark:border-zinc-700 rounded text-zinc-600 dark:text-zinc-300">取消</button>
-          <button type="submit" class="text-xs px-3 py-1.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded font-medium">沉淀在库</button>
+          <button type="button" onclick="XiangKuApp.modules.knowledge.closeModal()" class="h-8 text-xs px-3.5 border border-zinc-200 dark:border-zinc-700 rounded text-zinc-600 dark:text-zinc-300">取消</button>
+          <button type="submit" class="h-8 text-xs px-4 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded font-medium shadow-sm">沉淀在库</button>
         </div>
       </form>
     </div>
@@ -568,7 +574,7 @@
     <div class="bg-white dark:bg-[#1a1a1a] border border-zinc-200 dark:border-zinc-800 rounded-lg w-full max-w-[500px] shadow-2xl overflow-hidden">
       <div class="p-3 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
         <span id="profileItemModalTitle" class="text-xs font-semibold text-zinc-800 dark:text-zinc-100">记录个人资料</span>
-        <button onclick="XiangKuApp.modules.profileVault.closeItemModal()" class="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 text-xs p-1">✕</button>
+        <button onclick="XiangKuApp.modules.profileVault.closeItemModal()" class="w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 text-xs">✕</button>
       </div>
       <form onsubmit="XiangKuApp.modules.profileVault.handleItemSubmit(event)" class="p-3 sm:p-4 space-y-3">
         <input type="hidden" id="pvFormId" value="" />
@@ -579,8 +585,8 @@
         </div>
 
         <div class="flex justify-end gap-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
-          <button type="button" onclick="XiangKuApp.modules.profileVault.closeItemModal()" class="text-xs px-3 py-1.5 border border-zinc-200 dark:border-zinc-700 rounded text-zinc-600 dark:text-zinc-300">取消</button>
-          <button type="submit" class="text-xs px-4 py-1.5 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded font-medium">保存</button>
+          <button type="button" onclick="XiangKuApp.modules.profileVault.closeItemModal()" class="h-8 text-xs px-3.5 border border-zinc-200 dark:border-zinc-700 rounded text-zinc-600 dark:text-zinc-300">取消</button>
+          <button type="submit" class="h-8 text-xs px-4 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded font-medium shadow-sm">保存</button>
         </div>
       </form>
     </div>
@@ -589,7 +595,7 @@
   <!-- ================= 核心架构与业务逻辑脚本 ================= -->
   <script>
     /**
-     * 象库 · 轻工作台 (纯粹三大工作台 + 顶端个人资料库架构)
+     * 象库 · 轻工作台 (统一比例三大工作台 + 全分区知识库)
      */
     window.XiangKuApp = {
       STORAGE_KEY: 'xiangku_workstation_db_v3',
@@ -611,7 +617,7 @@
         workspace: [],
         notes: [],
         knowledge: [],
-        // 个人资料库 7 大独立维度
+        // 个人资料库 7 大维度
         profile: {
           name: '',
           role: '',
@@ -642,7 +648,6 @@
         document.getElementById('currentDateStr').innerText = new Date().toISOString().slice(0, 10).replace(/-/g, '.');
       },
 
-      // 移动端三大工作台 Tab 切换
       switchMobileTab(tabName) {
         this.activeMobileTab = tabName;
         document.querySelectorAll('.mobile-tab-section').forEach(el => el.classList.add('hidden'));
@@ -680,7 +685,17 @@
             this.db.settings = { ...this.db.settings, ...(parsed.settings || {}) };
             this.db.workspace = parsed.workspace || [];
             this.db.notes = parsed.notes || [];
-            this.db.knowledge = parsed.knowledge || parsed.assets || [];
+            // 合并旧版 assets 和 library 到知识库
+            const combinedKnowledge = parsed.knowledge || parsed.assets || [];
+            if (Array.isArray(parsed.library)) {
+              parsed.library.forEach(lib => {
+                if (!combinedKnowledge.some(k => k.id === lib.id || k.title === lib.title)) {
+                  combinedKnowledge.push(lib);
+                }
+              });
+            }
+            this.db.knowledge = combinedKnowledge;
+
             this.db.profile = { ...this.db.profile, ...(parsed.profile || { name: parsed.settings?.userName || '', role: parsed.settings?.userRole || '', bio: parsed.settings?.userBio || '' }) };
             this.db.skills = parsed.skills || [];
             this.db.experiences = parsed.experiences || [];
@@ -805,7 +820,7 @@
           this.db.notes.sort((a, b) => (b.id || '').localeCompare(a.id || ''));
         }
 
-        const knowList = imported.knowledge || imported.assets || [];
+        const knowList = imported.knowledge || imported.assets || imported.library || [];
         if (Array.isArray(knowList)) {
           knowList.forEach(k => {
             if (!this.db.knowledge.some(item => item.id === k.id || item.title === k.title)) {
@@ -1150,7 +1165,7 @@
           }
         },
 
-        // ========== 知识库 工作台 ==========
+        // ========== 知识库 工作台 (已扩充全部分区) ==========
         knowledge: {
           render(filterKw = '') {
             const container = document.getElementById('knowledgeCardList');
@@ -1167,14 +1182,21 @@
               container.innerHTML = `
                 <div class="h-48 flex flex-col items-center justify-center text-zinc-400 text-xs gap-1">
                   <i data-lucide="layers" class="w-5 h-5 text-zinc-300 dark:text-zinc-700 stroke-1"></i>
-                  <span>暂无工作知识库条目</span>
+                  <span>暂无该分类知识条目</span>
                 </div>
               `;
               lucide.createIcons();
               return;
             }
 
-            const catMap = { sop: '流程规范', project_doc: '项目资料', note_archive: '工作笔记' };
+            const catMap = { 
+              sop: '流程规范', 
+              policy: '制度规章', 
+              tech: '技术文档', 
+              reading: '摘录文献', 
+              project_doc: '项目资料', 
+              note_archive: '工作笔记' 
+            };
 
             list.forEach(item => {
               const card = document.createElement('div');
@@ -1182,7 +1204,7 @@
               card.innerHTML = `
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-1.5 min-w-0">
-                    <span class="text-[9px] font-mono px-1 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 shrink-0">${catMap[item.category] || '知识'}</span>
+                    <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 shrink-0">${catMap[item.category] || '知识'}</span>
                     <h3 class="text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate">${item.title}</h3>
                   </div>
                   <div class="flex items-center gap-1">
@@ -1204,9 +1226,9 @@
             XiangKuApp.currentKnowledgeCategory = cat;
             document.querySelectorAll('.knowledge-tab').forEach(btn => {
               if (btn.dataset.type === cat) {
-                btn.className = 'knowledge-tab px-2 py-0.5 rounded bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium shrink-0';
+                btn.className = 'knowledge-tab h-6 px-2.5 rounded bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium shrink-0 flex items-center';
               } else {
-                btn.className = 'knowledge-tab px-2 py-0.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0';
+                btn.className = 'knowledge-tab h-6 px-2.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0 flex items-center';
               }
             });
             this.render();
@@ -1279,7 +1301,7 @@
           }
         },
 
-        // ========== 顶端抽屉唤出：个人资料库模块 (7大维度 + AI画像) ==========
+        // ========== 顶端抽屉：个人资料库模块 (7大维度 + AI画像) ==========
         profileVault: {
           toggleDrawer() {
             document.getElementById('profileVaultDrawer').classList.toggle('translate-x-full');
@@ -1289,9 +1311,9 @@
             XiangKuApp.currentProfileSection = sec;
             document.querySelectorAll('.pv-tab').forEach(btn => {
               if (btn.dataset.sec === sec) {
-                btn.className = 'pv-tab px-2.5 py-1 rounded bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium shrink-0';
+                btn.className = 'pv-tab h-6 px-2.5 rounded bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium shrink-0 flex items-center';
               } else {
-                btn.className = 'pv-tab px-2.5 py-1 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0';
+                btn.className = 'pv-tab h-6 px-2.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400 shrink-0 flex items-center';
               }
             });
             this.render();
@@ -1315,30 +1337,30 @@
                   <div class="grid grid-cols-2 gap-2.5">
                     <div>
                       <label class="block text-[10px] text-zinc-400 mb-0.5">姓名 / 昵称</label>
-                      <input type="text" oninput="XiangKuApp.modules.profileVault.updateProfileField('name', this.value)" value="${p.name || ''}" placeholder="例如：乌鸦" class="w-full p-2 bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
+                      <input type="text" oninput="XiangKuApp.modules.profileVault.updateProfileField('name', this.value)" value="${p.name || ''}" placeholder="例如：乌鸦" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
                     </div>
                     <div>
                       <label class="block text-[10px] text-zinc-400 mb-0.5">职业身份</label>
-                      <input type="text" oninput="XiangKuApp.modules.profileVault.updateProfileField('role', this.value)" value="${p.role || ''}" placeholder="例如：独立开发者 / 运维" class="w-full p-2 bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
+                      <input type="text" oninput="XiangKuApp.modules.profileVault.updateProfileField('role', this.value)" value="${p.role || ''}" placeholder="例如：独立开发者 / 运维" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
                     </div>
                   </div>
                   <div class="grid grid-cols-2 gap-2.5">
                     <div>
                       <label class="block text-[10px] text-zinc-400 mb-0.5">主要工作领域</label>
-                      <input type="text" oninput="XiangKuApp.modules.profileVault.updateProfileField('field', this.value)" value="${p.field || ''}" placeholder="例如：系统维护、长文创作" class="w-full p-2 bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
+                      <input type="text" oninput="XiangKuApp.modules.profileVault.updateProfileField('field', this.value)" value="${p.field || ''}" placeholder="例如：系统维护、长文创作" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
                     </div>
                     <div>
                       <label class="block text-[10px] text-zinc-400 mb-0.5">擅长方向</label>
-                      <input type="text" oninput="XiangKuApp.modules.profileVault.updateProfileField('strengths', this.value)" value="${p.strengths || ''}" placeholder="例如：故障应急排查、架构精简" class="w-full p-2 bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
+                      <input type="text" oninput="XiangKuApp.modules.profileVault.updateProfileField('strengths', this.value)" value="${p.strengths || ''}" placeholder="例如：故障应急排查、架构精简" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
                     </div>
                   </div>
                   <div>
                     <label class="block text-[10px] text-zinc-400 mb-0.5">当前阶段目标</label>
-                    <input type="text" oninput="XiangKuApp.modules.profileVault.updateProfileField('goals', this.value)" value="${p.goals || ''}" placeholder="例如：搭建全套象库工具链闭环" class="w-full p-2 bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
+                    <input type="text" oninput="XiangKuApp.modules.profileVault.updateProfileField('goals', this.value)" value="${p.goals || ''}" placeholder="例如：搭建全套象库工具链闭环" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
                   </div>
                   <div>
                     <label class="block text-[10px] text-zinc-400 mb-0.5">个人简介 / 理念总结</label>
-                    <textarea rows="3" oninput="XiangKuApp.modules.profileVault.updateProfileField('bio', this.value)" placeholder="详细阐述个人的工作理念、风格与背景，用于驱动 AI 深度理解你的个人语境..." class="w-full p-2 bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none resize-none leading-relaxed">${p.bio || ''}</textarea>
+                    <textarea rows="3" oninput="XiangKuApp.modules.profileVault.updateProfileField('bio', this.value)" placeholder="详细阐述个人的工作理念、风格与背景，用于驱动 AI 深度理解你的个人语境..." class="w-full p-2 text-xs bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none resize-none leading-relaxed">${p.bio || ''}</textarea>
                   </div>
                 </div>
               `;
@@ -1460,8 +1482,8 @@
               card.className = 'p-3 bg-white dark:bg-[#181818] border border-zinc-200/80 dark:border-zinc-800 rounded-lg flex flex-col gap-1.5 shadow-sm relative group';
               card.innerHTML = `
                 <div class="absolute top-2.5 right-2.5 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button onclick="XiangKuApp.modules.profileVault.openItemModal('${item.id}')" class="text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 text-xs p-0.5">✎</button>
-                  <button onclick="XiangKuApp.modules.profileVault.deleteItem('${item.id}', '${sec}')" class="text-zinc-400 hover:text-red-500 text-xs p-0.5">✕</button>
+                  <button onclick="XiangKuApp.modules.profileVault.openItemModal('${item.id}')" class="w-5 h-5 flex items-center justify-center text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 text-xs">✎</button>
+                  <button onclick="XiangKuApp.modules.profileVault.deleteItem('${item.id}', '${sec}')" class="w-5 h-5 flex items-center justify-center text-zinc-400 hover:text-red-500 text-xs">✕</button>
                 </div>
                 ${cardContentBuilder(item)}
               `;
@@ -1494,11 +1516,11 @@
                 <div class="grid grid-cols-2 gap-2">
                   <div>
                     <label class="block text-[10px] text-zinc-400 mb-0.5">能力名称</label>
-                    <input type="text" id="pv_skill_name" value="${item?.name || ''}" placeholder="例如：Vue.js / 现场故障排查" class="w-full p-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" required />
+                    <input type="text" id="pv_skill_name" value="${item?.name || ''}" placeholder="例如：Vue.js / 故障排查" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" required />
                   </div>
                   <div>
                     <label class="block text-[10px] text-zinc-400 mb-0.5">能力分类</label>
-                    <select id="pv_skill_cat" class="w-full p-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none">
+                    <select id="pv_skill_cat" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none">
                       <option value="专业技能" ${item?.category==='专业技能'?'selected':''}>专业技能</option>
                       <option value="工具技能" ${item?.category==='工具技能'?'selected':''}>工具技能</option>
                       <option value="管理能力" ${item?.category==='管理能力'?'selected':''}>管理能力</option>
@@ -1509,15 +1531,15 @@
                 </div>
                 <div>
                   <label class="block text-[10px] text-zinc-400 mb-0.5">熟练程度</label>
-                  <input type="text" id="pv_skill_level" value="${item?.level || ''}" placeholder="例如：精通、熟练、入门实践中" class="w-full p-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
+                  <input type="text" id="pv_skill_level" value="${item?.level || ''}" placeholder="例如：精通、熟练、实践进阶中" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
                 </div>
                 <div>
                   <label class="block text-[10px] text-zinc-400 mb-0.5">说明与实战应用</label>
-                  <textarea id="pv_skill_desc" rows="2" placeholder="简述应用场景或代表项目..." class="w-full p-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none resize-none">${item?.desc || ''}</textarea>
+                  <textarea id="pv_skill_desc" rows="2" placeholder="简述应用场景或代表项目..." class="w-full p-2 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none resize-none">${item?.desc || ''}</textarea>
                 </div>
                 <div>
                   <label class="block text-[10px] text-zinc-400 mb-0.5">学习记录 / 相关参考资料</label>
-                  <input type="text" id="pv_skill_learning" value="${item?.learning || ''}" placeholder="书籍、实践心得或参考链接..." class="w-full p-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
+                  <input type="text" id="pv_skill_learning" value="${item?.learning || ''}" placeholder="书籍、实践心得或参考链接..." class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
                 </div>
               `;
             } else if (sec === 'experiences') {
@@ -1525,25 +1547,25 @@
               fieldsBox.innerHTML = `
                 <div>
                   <label class="block text-[10px] text-zinc-400 mb-0.5">经验标题</label>
-                  <input type="text" id="pv_exp_title" value="${item?.title || ''}" placeholder="例如：突发断电情况下设备的快速恢复流程" class="w-full p-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" required />
+                  <input type="text" id="pv_exp_title" value="${item?.title || ''}" placeholder="例如：突发断电情况下设备的快速恢复流程" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" required />
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                   <div>
                     <label class="block text-[10px] text-zinc-400 mb-0.5">面临问题 / 场景</label>
-                    <input type="text" id="pv_exp_scene" value="${item?.scene || ''}" placeholder="例如：夏季暴雨导致管道压力失衡" class="w-full p-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
+                    <input type="text" id="pv_exp_scene" value="${item?.scene || ''}" placeholder="例如：夏季暴雨导致管道压力失衡" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
                   </div>
                   <div>
                     <label class="block text-[10px] text-zinc-400 mb-0.5">关键词 (空格分隔)</label>
-                    <input type="text" id="pv_exp_keywords" value="${item?.keywords || ''}" placeholder="例如：#排错 #硬件 #避坑" class="w-full p-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
+                    <input type="text" id="pv_exp_keywords" value="${item?.keywords || ''}" placeholder="例如：#排错 #硬件 #避坑" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
                   </div>
                 </div>
                 <div>
                   <label class="block text-[10px] text-zinc-400 mb-0.5">具体解决方法</label>
-                  <textarea id="pv_exp_solution" rows="2" placeholder="当时是如何一步步解决的..." class="w-full p-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none resize-none">${item?.solution || ''}</textarea>
+                  <textarea id="pv_exp_solution" rows="2" placeholder="当时是如何一步步解决的..." class="w-full p-2 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none resize-none">${item?.solution || ''}</textarea>
                 </div>
                 <div>
                   <label class="block text-[10px] text-zinc-400 mb-0.5">经验总结与复盘认知</label>
-                  <textarea id="pv_exp_summary" rows="2" placeholder="提炼通用逻辑，下次如何更快更稳处理..." class="w-full p-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none resize-none">${item?.summary || ''}</textarea>
+                  <textarea id="pv_exp_summary" rows="2" placeholder="提炼通用逻辑，下次如何更快更稳处理..." class="w-full p-2 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none resize-none">${item?.summary || ''}</textarea>
                 </div>
               `;
             } else if (sec === 'templates') {
@@ -1552,11 +1574,11 @@
                 <div class="grid grid-cols-2 gap-2">
                   <div>
                     <label class="block text-[10px] text-zinc-400 mb-0.5">模板标题</label>
-                    <input type="text" id="pv_tpl_title" value="${item?.title || ''}" placeholder="例如：每日交接班检查清单" class="w-full p-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" required />
+                    <input type="text" id="pv_tpl_title" value="${item?.title || ''}" placeholder="例如：每日交接班检查清单" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" required />
                   </div>
                   <div>
                     <label class="block text-[10px] text-zinc-400 mb-0.5">模板类型</label>
-                    <select id="pv_tpl_type" class="w-full p-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none">
+                    <select id="pv_tpl_type" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none">
                       <option value="工作总结模板" ${item?.type==='工作总结模板'?'selected':''}>工作总结模板</option>
                       <option value="汇报模板" ${item?.type==='汇报模板'?'selected':''}>汇报模板</option>
                       <option value="检查清单" ${item?.type==='检查清单'?'selected':''}>检查清单</option>
@@ -1567,7 +1589,7 @@
                 </div>
                 <div>
                   <label class="block text-[10px] text-zinc-400 mb-0.5">模板正文内容</label>
-                  <textarea id="pv_tpl_content" rows="6" placeholder="输入模板文本格式..." class="w-full p-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none resize-none font-mono text-[11px]" required>${item?.content || ''}</textarea>
+                  <textarea id="pv_tpl_content" rows="6" placeholder="输入模板文本格式..." class="w-full p-2 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none resize-none font-mono leading-relaxed" required>${item?.content || ''}</textarea>
                 </div>
               `;
             } else if (sec === 'contacts') {
@@ -1576,30 +1598,30 @@
                 <div class="grid grid-cols-2 gap-2">
                   <div>
                     <label class="block text-[10px] text-zinc-400 mb-0.5">姓名 / 称呼</label>
-                    <input type="text" id="pv_cnt_name" value="${item?.name || ''}" placeholder="例如：李工" class="w-full p-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" required />
+                    <input type="text" id="pv_cnt_name" value="${item?.name || ''}" placeholder="例如：李工" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" required />
                   </div>
                   <div>
                     <label class="block text-[10px] text-zinc-400 mb-0.5">角色 / 岗位</label>
-                    <input type="text" id="pv_cnt_role" value="${item?.role || ''}" placeholder="例如：高压电网维保负责人" class="w-full p-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
+                    <input type="text" id="pv_cnt_role" value="${item?.role || ''}" placeholder="例如：高压电网维保负责人" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
                   </div>
                 </div>
                 <div class="grid grid-cols-2 gap-2">
                   <div>
                     <label class="block text-[10px] text-zinc-400 mb-0.5">负责领域</label>
-                    <input type="text" id="pv_cnt_field" value="${item?.field || ''}" placeholder="例如：电力供应与抢修" class="w-full p-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
+                    <input type="text" id="pv_cnt_field" value="${item?.field || ''}" placeholder="例如：电力供应与抢修" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
                   </div>
                   <div>
                     <label class="block text-[10px] text-zinc-400 mb-0.5">联系方式</label>
-                    <input type="text" id="pv_cnt_contact" value="${item?.contact || ''}" placeholder="电话 / 微信 / 邮箱" class="w-full p-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
+                    <input type="text" id="pv_cnt_contact" value="${item?.contact || ''}" placeholder="电话 / 微信 / 邮箱" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
                   </div>
                 </div>
                 <div>
                   <label class="block text-[10px] text-zinc-400 mb-0.5">合作记录与事实</label>
-                  <textarea id="pv_cnt_history" rows="2" placeholder="记录协同历史与合作节点..." class="w-full p-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none resize-none">${item?.history || ''}</textarea>
+                  <textarea id="pv_cnt_history" rows="2" placeholder="记录协同历史与合作节点..." class="w-full p-2 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none resize-none">${item?.history || ''}</textarea>
                 </div>
                 <div>
                   <label class="block text-[10px] text-zinc-400 mb-0.5">沟通特点与备注</label>
-                  <input type="text" id="pv_cnt_notes" value="${item?.notes || ''}" placeholder="例如：喜欢直接电话沟通" class="w-full p-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
+                  <input type="text" id="pv_cnt_notes" value="${item?.notes || ''}" placeholder="例如：喜欢直接电话沟通" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
                 </div>
               `;
             } else if (sec === 'methods') {
@@ -1608,11 +1630,11 @@
                 <div class="grid grid-cols-2 gap-2">
                   <div>
                     <label class="block text-[10px] text-zinc-400 mb-0.5">方法论标题</label>
-                    <input type="text" id="pv_mth_title" value="${item?.title || ''}" placeholder="例如：我的设备巡检三步法" class="w-full p-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" required />
+                    <input type="text" id="pv_mth_title" value="${item?.title || ''}" placeholder="例如：我的设备巡检三步法" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" required />
                   </div>
                   <div>
                     <label class="block text-[10px] text-zinc-400 mb-0.5">分类</label>
-                    <select id="pv_mth_cat" class="w-full p-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none">
+                    <select id="pv_mth_cat" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none">
                       <option value="时间管理" ${item?.category==='时间管理'?'selected':''}>时间管理</option>
                       <option value="整理方法" ${item?.category==='整理方法'?'selected':''}>整理方法</option>
                       <option value="项目推进" ${item?.category==='项目推进'?'selected':''}>项目推进</option>
@@ -1623,7 +1645,7 @@
                 </div>
                 <div>
                   <label class="block text-[10px] text-zinc-400 mb-0.5">核心原则与步骤</label>
-                  <textarea id="pv_mth_content" rows="6" placeholder="详细陈述你长期验证有效的思维框架与执行步骤..." class="w-full p-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none resize-none font-mono text-[11px]" required>${item?.content || ''}</textarea>
+                  <textarea id="pv_mth_content" rows="6" placeholder="详细陈述你长期验证有效的思维框架与执行步骤..." class="w-full p-2 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none resize-none font-mono leading-relaxed" required>${item?.content || ''}</textarea>
                 </div>
               `;
             } else if (sec === 'growth') {
@@ -1632,24 +1654,24 @@
                 <div class="grid grid-cols-3 gap-2">
                   <div>
                     <label class="block text-[10px] text-zinc-400 mb-0.5">时间</label>
-                    <input type="date" id="pv_gro_date" value="${item?.date || new Date().toISOString().slice(0,10)}" class="w-full p-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" required />
+                    <input type="date" id="pv_gro_date" value="${item?.date || new Date().toISOString().slice(0,10)}" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" required />
                   </div>
                   <div class="col-span-2">
                     <label class="block text-[10px] text-zinc-400 mb-0.5">核心事件</label>
-                    <input type="text" id="pv_gro_event" value="${item?.event || ''}" placeholder="例如：主导完成年度系统架构升级" class="w-full p-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" required />
+                    <input type="text" id="pv_gro_event" value="${item?.event || ''}" placeholder="例如：主导完成年度系统架构升级" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" required />
                   </div>
                 </div>
                 <div>
                   <label class="block text-[10px] text-zinc-400 mb-0.5">获得经验</label>
-                  <textarea id="pv_gro_exp" rows="2" placeholder="在事件中积累了哪些具体经验..." class="w-full p-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none resize-none">${item?.experience || ''}</textarea>
+                  <textarea id="pv_gro_exp" rows="2" placeholder="在事件中积累了哪些具体经验..." class="w-full p-2 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none resize-none">${item?.experience || ''}</textarea>
                 </div>
                 <div>
                   <label class="block text-[10px] text-zinc-400 mb-0.5">新认知与思维迭代</label>
-                  <textarea id="pv_gro_insight" rows="2" placeholder="形成了什么新认知..." class="w-full p-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none resize-none">${item?.insight || ''}</textarea>
+                  <textarea id="pv_gro_insight" rows="2" placeholder="形成了什么新认知..." class="w-full p-2 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none resize-none">${item?.insight || ''}</textarea>
                 </div>
                 <div>
                   <label class="block text-[10px] text-zinc-400 mb-0.5">未来计划与改进</label>
-                  <input type="text" id="pv_gro_plan" value="${item?.plan || ''}" placeholder="下一步规划..." class="w-full p-1.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
+                  <input type="text" id="pv_gro_plan" value="${item?.plan || ''}" placeholder="下一步规划..." class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
                 </div>
               `;
             }
