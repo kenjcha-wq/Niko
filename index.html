@@ -2400,4 +2400,182 @@ ${XiangKuApp.db.growth.map(g => `- [${g.date}] ${g.event} -> 认知: ${g.insight
               const extractPrompt = `请分析以下异常记录，提炼出一条标准的个人经验总结（JSON格式：{"title":"","scene":"","solution":"","summary":"","keywords":""}）：\n` + JSON.stringify(issues);
               try {
                 const res = await XiangKuApp.requestAI(extractPrompt, '你是一个经验萃取智能体。请只输出纯合法JSON字符串，不要加markdown代码块。');
-                const cleanJson = res.replace(/```json/g, '').replace(/
+                const cleanJson = res.replace(/```json/g, '').replace(/```/g, '').trim();
+                const expData = JSON.parse(cleanJson);
+                expData.id = 'pv_' + Date.now();
+                XiangKuApp.db.experiences.unshift(expData);
+                XiangKuApp.saveStorage();
+                XiangKuApp.renderAll();
+                out.innerText += `\n✅ 智能体已自动入库经验：【${expData.title}】至个人资料库！`;
+              } catch (e) {
+                out.innerText += `\n提炼失败: ${e.message}`;
+              }
+            }
+          }
+        },
+
+        assistant: {
+          toggleDrawer() {
+            document.getElementById('assistantDrawer').classList.toggle('translate-x-full');
+          },
+
+          buildContext() {
+            const p = XiangKuApp.db.profile;
+            const notes = XiangKuApp.db.notes;
+            const k = XiangKuApp.db.knowledge;
+            return `
+用户背景: ${p.name || '工作者'} | ${p.role || ''} | ${p.bio || ''}
+今日工作流记录 (${notes.length}条):\n${notes.map(n => `[${n.time}][${n.type}] ${n.content}`).join('\n')}
+知识库 (${k.length}篇):\n${k.map(item => `【${item.title}】(${item.category}): ${item.content}`).join('\n')}
+个人能力与经验概述: 拥有能力${XiangKuApp.db.skills.length}项，实战经验总结${XiangKuApp.db.experiences.length}条，方法论${XiangKuApp.db.methods.length}篇。
+`;
+          },
+
+          async runPrompt(type) {
+            if (type === 'portrait') {
+              return XiangKuApp.modules.profileVault.generateAiPortrait();
+            }
+
+            const output = document.getElementById('assistantOutput');
+            output.innerText = '正在分析处理...';
+
+            const prompts = {
+              summary: '请总结今天的工作流记录，结合用户背景输出今日工作总结。',
+              weekly: '请基于当前记录，提炼并生成结构化周报草稿。',
+              issues: '请梳理记录中的异常与未决问题，结合经验库给出解决建议。'
+            };
+
+            try {
+              const res = await XiangKuApp.requestAI(prompts[type], `你是专属工作助理。基于以下完整工作台数据回答：\n${this.buildContext()}`);
+              output.innerText = res;
+            } catch (err) {
+              output.innerText = err.message === 'MISSING_CONFIG' ? '未配置 API Key，请在设置中配置大模型。' : `调用失败: ${err.message}`;
+            }
+          },
+
+          async handleCustomAsk(e) {
+            e.preventDefault();
+            const input = document.getElementById('assistantCustomInput');
+            const q = input.value.trim();
+            if (!q) return;
+
+            const output = document.getElementById('assistantOutput');
+            output.innerText = '正在结合工作台与个人资料库分析...';
+
+            try {
+              const res = await XiangKuApp.requestAI(q, `你是专属工作助理。基于以下工作台与个人背景数据回答：\n${this.buildContext()}`);
+              output.innerText = res;
+              input.value = '';
+            } catch (err) {
+              output.innerText = `异常: ${err.message}`;
+            }
+          }
+        },
+
+        nik: {
+          renderMessages() {
+            const container = document.getElementById('nikChatMessages');
+            if (!XiangKuApp.db.nikMessages || XiangKuApp.db.nikMessages.length === 0) {
+              container.innerHTML = `
+                <div class="flex gap-2">
+                  <div class="w-5 h-5 rounded bg-zinc-900 dark:bg-zinc-800 border border-zinc-700 text-zinc-300 font-mono text-[10px] flex items-center justify-center shrink-0 mt-0.5">
+                    <i data-lucide="bot" class="w-3.5 h-3.5 text-zinc-300"></i>
+                  </div>
+                  <div class="bg-zinc-100 dark:bg-zinc-800/80 text-zinc-800 dark:text-zinc-200 p-2.5 rounded-lg rounded-tl-none leading-relaxed max-w-[85%] whitespace-pre-wrap">
+你好！我是 NIK。我现在升级为具备系统操作能力的智能体，你可以让我帮你记录流水、归档知识、总结经验或推送到飞书。
+                  </div>
+                </div>
+              `;
+              lucide.createIcons();
+              return;
+            }
+
+            container.innerHTML = '';
+            XiangKuApp.db.nikMessages.forEach(msg => {
+              const isUser = msg.role === 'user';
+              const div = document.createElement('div');
+              div.className = `flex gap-2 ${isUser ? 'justify-end' : 'justify-start'}`;
+
+              if (isUser) {
+                div.innerHTML = `<div class="bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 p-2 rounded-lg rounded-tr-none leading-relaxed max-w-[85%] whitespace-pre-wrap font-sans">${msg.content}</div>`;
+              } else {
+                div.innerHTML = `
+                  <div class="w-5 h-5 rounded bg-zinc-900 dark:bg-zinc-800 border border-zinc-700 text-zinc-300 flex items-center justify-center shrink-0 mt-0.5">
+                    <i data-lucide="bot" class="w-3.5 h-3.5 text-zinc-300"></i>
+                  </div>
+                  <div class="bg-zinc-100 dark:bg-zinc-800/80 text-zinc-800 dark:text-zinc-200 p-2.5 rounded-lg rounded-tl-none leading-relaxed max-w-[85%] whitespace-pre-wrap">${msg.content}</div>
+                `;
+              }
+              container.appendChild(div);
+            });
+            lucide.createIcons();
+            this.scrollToBottom();
+          },
+
+          async sendMessage(e) {
+            e.preventDefault();
+            const input = document.getElementById('nikChatInput');
+            const q = input.value.trim();
+            if (!q) return;
+
+            XiangKuApp.db.nikMessages.push({ role: 'user', content: q });
+            input.value = '';
+            this.renderMessages();
+
+            try {
+              const historyPayload = XiangKuApp.db.nikMessages.slice(-6);
+              const systemPrompt = `你是 NIK，嵌入在象库轻工作台中的核心通用智能体。
+你拥有前端系统的完全操作能力。当前工作台已有记录 ${XiangKuApp.db.notes.length}条，知识 ${XiangKuApp.db.knowledge.length}篇。
+如果用户的意图包含操作系统（例如：“记录流水”、“沉淀经验”、“保存知识”、“推送到飞书”），请以清晰直接的专业语气回复，并告知已在后台自动执行。`;
+
+              const reply = await XiangKuApp.requestAI(historyPayload, systemPrompt);
+
+              const lowerQ = q.toLowerCase();
+              if (lowerQ.includes('记录') || lowerQ.includes('流水') || lowerQ.includes('异常')) {
+                const now = new Date();
+                const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                XiangKuApp.db.notes.unshift({
+                  id: 'n_' + Date.now(),
+                  title: q.slice(0, 12),
+                  content: q,
+                  time: timeStr,
+                  type: lowerQ.includes('异常') ? 'issue' : 'log',
+                  workspaceId: XiangKuApp.currentWorkspaceId === 'all' ? 'general' : XiangKuApp.currentWorkspaceId
+                });
+                XiangKuApp.saveStorage();
+                XiangKuApp.renderAll();
+              }
+
+              XiangKuApp.db.nikMessages.push({ role: 'assistant', content: reply });
+              XiangKuApp.saveStorage();
+              this.renderMessages();
+            } catch (err) {
+              const errMsg = err.message === 'MISSING_CONFIG' ? "提示：尚未配置大模型 API Key，请在设置中填写。" : `调用失败: ${err.message}`;
+              XiangKuApp.db.nikMessages.push({ role: 'assistant', content: errMsg });
+              XiangKuApp.saveStorage();
+              this.renderMessages();
+            }
+          },
+
+          clearChat() {
+            if (confirm('清空 NIK 对话？')) {
+              XiangKuApp.db.nikMessages = [];
+              XiangKuApp.saveStorage();
+              this.renderMessages();
+            }
+          },
+
+          scrollToBottom() {
+            const container = document.getElementById('nikChatMessages');
+            if (container) container.scrollTop = container.scrollHeight;
+          }
+        }
+      }
+    };
+
+    window.addEventListener('DOMContentLoaded', () => {
+      XiangKuApp.init();
+    });
+  </script>
+</body>
+</html>
