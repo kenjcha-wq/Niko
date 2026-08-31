@@ -948,11 +948,68 @@
             throw new Error('MISSING_CONFIG');
           }
 
-          const notes = this.db.notes.filter(n => !n.archived).slice(0, 10);
-          const context = notes.map(n => `[${n.date}] ${n.content}`).join('\n');
-          const fullPrompt = `你是一个工作流 AI 助手。当前工作记录摘要：\n${context || '暂无记录'}\n\n用户问题：${msg}\n请基于上下文给出专业、简洁的回答。`;
+          // —— 全域检索：汇总工作台全部数据 ——
+          const allNotes = this.db.notes.filter(n => !n.archived);
+          const todayStr = new Date().toISOString().slice(0, 10);
+          const todayNotes = allNotes.filter(n => (n.date || '').slice(0, 10) === todayStr);
+          const ctxToday = (todayNotes.map(n => `- ${n.content}`).join('\n') || '（暂无今日记录）');
+          const ctxNotes = (allNotes.slice(0, 30).map(n => `[${n.date || ''} ${n.time || ''}][${n.type || ''}] ${n.content}`).join('\n') || '（暂无）');
+          const ctxWs = (this.db.workspace.map(w => `· ${w.name}: ${(w.description || '')}`).join('\n') || '（暂无）');
+          const ctxKno = (this.db.knowledge.slice(0, 15).map(k => `【${k.title}】(${k.category || ''}): ${(k.content || '').slice(0, 120)}`).join('\n') || '（暂无）');
+          const ctxExp = (this.db.experiences.slice(0, 15).map(e => `· ${e.title}: ${(e.summary || e.content || '').slice(0, 120)}`).join('\n') || '（暂无）');
+          const ctxSkill = (this.db.skills.map(s => `· ${s.name}`).join('、') || '（暂无）');
+          const ctxTpl = (this.db.templates.slice(0, 10).map(t => `· ${t.title || t.name}`).join('、') || '（暂无）');
 
-          const response = await this.requestAI(fullPrompt);
+          const context = `【今日工作流 (${todayNotes.length}条)】\n${ctxToday}\n\n` +
+            `【全部工作流 (近${allNotes.length}条)】\n${ctxNotes}\n\n` +
+            `【工作空间/项目 (${this.db.workspace.length}项)】\n${ctxWs}\n\n` +
+            `【知识库 (${this.db.knowledge.length}篇)】\n${ctxKno}\n\n` +
+            `【个人经验库 (${this.db.experiences.length}条)】\n${ctxExp}\n\n` +
+            `【技能库】${ctxSkill} ｜ 【模板库】${ctxTpl}`;
+
+          const fullPrompt = `你是【象库工作台 AI 助手】，具备全域检索与执行能力。你可以读取并理解用户工作台的全部内容（工作流、工作空间、知识库、经验库、技能、模板、个人资料），据此回答问题、总结工作、主动生成可落地计划。
+
+【全域数据概览】
+${context}
+
+【能力要求】
+1. 回答前先在全域数据中检索相关信息，引用具体条目，不凭空编造。
+2. 用户问"今天做了什么 / 总结一下"，基于「今日工作流」自动汇总输出日报式小结。
+3. 用户提出目标或需求时，主动拆解为可执行的工作流条目。
+4. 若需系统自动写入（新增工作空间或记录），请在回复末尾附上如下包裹的 JSON：
+<<<JSON
+{"actions":[{"type":"add_workspace","name":"项目名","description":"说明"},{"type":"add_note","content":"任务内容","type":"log"}]}
+>>>
+5. 语气直接、专业、克制，结论先行。
+
+用户问题：${msg}`;
+
+          let response = await this.requestAI(fullPrompt);
+
+          // —— 解析 AI 下推的可执行动作（自动增加工作流 / 记录）——
+          try {
+            const m = response.match(/<<<JSON\s*([\s\S]*?)\s*>>>/);
+            if (m) {
+              const plan = JSON.parse(m[1]);
+              const acts = Array.isArray(plan.actions) ? plan.actions : [];
+              const fb = [];
+              acts.forEach(a => {
+                if (a && a.type === 'add_workspace' && a.name) {
+                  XiangKuApp.db.workspace.push({ id: 'ws_' + Date.now() + Math.random().toString(36).slice(2, 6), name: String(a.name), description: a.description ? String(a.description) : '' });
+                  fb.push('✓ 已新增工作空间：《' + a.name + '》');
+                } else if (a && a.type === 'add_note' && a.content) {
+                  const now = new Date();
+                  XiangKuApp.db.notes.unshift({ id: 'n_' + Date.now(), content: String(a.content), date: a.date || now.toISOString().slice(0, 10), time: String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0'), type: a.type || 'log', archived: false, workspaceId: XiangKuApp.currentWorkspaceId === 'all' ? 'general' : XiangKuApp.currentWorkspaceId });
+                  fb.push('✓ 已记录工作流：' + String(a.content).slice(0, 20));
+                }
+              });
+              if (fb.length) {
+                XiangKuApp.saveStorage();
+                XiangKuApp.renderAll();
+                response = response.replace(/<<<JSON[\s\S]*?>>>/, '').trim() + '\n\n' + fb.join('\n');
+              }
+            }
+          } catch (e) {}
 
           const thinkingEl = document.getElementById('floatingThinking');
           if (thinkingEl) thinkingEl.remove();
@@ -1107,6 +1164,82 @@
           this.db.knowledgeCategories = this.DEFAULT_KNOWLEDGE_CATEGORIES;
           this.db.profileCategories = this.DEFAULT_PROFILE_CATEGORIES;
         }
+
+        this.seedBuiltinAgents();
+      },
+
+      seedBuiltinAgents() {
+        this.db.agents = this.db.agents || [];
+        const builtins = [
+          {
+            id: 'ag_daily_report',
+            name: '日报生成器',
+            icon: 'calendar-clock',
+            desc: '汇总当日全部工作台数据，自动产出结构化日报',
+            prompt: `你是「日报生成器」智能体。基于授权范围内的全部数据，自动生成当日结构化工作日报。
+
+要求：
+1. 汇总今日（按日期筛选）所有工作流记录、空间进度、知识沉淀、经验更新。
+2. 按「今日完成 / 进行中 / 阻塞与风险 / 明日计划 / 关键洞察」五段式输出。
+3. 量化成果（条数、项目、产出），不空泛、不编造。
+4. 数据不足时明确标注「暂无记录」而非虚构。
+5. 末尾附「一句话复盘」。
+
+输出为干净 Markdown，可直接复制归档。`,
+            authAll: true,
+            authNotes: true,
+            authKnowledge: true,
+            authProfile: true
+          },
+          {
+            id: 'ag_workflow_arch',
+            name: '工作流编排师',
+            icon: 'git-branch',
+            desc: '读需求后自动拆条，生成可落地的空间/任务清单',
+            prompt: `你是「工作流编排师」智能体。把用户的模糊目标或需求，拆解成可立即执行的工作流条目。
+
+要求：
+1. 先复述你理解的核心目标（1 句）。
+2. 拆解为「项目/空间 → 任务卡片」两级结构，每条任务含：标题、产出物、截止建议。
+3. 标注优先级（P0/P1/P2）与依赖关系。
+4. 若用户未给时间，给出合理排期建议。
+5. 可主动建议把条目写入「工作空间」或「今日工作流」。
+
+输出为干净 Markdown 清单，便于直接落地。`,
+            authAll: true,
+            authNotes: true,
+            authKnowledge: true,
+            authProfile: true
+          },
+          {
+            id: 'ag_weekly_review',
+            name: '周报复盘萃取师',
+            icon: 'sparkles',
+            desc: '跨日聚合产出周报，并从经历中萃取可复用经验',
+            prompt: `你是「周报复盘萃取师」智能体。聚合近期（本周）全部数据，产出周报并萃取可复用经验。
+
+要求：
+1. 周报四段：本周概览（量化）、重点项目进展、问题与卡点、下周重心。
+2. 从本周工作流/知识/空间中，提炼 3-5 条「可复用经验」，每条含：场景、做法、认知。
+3. 标注哪些经验值得存入「个人经验库」（给出标题与摘要草案）。
+4. 识别重复出现的问题，给出一条系统性改进建议。
+5. 不编造数据，缺失处明确标注。
+
+输出为干净 Markdown。`,
+            authAll: true,
+            authNotes: true,
+            authKnowledge: true,
+            authProfile: true
+          }
+        ];
+        let added = 0;
+        builtins.forEach(b => {
+          if (!this.db.agents.some(a => a.id === b.id)) {
+            this.db.agents.unshift(b);
+            added++;
+          }
+        });
+        if (added > 0) this.saveStorage();
       },
 
       saveStorage() {
@@ -2682,6 +2815,23 @@ ${XiangKuApp.db.growth.map(g => `- [${g.date}] ${g.event} -> 认知: ${g.insight
               customContext += `【个人资料】:\n- 姓名:${p.name || ''} | 角色:${p.role || ''} | 领域:${p.field || ''}\n- 能力${XiangKuApp.db.skills.length}项，经验${XiangKuApp.db.experiences.length}条\n`;
             }
 
+            if (agent.authAll) {
+              const ws = XiangKuApp.db.workspace;
+              customContext += `【工作空间/项目 (${ws.length}项)】:\n` + ws.map(w => `· ${w.name}: ${(w.description || '')}`).join('\n') + '\n\n';
+              const exp = XiangKuApp.db.experiences;
+              customContext += `【个人经验库 (${exp.length}条)】:\n` + exp.map(e => `· ${e.title}: ${(e.summary || e.content || '').slice(0, 160)}`).join('\n') + '\n\n';
+              const sk = XiangKuApp.db.skills;
+              customContext += `【技能库 (${sk.length}项)】:\n` + sk.map(s => `· ${s.name}: ${(s.desc || s.content || '').slice(0, 120)}`).join('\n') + '\n\n';
+              const tpl = XiangKuApp.db.templates;
+              customContext += `【模板库 (${tpl.length}项)】:\n` + tpl.map(t => `· ${t.title || t.name}: ${(t.content || '').slice(0, 120)}`).join('\n') + '\n\n';
+              const mth = XiangKuApp.db.methods;
+              customContext += `【方法库 (${mth.length}项)】:\n` + mth.map(m => `· ${m.title || m.name}: ${(m.content || '').slice(0, 120)}`).join('\n') + '\n\n';
+              const ctt = XiangKuApp.db.contacts;
+              customContext += `【联系人 (${ctt.length}项)】:\n` + ctt.map(c => `· ${c.name || c.title}: ${(c.content || c.desc || '').slice(0, 120)}`).join('\n') + '\n\n';
+              const grw = XiangKuApp.db.growth;
+              customContext += `【成长记录 (${grw.length}项)】:\n` + grw.map(g => `· ${g.title || g.name}: ${(g.content || g.desc || '').slice(0, 120)}`).join('\n') + '\n\n';
+            }
+
             try {
               const res = await XiangKuApp.requestAI("请执行你的分析任务并输出结论：", customContext);
               this.saveOutput(agent.name + ' 分析成果', agent.name, res);
@@ -2810,7 +2960,7 @@ ${XiangKuApp.db.growth.map(g => `- [${g.date}] ${g.event} -> 认知: ${g.insight
               const parsePrompt = `用户指令: "${q}"
 请判断用户是否要求执行系统操作。请返回一个纯 JSON 对象，格式如下：
 {
-  "action": "none" | "add_note" | "add_experience" | "add_knowledge" | "add_skill" | "sync_feishu",
+  "action": "none" | "add_note" | "add_experience" | "add_knowledge" | "add_workspace" | "add_skill" | "sync_feishu",
   "extractedData": {
     "title": "从用户话中提炼的精简标题",
     "content": "提炼出的纯干货内容（去除'请帮我填入'等废话指令）",
@@ -2873,11 +3023,22 @@ ${XiangKuApp.db.growth.map(g => `- [${g.date}] ${g.event} -> 认知: ${g.insight
                 });
                 XiangKuApp.saveStorage();
                 XiangKuApp.renderAll();
-                executionFeedback = `[系统操作] 已提炼并记录至【今日工作流】。\n`;
+                  executionFeedback = `[系统操作] 已提炼并记录至【今日工作流】。\n`;
+              } else if (actionPlan.action === 'add_workspace') {
+                const d = actionPlan.extractedData || {};
+                XiangKuApp.db.workspace.push({
+                  id: 'ws_' + Date.now(),
+                  name: d.name || q.slice(0, 15),
+                  description: d.description || d.content || ''
+                });
+                XiangKuApp.saveStorage();
+                XiangKuApp.renderAll();
+                executionFeedback = `[系统操作] 已在工作空间新增项目:《${d.name || '未命名项目'}》\n`;
               }
 
               const historyPayload = XiangKuApp.db.nikMessages.slice(-6);
-              const systemPrompt = `你是 NIK，象库轻工作台的核心通用智能体。当前系统执行状态：${executionFeedback || '无自动入库动作'}。请以博学、直接、中肯且专业的语气给用户最终答复。`;
+              const ctxSummary = `【数据概览】工作流${XiangKuApp.db.notes.filter(n=>!n.archived).length}条 / 工作空间${XiangKuApp.db.workspace.length}项 / 知识${XiangKuApp.db.knowledge.length}篇 / 经验${XiangKuApp.db.experiences.length}条 / 技能${XiangKuApp.db.skills.length}项`;
+              const systemPrompt = `你是 NIK，象库轻工作台的核心通用智能体，具备全域检索与自动执行能力。${ctxSummary}。当前系统执行状态：${executionFeedback || '无自动入库动作'}。你可以主动基于全部数据检索、总结，并按需将内容自动写入对应库（工作流/知识/经验/工作空间）。请以博学、直接、中肯且专业的语气给用户最终答复，结论先行。`;
 
               const reply = await XiangKuApp.requestAI(historyPayload, systemPrompt);
 
