@@ -70,10 +70,8 @@
         <i data-lucide="search" class="w-3.5 h-3.5 absolute left-2 text-zinc-400"></i>
         <input type="text" id="globalSearchInput" oninput="XiangKuApp.handleSearch()" placeholder="全局检索 (/) " class="w-20 sm:w-28 md:w-36 h-7 pl-6 pr-2 text-xs bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none focus:border-zinc-400 text-zinc-800 dark:text-zinc-100 transition-all placeholder:text-zinc-400" />
       </div>
-      <!-- NIK 快捷入口 -->
       <button onclick="XiangKuApp.openNikDrawer()" title="NIK 智能助手" class="h-7 flex items-center gap-1 text-xs px-2.5 rounded border border-purple-200 dark:border-purple-900 bg-purple-50/50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 shrink-0 font-medium shadow-sm">
-        <i data-lucide="bot" class="w-3.5 h-3.5 text-purple-600 dark:text-purple-400"></i>
-        <span class="hidden sm:inline">NIK</span>
+        <i data-lucide="bot" class="w-3.5 h-3.5 text-purple-600 dark:text-purple-400"></i><span class="hidden sm:inline">NIK</span>
       </button>
       <button onclick="XiangKuApp.modules.profileVault.toggleDrawer()" title="个人资料库" class="hidden md:flex h-7 items-center gap-1 text-xs px-2.5 rounded border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium shrink-0 bg-white dark:bg-zinc-800 shadow-sm">
         <i data-lucide="user-check" class="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400"></i><span>个人资料库</span>
@@ -190,7 +188,7 @@
           </div>
           <div>
             <span class="text-sm font-semibold">NIK · 智能中枢</span>
-            <span class="text-[10px] text-white/70 block -mt-0.5">智能识别意图 · 自动路由 · 时间感知</span>
+            <span class="text-[10px] text-white/70 block -mt-0.5">智能识别意图 · 自动路由 · 归档可查</span>
           </div>
         </div>
         <div class="flex items-center gap-1.5">
@@ -517,7 +515,6 @@
         { id: 'growth', name: '成长轨迹' }
       ],
 
-      // 预置智能体模板
       PRESET_AGENTS: [
         {
           id: 'preset_daily',
@@ -570,7 +567,7 @@
         contacts: [],
         methods: [],
         growth: [],
-        agents: [], // 用户自建智能体
+        agents: [],
         agentOutputs: [],
         nikMessages: []
       },
@@ -591,7 +588,6 @@
         const todayStr = new Date().toISOString().slice(0, 10);
         document.getElementById('currentDateStr').innerText = todayStr.replace(/-/g, '.');
         document.getElementById('quickInputDate').value = todayStr;
-        // PC 端默认显示 NIK
         if (window.innerWidth >= 768) {
           document.getElementById('tabSectionNik').classList.remove('hidden');
           document.getElementById('tabSectionNik').classList.add('flex');
@@ -1193,11 +1189,18 @@
               const catName = catObj ? catObj.name : '流水';
               const item = document.createElement('div');
               item.className = 'relative pl-4 border-l-2 border-zinc-200 dark:border-zinc-800 group transition-all';
+              const dateDisplay = note.archived ? '📦 ' + (note.archivedDate || note.date) : (note.date !== today ? note.date + ' ' : '');
               item.innerHTML = `
                 <div class="absolute -left-[5px] top-1 w-2 h-2 rounded-full ${note.archived ? 'bg-amber-400' : 'bg-zinc-300 dark:bg-zinc-700'} group-hover:bg-zinc-900 dark:group-hover:bg-zinc-100"></div>
                 <div class="flex items-center justify-between text-[11px] mb-1">
-                  <div class="flex items-center gap-1.5"><span class="font-mono text-zinc-400 dark:text-zinc-500">${note.date !== today ? note.date + ' ' : ''}${note.time || '--:--'}</span><span class="text-[10px] px-1.5 py-0.2 rounded border bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700">${catName}</span></div>
-                  <div class="flex items-center gap-1"><button onclick="XiangKuApp.modules.notes.toggleArchive('${note.id}')" class="text-zinc-400 hover:text-amber-600 text-xs px-1">${note.archived ? '恢复' : '归档'}</button><button onclick="XiangKuApp.modules.notes.delete('${note.id}')" class="text-zinc-300 hover:text-red-500 text-xs px-1">删除</button></div>
+                  <div class="flex items-center gap-1.5">
+                    <span class="font-mono text-zinc-400 dark:text-zinc-500">${dateDisplay}${note.time || '--:--'}</span>
+                    <span class="text-[10px] px-1.5 py-0.2 rounded border bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700">${catName}</span>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <button onclick="XiangKuApp.modules.notes.toggleArchive('${note.id}')" class="text-zinc-400 hover:text-amber-600 text-xs px-1">${note.archived ? '恢复' : '归档'}</button>
+                    <button onclick="XiangKuApp.modules.notes.delete('${note.id}')" class="text-zinc-300 hover:text-red-500 text-xs px-1">删除</button>
+                  </div>
                 </div>
                 <p class="text-xs text-zinc-800 dark:text-zinc-200 leading-relaxed whitespace-pre-wrap">${note.content}</p>
               `;
@@ -1226,6 +1229,7 @@
               time: timeStr,
               type: typeEl.value,
               archived: false,
+              archivedDate: null,
               workspaceId: XiangKuApp.currentWorkspaceId === 'all' ? 'general' : XiangKuApp.currentWorkspaceId
             });
             contentEl.value = '';
@@ -1236,7 +1240,16 @@
 
           toggleArchive(id) {
             const note = XiangKuApp.db.notes.find(n => n.id === id);
-            if (note) { note.archived = !note.archived; XiangKuApp.saveStorage(); XiangKuApp.renderAll(); }
+            if (note) {
+              note.archived = !note.archived;
+              if (note.archived) {
+                note.archivedDate = new Date().toISOString().slice(0, 10);
+              } else {
+                note.archivedDate = null;
+              }
+              XiangKuApp.saveStorage();
+              XiangKuApp.renderAll();
+            }
           },
 
           delete(id) {
@@ -1653,7 +1666,6 @@
             container.innerHTML = '';
 
             if (this.currentSubTab === 'agents') {
-              // 用户自建智能体
               const agents = XiangKuApp.db.agents;
               if (agents.length === 0) {
                 container.innerHTML = `<div class="p-8 text-center text-zinc-400 text-xs">暂无自建智能体。点击右上角「新建智能体」或使用「实用模板」快速创建。</div>`;
@@ -1677,7 +1689,6 @@
               container.appendChild(grid);
 
             } else if (this.currentSubTab === 'presets') {
-              // 实用模板
               const presets = XiangKuApp.PRESET_AGENTS;
               const grid = document.createElement('div');
               grid.className = 'grid grid-cols-1 sm:grid-cols-2 gap-2.5';
@@ -1793,7 +1804,6 @@
           importPreset(presetId) {
             const preset = XiangKuApp.PRESET_AGENTS.find(p => p.id === presetId);
             if (!preset) return;
-            // 检查是否已存在同名
             if (XiangKuApp.db.agents.some(a => a.name === preset.name)) {
               if (!confirm(`已存在同名智能体「${preset.name}」，是否覆盖？`)) return;
               const existing = XiangKuApp.db.agents.find(a => a.name === preset.name);
@@ -1825,7 +1835,6 @@
           runPreset(presetId) {
             const preset = XiangKuApp.PRESET_AGENTS.find(p => p.id === presetId);
             if (!preset) return;
-            // 直接用预设运行
             this.executeAgentWithPrompt(preset.name, preset.prompt, preset.icon || 'bot');
           },
 
@@ -1839,12 +1848,10 @@
             this.switchSubTab('history');
             const allNotes = XiangKuApp.db.notes.filter(n => !n.archived);
             
-            // 时间范围识别
             const today = new Date().toISOString().slice(0, 10);
             let filteredNotes = allNotes;
             let timeLabel = '全部';
 
-            // 检查 prompt 或 name 中是否包含时间关键词
             const fullText = (prompt + ' ' + name).toLowerCase();
             if (fullText.includes('今日') || fullText.includes('今天')) {
               filteredNotes = allNotes.filter(n => n.date === today);
@@ -1925,7 +1932,7 @@
 • "记录一下会议纪要"<br>
 • "把设备故障经验存入经验库"<br>
 • "总结今天的异常记录"<br>
-• "帮我分析最近的工作效率"
+• "在归档库找今天完成的工作"
                   </div>
                 </div>
               `;
@@ -1995,11 +2002,12 @@
 
 【可识别的动作类型】
 - "record": 记录到工作流
-- "summary": 总结内容
+- "summary": 总结内容并存入
 - "note": 存入工作笔记
 - "knowledge": 存入知识库
 - "experience": 存入经验库
-- "analyze": 分析内容
+- "analyze": 分析内容并存入
+- "archive_search": 搜索归档库
 - "chat": 普通对话
 
 【目标位置识别规则】
@@ -2016,7 +2024,7 @@
 
 返回 JSON 格式（只输出 JSON）：
 {
-  "action": "record|summary|note|knowledge|experience|analyze|chat",
+  "action": "record|summary|note|knowledge|experience|analyze|archive_search|chat",
   "target": "workflow|note|knowledge|experience|chat",
   "content": "提取的实质内容",
   "workspaceId": "匹配的工作空间ID 或 null",
@@ -2044,44 +2052,110 @@
                 if (found) categoryName = found.name;
               }
 
+              // ===== 搜索归档库 =====
+              if (parsed.action === 'archive_search' || (q.includes('归档') && (q.includes('找') || q.includes('查') || q.includes('搜索')))) {
+                const today = new Date().toISOString().slice(0, 10);
+                const fullText = (q + ' ' + (parsed.content || '')).toLowerCase();
+                
+                let archivedNotes = XiangKuApp.db.notes.filter(n => n.archived === true);
+                let timeLabel = '全部归档';
+                
+                if (fullText.includes('今日') || fullText.includes('今天')) {
+                  archivedNotes = archivedNotes.filter(n => n.archivedDate === today || n.date === today);
+                  timeLabel = '今日归档';
+                } else if (fullText.includes('本周') || fullText.includes('这周')) {
+                  const range = XiangKuApp.getDateRange('week');
+                  archivedNotes = archivedNotes.filter(n => n.archivedDate >= range.startDate && n.archivedDate <= range.endDate);
+                  timeLabel = '本周归档';
+                } else if (fullText.includes('本月') || fullText.includes('这个月')) {
+                  const range = XiangKuApp.getDateRange('month');
+                  archivedNotes = archivedNotes.filter(n => n.archivedDate >= range.startDate && n.archivedDate <= range.endDate);
+                  timeLabel = '本月归档';
+                }
+                
+                // 提取搜索关键词
+                let searchKw = parsed.content || q;
+                searchKw = searchKw.replace(/在归档库找|查找|搜索|归档|里|的|中|今天|昨日|昨天|本周|上周|本月|上个月/g, '').trim();
+                if (searchKw && searchKw.length > 0) {
+                  archivedNotes = archivedNotes.filter(n => 
+                    n.content.toLowerCase().includes(searchKw.toLowerCase()) ||
+                    n.title.toLowerCase().includes(searchKw.toLowerCase())
+                  );
+                }
+                
+                if (archivedNotes.length === 0) {
+                  finalReply = `📭 ${timeLabel}中没有找到匹配的记录。\n\n💡 提示：归档记录需要点击「归档」按钮移入，归档后仍可按日期查找。`;
+                } else {
+                  const list = archivedNotes.map(n => 
+                    `• [${n.archivedDate || n.date}] ${n.content}`
+                  ).join('\n');
+                  finalReply = `📦 在${timeLabel}中找到 ${archivedNotes.length} 条记录：\n\n${list}`;
+                }
+                
+                XiangKuApp.db.nikMessages.pop();
+                XiangKuApp.db.nikMessages.push({ role: 'assistant', content: finalReply });
+                XiangKuApp.saveStorage();
+                this.renderMessages();
+                return;
+              }
+
+              // ===== 总结/分析 =====
               if (parsed.action === 'summary' || parsed.action === 'analyze') {
-                let context = XiangKuApp.db.notes.filter(n => !n.archived);
-                if (parsed.workspaceId) context = context.filter(n => n.workspaceId === parsed.workspaceId);
-                if (parsed.categoryId) context = context.filter(n => n.type === parsed.categoryId);
-                context = context.slice(0, 30);
-                const contextText = context.map(n => `[${n.date}] [${n.type}] ${n.content}`).join('\n');
+                const today = new Date().toISOString().slice(0, 10);
+                const fullText = (q + ' ' + parsed.content).toLowerCase();
+                let filteredNotes = XiangKuApp.db.notes.filter(n => !n.archived);
+                let timeLabel = '全部';
+
+                if (fullText.includes('今日') || fullText.includes('今天')) {
+                  filteredNotes = filteredNotes.filter(n => n.date === today);
+                  timeLabel = '今日';
+                } else if (fullText.includes('本周') || fullText.includes('这周')) {
+                  const range = XiangKuApp.getDateRange('week');
+                  filteredNotes = filteredNotes.filter(n => n.date >= range.startDate && n.date <= range.endDate);
+                  timeLabel = '本周';
+                } else if (fullText.includes('本月') || fullText.includes('这个月')) {
+                  const range = XiangKuApp.getDateRange('month');
+                  filteredNotes = filteredNotes.filter(n => n.date >= range.startDate && n.date <= range.endDate);
+                  timeLabel = '本月';
+                }
+
+                if (parsed.workspaceId) {
+                  filteredNotes = filteredNotes.filter(n => n.workspaceId === parsed.workspaceId);
+                }
+                if (parsed.categoryId) {
+                  filteredNotes = filteredNotes.filter(n => n.type === parsed.categoryId);
+                }
+                filteredNotes = filteredNotes.slice(0, 50);
+
+                const contextText = filteredNotes.map(n => `[${n.date}] [${n.type}] ${n.content}`).join('\n');
                 const summaryPrompt = parsed.action === 'summary' 
-                  ? `请总结以下工作记录（工作空间：${workspaceName}${categoryName ? '，分类：'+categoryName : ''}）：\n${contextText || '暂无记录'}\n\n用户要求：${parsed.content || q}`
-                  : `请分析以下工作记录（工作空间：${workspaceName}${categoryName ? '，分类：'+categoryName : ''}）：\n${contextText || '暂无记录'}\n\n分析要求：${parsed.content || q}`;
+                  ? `请总结以下${timeLabel}工作记录（共${filteredNotes.length}条，工作空间：${workspaceName}${categoryName ? '，分类：'+categoryName : ''}）：\n${contextText || '暂无记录'}\n\n请生成一份简洁的工作总结。`
+                  : `请分析以下${timeLabel}工作记录（共${filteredNotes.length}条，工作空间：${workspaceName}${categoryName ? '，分类：'+categoryName : ''}）：\n${contextText || '暂无记录'}\n\n请给出分析和建议。`;
+
                 const executionResult = await XiangKuApp.requestAI(summaryPrompt, '你是一个专业的工作分析助手。');
 
-                if (parsed.target === 'note') {
-                  const now = new Date();
-                  XiangKuApp.db.notes.unshift({
-                    id: 'n_' + Date.now(),
-                    title: parsed.content?.slice(0, 16) || 'AI 总结',
-                    content: `【AI 总结】\n${executionResult}`,
-                    date: now.toISOString().slice(0, 10),
-                    time: `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
-                    type: parsed.categoryId || 'insight',
-                    archived: false,
-                    workspaceId: parsed.workspaceId || (XiangKuApp.currentWorkspaceId === 'all' ? 'general' : XiangKuApp.currentWorkspaceId)
-                  });
-                  XiangKuApp.saveStorage();
-                  finalReply = `✅ 已生成总结并存入「${workspaceName}${categoryName ? ' › ' + categoryName : ''}」\n\n${executionResult}`;
-                } else if (parsed.target === 'knowledge') {
-                  XiangKuApp.db.knowledge.unshift({
-                    id: 'k_' + Date.now(),
-                    title: parsed.content?.slice(0, 20) || 'AI 分析报告',
-                    category: parsed.categoryId || 'note_archive',
-                    workspaceId: parsed.workspaceId || 'general',
-                    content: executionResult
-                  });
-                  XiangKuApp.saveStorage();
-                  finalReply = `✅ 已生成分析报告并存入知识库\n\n${executionResult}`;
-                } else {
-                  finalReply = executionResult;
-                }
+                const now = new Date();
+                const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                const targetWorkspaceId = parsed.workspaceId || (XiangKuApp.currentWorkspaceId === 'all' ? 'general' : XiangKuApp.currentWorkspaceId);
+                const targetCategoryId = parsed.categoryId || 'insight';
+
+                const newNote = {
+                  id: 'n_' + Date.now(),
+                  title: (parsed.content?.slice(0, 16) || 'AI 总结') + (timeLabel !== '全部' ? ' (' + timeLabel + ')' : ''),
+                  content: `【${parsed.action === 'summary' ? 'AI 总结' : 'AI 分析'} - ${timeLabel}】\n${executionResult}`,
+                  date: today,
+                  time: timeStr,
+                  type: targetCategoryId,
+                  archived: false,
+                  archivedDate: null,
+                  workspaceId: targetWorkspaceId
+                };
+                XiangKuApp.db.notes.unshift(newNote);
+                XiangKuApp.saveStorage();
+                XiangKuApp.renderAll();
+
+                const locText = `${workspaceName}${categoryName ? ' › ' + categoryName : ''}`;
+                finalReply = `✅ 已生成${parsed.action === 'summary' ? '总结' : '分析'}并存入「${locText}」\n📅 时间范围：${timeLabel}（${filteredNotes.length}条记录）\n\n${executionResult}`;
 
               } else if (parsed.action === 'record' || parsed.action === 'note' || parsed.action === 'experience') {
                 let content = parsed.content || q;
@@ -2090,29 +2164,37 @@
                   .replace(/\s*(记入|放入|记录到|存入|保存到)(工作流|工作笔记|笔记|知识库|经验库)$/, '')
                   .trim();
 
+                const now = new Date();
+                const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                const today = now.toISOString().slice(0, 10);
+                const targetWorkspaceId = parsed.workspaceId || (XiangKuApp.currentWorkspaceId === 'all' ? 'general' : XiangKuApp.currentWorkspaceId);
+                const targetCategoryId = parsed.categoryId || 'log';
+
                 if (parsed.target === 'note' || parsed.target === 'workflow') {
-                  const now = new Date();
                   XiangKuApp.db.notes.unshift({
                     id: 'n_' + Date.now(),
                     title: cleanContent.slice(0, 16),
                     content: cleanContent,
-                    date: now.toISOString().slice(0, 10),
-                    time: `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
-                    type: parsed.categoryId || 'log',
+                    date: today,
+                    time: timeStr,
+                    type: targetCategoryId,
                     archived: false,
-                    workspaceId: parsed.workspaceId || (XiangKuApp.currentWorkspaceId === 'all' ? 'general' : XiangKuApp.currentWorkspaceId)
+                    archivedDate: null,
+                    workspaceId: targetWorkspaceId
                   });
                   XiangKuApp.saveStorage();
+                  XiangKuApp.renderAll();
                   finalReply = `✅ 已记录到「${workspaceName}${categoryName ? ' › ' + categoryName : ''}」\n"${cleanContent}"`;
                 } else if (parsed.target === 'knowledge') {
                   XiangKuApp.db.knowledge.unshift({
                     id: 'k_' + Date.now(),
                     title: cleanContent.slice(0, 20),
                     category: parsed.categoryId || 'note_archive',
-                    workspaceId: parsed.workspaceId || 'general',
+                    workspaceId: targetWorkspaceId,
                     content: cleanContent
                   });
                   XiangKuApp.saveStorage();
+                  XiangKuApp.renderAll();
                   finalReply = `✅ 已存入知识库「${parsed.categoryId || '默认'}」\n"${cleanContent}"`;
                 } else if (parsed.target === 'experience') {
                   XiangKuApp.db.experiences.unshift({
@@ -2124,21 +2206,23 @@
                     keywords: '#NIK记录'
                   });
                   XiangKuApp.saveStorage();
+                  XiangKuApp.renderAll();
                   finalReply = `✅ 已存入经验库\n"${cleanContent}"`;
                 } else {
-                  const now = new Date();
                   XiangKuApp.db.notes.unshift({
                     id: 'n_' + Date.now(),
                     title: cleanContent.slice(0, 16),
                     content: cleanContent,
-                    date: now.toISOString().slice(0, 10),
-                    time: `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`,
-                    type: parsed.categoryId || 'log',
+                    date: today,
+                    time: timeStr,
+                    type: targetCategoryId,
                     archived: false,
-                    workspaceId: parsed.workspaceId || (XiangKuApp.currentWorkspaceId === 'all' ? 'general' : XiangKuApp.currentWorkspaceId)
+                    archivedDate: null,
+                    workspaceId: targetWorkspaceId
                   });
                   XiangKuApp.saveStorage();
-                  finalReply = `✅ 已记录到工作流\n"${cleanContent}"`;
+                  XiangKuApp.renderAll();
+                  finalReply = `✅ 已记录到工作流「${workspaceName}」\n"${cleanContent}"`;
                 }
 
               } else {
