@@ -60,6 +60,15 @@
 
     .no-scrollbar::-webkit-scrollbar { display: none; }
     .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* 悬浮球脉冲动画 */
+    @keyframes float-pulse {
+      0%, 100% { transform: scale(1); opacity: 0.6; }
+      50% { transform: scale(1.15); opacity: 0.2; }
+    }
+    .float-ring {
+      animation: float-pulse 2s ease-in-out infinite;
+    }
   </style>
 </head>
 <body id="mainBody" class="bg-[#F8F9FA] dark:bg-[#121212] text-[#1A1A1A] dark:text-[#EDEDED] font-sans antialiased h-[100dvh] flex flex-col overflow-hidden select-none transition-colors duration-200 bg-theme-plain">
@@ -147,10 +156,10 @@
     </div>
   </header>
 
-  <!-- ================= 首页三大工作台 (标准 2 : 5 : 5 比例) ================= -->
+  <!-- ================= 首页三大工作台 ================= -->
   <main class="flex-1 grid grid-cols-1 md:grid-cols-12 gap-0 overflow-hidden relative">
     
-    <!-- 1. 【工作空间 工作台】(占 2 列) -->
+    <!-- 1. 【工作空间 工作台】 -->
     <aside id="tabSectionWorkspace" class="mobile-tab-section hidden md:flex md:col-span-2 border-r border-zinc-200/80 dark:border-zinc-800 bg-[#FAFAFA]/95 dark:bg-[#141414]/95 flex-col justify-between overflow-hidden h-full">
       <div class="flex-1 flex flex-col overflow-hidden">
         <div class="p-3 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between text-xs font-semibold text-zinc-400 dark:text-zinc-500 tracking-wider">
@@ -181,9 +190,9 @@
       </div>
     </aside>
 
-    <!-- 2. 【工作流 工作台】(占 5 列，支持归档、指定日期与自定义分区) -->
+    <!-- 2. 【工作流 工作台】 -->
     <section id="tabSectionNotes" class="mobile-tab-section flex md:col-span-5 border-r border-zinc-200/80 dark:border-zinc-800 flex-col bg-white/95 dark:bg-[#181818]/95 overflow-hidden h-full">
-      <!-- 快速录入区 (支持日期选择) -->
+      <!-- 快速录入区 -->
       <div class="p-2.5 md:p-3 border-b border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-900/60 shrink-0">
         <div class="flex items-center justify-between mb-1.5 gap-2">
           <span class="text-xs font-semibold text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5 shrink-0">
@@ -191,14 +200,12 @@
             快速知识捕获
           </span>
           <div class="flex items-center gap-1.5">
-            <!-- 日期设定 (支持提前预排未来任务) -->
             <input 
               type="date" 
               id="quickInputDate" 
               class="h-6 text-[10px] bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded px-1.5 text-zinc-600 dark:text-zinc-300 focus:outline-none"
             />
             <select id="quickTypeSelect" class="h-6 text-[11px] bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded px-1.5 text-zinc-600 dark:text-zinc-300 focus:outline-none">
-              <!-- 动态根据工作流分区渲染 -->
             </select>
           </div>
         </div>
@@ -229,13 +236,11 @@
         </form>
       </div>
 
-      <!-- 工作流分类过滤 + 归档视图切换 + 分区管理 -->
+      <!-- 工作流分类过滤 -->
       <div class="px-2.5 md:px-3 py-1.5 bg-white/90 dark:bg-[#181818]/90 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between gap-1 text-[11px] shrink-0">
         <div id="notesTabsContainer" class="flex items-center gap-1 overflow-x-auto no-scrollbar flex-1">
-          <!-- 动态渲染工作流分类 Tab -->
         </div>
         <div class="flex items-center gap-1 shrink-0 ml-1">
-          <!-- 归档视图切换开关 -->
           <button 
             id="notesArchiveToggleBtn"
             onclick="XiangKuApp.modules.notes.toggleArchiveView()"
@@ -261,12 +266,11 @@
           <span id="currentDateStr" class="text-[11px] font-mono text-zinc-400 dark:text-zinc-500">--</span>
         </div>
         <div id="dailyLogStream" class="flex-1 overflow-y-auto p-3 md:p-4 space-y-3 pb-24 md:pb-4">
-          <!-- 动态渲染工作流时间轴 -->
         </div>
       </div>
     </section>
 
-    <!-- 3. 【知识库 工作台】(占 5 列) -->
+    <!-- 3. 【知识库 工作台】 -->
     <section id="tabSectionKnowledge" class="mobile-tab-section hidden md:flex md:col-span-5 flex-col bg-[#FAFAFA]/90 dark:bg-[#141414]/90 overflow-hidden h-full">
       <div class="p-2.5 md:p-3 border-b border-zinc-200/80 dark:border-zinc-800 bg-white/90 dark:bg-[#181818]/90 flex items-center justify-between shrink-0">
         <div>
@@ -285,10 +289,8 @@
         </button>
       </div>
 
-      <!-- 动态知识库分类过滤器 -->
       <div class="px-2.5 md:px-3 py-1.5 bg-white/90 dark:bg-[#181818]/90 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between gap-1 text-[11px] shrink-0">
         <div id="knowledgeTabsContainer" class="flex items-center gap-1 overflow-x-auto no-scrollbar flex-1">
-          <!-- 动态渲染知识库 Tab -->
         </div>
         <button 
           onclick="XiangKuApp.modules.categoryManager.openModal('knowledgeCategories', '知识库分区管理')" 
@@ -299,9 +301,7 @@
         </button>
       </div>
 
-      <!-- 知识库卡片列表 -->
       <div id="knowledgeCardList" class="flex-1 overflow-y-auto p-2.5 md:p-3 space-y-2.5 pb-24 md:pb-4">
-        <!-- 动态渲染知识库卡片 -->
       </div>
     </section>
 
@@ -323,23 +323,21 @@
       </div>
 
       <div id="nikChatMessages" class="flex-1 overflow-y-auto p-3 space-y-2.5 text-xs pb-6">
-        <!-- 动态渲染对话 -->
       </div>
 
       <form onsubmit="XiangKuApp.modules.nik.sendMessage(event)" class="p-2 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 flex gap-1.5 items-center shrink-0 mb-14 md:mb-0">
         <input 
           type="text" 
           id="nikChatInput" 
-          placeholder="给 NIK 下达指令（如：把XX问题存入经验库，或总结今日工作）..." 
+          placeholder="给 NIK 下达指令..." 
           class="flex-1 h-8 text-xs px-2.5 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded focus:outline-none focus:border-zinc-500 text-zinc-800 dark:text-zinc-100"
         />
         <button type="submit" class="h-8 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-3.5 rounded text-xs font-medium shadow-sm">发送</button>
       </form>
     </section>
-
   </main>
 
-  <!-- ================= 移动端底部原生 5 栏 Tab ================= -->
+  <!-- ================= 移动端底部 5 栏 Tab ================= -->
   <nav class="md:hidden h-14 bg-white/95 dark:bg-[#181818]/95 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-around px-1 shrink-0 z-30">
     <button onclick="XiangKuApp.switchMobileTab('workspace')" id="mobileNavWorkspace" class="flex flex-col items-center gap-0.5 text-zinc-400 dark:text-zinc-500 py-1 px-2">
       <i data-lucide="folder" class="w-4 h-4"></i>
@@ -363,9 +361,60 @@
     </button>
   </nav>
 
-  <!-- ================= 【抽屉】智能体中心 (含自动化工具增删 + 生成历史库) ================= -->
+  <!-- ================= 【AI 悬浮球】 ================= -->
+  <div id="aiFloatingBall" class="fixed bottom-20 right-4 md:bottom-6 md:right-6 z-40 cursor-pointer group" onclick="XiangKuApp.toggleFloatingBall()">
+    <div class="relative w-14 h-14 md:w-16 md:h-16 rounded-full bg-gradient-to-br from-purple-600 to-indigo-600 shadow-2xl shadow-purple-500/30 hover:shadow-purple-500/50 transition-all duration-300 flex items-center justify-center hover:scale-105 active:scale-95">
+      <i data-lucide="bot" class="w-7 h-7 text-white"></i>
+      <div class="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white dark:border-zinc-800 animate-pulse"></div>
+      <div class="absolute inset-0 rounded-full border-2 border-purple-400/30 float-ring"></div>
+    </div>
+    <span class="absolute -top-2 -right-2 text-[10px] font-bold bg-white dark:bg-zinc-800 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 rounded-full shadow-md border border-purple-200 dark:border-purple-800">AI</span>
+  </div>
+
+  <!-- ================= AI 悬浮球对话窗 ================= -->
+  <div id="aiFloatingChat" class="fixed bottom-32 right-4 md:bottom-28 md:right-6 w-[92vw] max-w-[420px] h-[500px] max-h-[70vh] bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-700 hidden flex-col z-40 overflow-hidden transition-all duration-300">
+    <div class="p-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-2">
+        <i data-lucide="bot" class="w-4 h-4"></i>
+        <span class="text-sm font-semibold">AI 助手</span>
+        <span class="text-[10px] bg-white/20 px-2 py-0.5 rounded-full">在线</span>
+      </div>
+      <div class="flex items-center gap-1">
+        <button onclick="XiangKuApp.minimizeFloatingChat()" class="w-6 h-6 flex items-center justify-center hover:bg-white/20 rounded text-white/80 hover:text-white transition">
+          <i data-lucide="minus" class="w-3.5 h-3.5"></i>
+        </button>
+        <button onclick="XiangKuApp.closeFloatingChat()" class="w-6 h-6 flex items-center justify-center hover:bg-white/20 rounded text-white/80 hover:text-white transition">
+          <i data-lucide="x" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+    </div>
+
+    <div id="floatingChatMessages" class="flex-1 overflow-y-auto p-3 space-y-2.5 text-xs bg-zinc-50/50 dark:bg-zinc-900/30">
+      <div class="flex gap-2">
+        <div class="w-7 h-7 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center shrink-0">
+          <i data-lucide="bot" class="w-3.5 h-3.5 text-purple-600 dark:text-purple-400"></i>
+        </div>
+        <div class="bg-white dark:bg-zinc-800 p-2.5 rounded-xl rounded-tl-none shadow-sm max-w-[85%] text-zinc-700 dark:text-zinc-200 leading-relaxed">
+          你好！我是你的 AI 工作助手。<br>可以问我任何工作相关的问题，或让我帮你整理工作内容。
+        </div>
+      </div>
+    </div>
+
+    <form onsubmit="XiangKuApp.sendFloatingMessage(event)" class="p-2.5 border-t border-zinc-200 dark:border-zinc-700 bg-white dark:bg-[#1a1a1a] flex gap-1.5 items-center shrink-0">
+      <input 
+        type="text" 
+        id="floatingChatInput" 
+        placeholder="输入工作问题..." 
+        class="flex-1 h-9 text-xs px-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 text-zinc-800 dark:text-zinc-100 transition-all"
+      />
+      <button type="submit" class="h-9 w-9 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white flex items-center justify-center hover:shadow-lg hover:shadow-purple-500/30 transition-all shrink-0">
+        <i data-lucide="send" class="w-4 h-4"></i>
+      </button>
+    </form>
+  </div>
+
+  <!-- ================= 【抽屉】智能体中心 ================= -->
   <div id="agentDrawer" class="fixed inset-y-0 right-0 w-full sm:w-[500px] md:w-[580px] bg-white dark:bg-[#181818] border-l border-zinc-200 dark:border-zinc-800 shadow-2xl transform translate-x-full transition-transform duration-200 z-50 flex flex-col">
-    <!-- 顶栏 -->
     <div class="p-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between bg-zinc-50 dark:bg-zinc-900">
       <div class="flex items-center gap-2">
         <i data-lucide="cpu" class="w-4 h-4 text-purple-600"></i>
@@ -383,16 +432,13 @@
       </div>
     </div>
 
-    <!-- 智能体中心三级视图 Tab: 自建智能体 / 自动化链路工具 / 智能体产出历史库 -->
     <div class="px-3 py-2 bg-white dark:bg-[#181818] border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-1 text-[11px] shrink-0">
       <button onclick="XiangKuApp.modules.agent.switchSubTab('agents')" id="agentSubTabAgents" class="h-6 px-2.5 rounded bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium">专属智能体</button>
       <button onclick="XiangKuApp.modules.agent.switchSubTab('tools')" id="agentSubTabTools" class="h-6 px-2.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400">自动化工具库</button>
       <button onclick="XiangKuApp.modules.agent.switchSubTab('history')" id="agentSubTabHistory" class="h-6 px-2.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400">产出资产库</button>
     </div>
 
-    <!-- 动态主面板 -->
     <div id="agentMainViewContainer" class="flex-1 overflow-y-auto p-3 space-y-3">
-      <!-- 动态渲染 -->
     </div>
   </div>
 
@@ -423,10 +469,8 @@
       </div>
     </div>
 
-    <!-- 动态个人资料库分类 Tab + 管理按钮 -->
     <div class="px-3 py-2 bg-white dark:bg-[#181818] border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between gap-1 text-[11px] shrink-0">
       <div id="profileTabsContainer" class="flex items-center gap-1 overflow-x-auto no-scrollbar flex-1">
-        <!-- 动态渲染个人资料 Tab -->
       </div>
       <button 
         onclick="XiangKuApp.modules.categoryManager.openModal('profileCategories', '个人资料库维度管理')" 
@@ -438,7 +482,6 @@
     </div>
 
     <div id="profileVaultContainer" class="flex-1 overflow-y-auto p-3 space-y-3">
-      <!-- 动态渲染 -->
     </div>
   </div>
 
@@ -454,7 +497,6 @@
       </div>
 
       <div class="p-3 sm:p-4 overflow-y-auto space-y-4 text-xs">
-        <!-- 象库矩阵 -->
         <section class="space-y-2">
           <div class="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-1">
             <h3 class="font-semibold text-zinc-800 dark:text-zinc-200">象库矩阵 (XiangKu Matrix)</h3>
@@ -476,7 +518,6 @@
           </div>
         </section>
 
-        <!-- 基础设置 -->
         <section class="space-y-2">
           <h3 class="font-semibold text-zinc-800 dark:text-zinc-200 border-b border-zinc-100 dark:border-zinc-800 pb-1">1. 基础与外观</h3>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -496,7 +537,6 @@
           </div>
         </section>
 
-        <!-- 数据备份导入 -->
         <section class="space-y-2">
           <h3 class="font-semibold text-zinc-800 dark:text-zinc-200 border-b border-zinc-100 dark:border-zinc-800 pb-1">2. 数据管理</h3>
           <div class="flex gap-2">
@@ -505,7 +545,6 @@
           </div>
         </section>
 
-        <!-- 飞书配置 -->
         <section class="space-y-2">
           <div class="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-1">
             <h3 class="font-semibold text-zinc-800 dark:text-zinc-200">3. 飞书接入中枢</h3>
@@ -517,7 +556,6 @@
           </div>
         </section>
 
-        <!-- AI 模型配置 -->
         <section class="space-y-2">
           <h3 class="font-semibold text-zinc-800 dark:text-zinc-200 border-b border-zinc-100 dark:border-zinc-800 pb-1">4. AI 模型与智能体配置</h3>
           <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -556,7 +594,7 @@
     </div>
   </div>
 
-  <!-- ================= 通用分类管理弹窗 (知识库/工作流/资料库) ================= -->
+  <!-- ================= 通用分类管理弹窗 ================= -->
   <div id="categoryManagerModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-2 sm:p-4">
     <div class="bg-white dark:bg-[#1a1a1a] border border-zinc-200 dark:border-zinc-800 rounded-lg w-full max-w-[460px] shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
       <div class="p-3 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
@@ -584,7 +622,6 @@
         <div class="border-t border-zinc-100 dark:border-zinc-800 pt-2 space-y-1.5">
           <span class="text-[10px] text-zinc-400 uppercase tracking-wider block">现有分类清单 (修改即时生效):</span>
           <div id="categoriesListContainer" class="space-y-1.5 max-h-56 overflow-y-auto">
-            <!-- 动态渲染 -->
           </div>
         </div>
       </div>
@@ -666,7 +703,6 @@
         </div>
 
         <div id="pvDynamicFields" class="space-y-3 text-xs">
-          <!-- 动态表单字段 -->
         </div>
 
         <div class="flex justify-end gap-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
@@ -726,7 +762,6 @@
           <textarea id="customAgentPrompt" rows="4" placeholder="详细定义此智能体/工具的角色定位、提取维度与格式要求..." class="w-full p-2 text-xs bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none resize-none font-mono leading-relaxed text-zinc-800 dark:text-zinc-100" required></textarea>
         </div>
 
-        <!-- 数据权限配置 -->
         <div class="p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded space-y-1.5">
           <span class="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 block">允许读取的数据上下文:</span>
           <div class="grid grid-cols-3 gap-2 text-[11px] text-zinc-700 dark:text-zinc-300">
@@ -758,7 +793,6 @@
     window.XiangKuApp = {
       STORAGE_KEY: 'xiangku_workstation_db_v5',
 
-      // 默认分区
       DEFAULT_NOTE_CATEGORIES: [
         { id: 'log', name: '流水' },
         { id: 'progress', name: '进展' },
@@ -802,7 +836,6 @@
         workspace: [],
         notes: [],
         knowledge: [],
-        // 动态分类
         noteCategories: [],
         knowledgeCategories: [],
         profileCategories: [],
@@ -821,7 +854,7 @@
         methods: [],
         growth: [],
         agents: [],
-        agentOutputs: [], // 智能体产出专属历史库 (永久留存不覆盖)
+        agentOutputs: [],
         nikMessages: []
       },
 
@@ -832,6 +865,7 @@
       activeMobileTab: 'notes',
       isNotesArchiveView: false,
 
+      // ===== 初始化 =====
       init() {
         this.loadStorage();
         this.applyThemeAndBg();
@@ -841,6 +875,135 @@
         const todayStr = new Date().toISOString().slice(0, 10);
         document.getElementById('currentDateStr').innerText = todayStr.replace(/-/g, '.');
         document.getElementById('quickInputDate').value = todayStr;
+      },
+
+      // ===== AI 悬浮球控制 =====
+      aiFloatingChatOpen: false,
+      aiFloatingMinimized: false,
+
+      toggleFloatingBall() {
+        const chat = document.getElementById('aiFloatingChat');
+        const ball = document.getElementById('aiFloatingBall');
+        
+        if (this.aiFloatingChatOpen) {
+          chat.classList.add('hidden');
+          this.aiFloatingChatOpen = false;
+          ball.style.display = 'flex';
+        } else {
+          chat.classList.remove('hidden');
+          this.aiFloatingChatOpen = true;
+          if (this.aiFloatingMinimized) {
+            chat.style.height = '500px';
+            this.aiFloatingMinimized = false;
+          }
+          setTimeout(() => this.scrollFloatingChat(), 100);
+        }
+      },
+
+      closeFloatingChat() {
+        document.getElementById('aiFloatingChat').classList.add('hidden');
+        this.aiFloatingChatOpen = false;
+        document.getElementById('aiFloatingBall').style.display = 'flex';
+      },
+
+      minimizeFloatingChat() {
+        const chat = document.getElementById('aiFloatingChat');
+        if (this.aiFloatingMinimized) {
+          chat.style.height = '500px';
+          this.aiFloatingMinimized = false;
+        } else {
+          chat.style.height = '60px';
+          this.aiFloatingMinimized = true;
+        }
+      },
+
+      scrollFloatingChat() {
+        const container = document.getElementById('floatingChatMessages');
+        if (container) container.scrollTop = container.scrollHeight;
+      },
+
+      async sendFloatingMessage(e) {
+        e.preventDefault();
+        const input = document.getElementById('floatingChatInput');
+        const msg = input.value.trim();
+        if (!msg) return;
+
+        const container = document.getElementById('floatingChatMessages');
+        
+        const userDiv = document.createElement('div');
+        userDiv.className = 'flex gap-2 justify-end';
+        userDiv.innerHTML = `
+          <div class="bg-purple-600 text-white p-2.5 rounded-xl rounded-tr-none max-w-[85%] leading-relaxed">${msg}</div>
+        `;
+        container.appendChild(userDiv);
+        input.value = '';
+        this.scrollFloatingChat();
+
+        // 正在思考
+        const thinkingDiv = document.createElement('div');
+        thinkingDiv.className = 'flex gap-2';
+        thinkingDiv.id = 'floatingThinking';
+        thinkingDiv.innerHTML = `
+          <div class="w-7 h-7 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center shrink-0">
+            <i data-lucide="bot" class="w-3.5 h-3.5 text-purple-600 dark:text-purple-400"></i>
+          </div>
+          <div class="bg-white dark:bg-zinc-800 p-2.5 rounded-xl rounded-tl-none shadow-sm flex items-center gap-1.5">
+            <span class="text-zinc-500 dark:text-zinc-400 text-xs">思考中</span>
+            <span class="flex gap-1">
+              <span class="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style="animation-delay:0s"></span>
+              <span class="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style="animation-delay:0.2s"></span>
+              <span class="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style="animation-delay:0.4s"></span>
+            </span>
+          </div>
+        `;
+        container.appendChild(thinkingDiv);
+        lucide.createIcons();
+        this.scrollFloatingChat();
+
+        try {
+          const ai = this.db.settings.aiConfig || {};
+          if (!ai.apiKey || !ai.baseUrl) {
+            throw new Error('MISSING_CONFIG');
+          }
+
+          const notes = this.db.notes.filter(n => !n.archived).slice(0, 10);
+          const context = notes.map(n => `[${n.date}] ${n.content}`).join('\n');
+          const fullPrompt = `你是一个工作流 AI 助手。当前工作记录摘要：\n${context || '暂无记录'}\n\n用户问题：${msg}\n请基于上下文给出专业、简洁的回答。`;
+
+          const response = await this.requestAI(fullPrompt);
+
+          const thinkingEl = document.getElementById('floatingThinking');
+          if (thinkingEl) thinkingEl.remove();
+
+          const aiDiv = document.createElement('div');
+          aiDiv.className = 'flex gap-2';
+          aiDiv.innerHTML = `
+            <div class="w-7 h-7 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center shrink-0">
+              <i data-lucide="bot" class="w-3.5 h-3.5 text-purple-600 dark:text-purple-400"></i>
+            </div>
+            <div class="bg-white dark:bg-zinc-800 p-2.5 rounded-xl rounded-tl-none shadow-sm max-w-[85%] text-zinc-700 dark:text-zinc-200 leading-relaxed whitespace-pre-wrap">${response}</div>
+          `;
+          container.appendChild(aiDiv);
+          lucide.createIcons();
+          this.scrollFloatingChat();
+
+        } catch (err) {
+          const thinkingEl = document.getElementById('floatingThinking');
+          if (thinkingEl) thinkingEl.remove();
+
+          const errMsg = err.message === 'MISSING_CONFIG' ? '⚠️ 请先在设置中配置 API Key' : `❌ ${err.message}`;
+          const errDiv = document.createElement('div');
+          errDiv.className = 'flex gap-2';
+          errDiv.innerHTML = `
+            <div class="w-7 h-7 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center shrink-0">
+              <i data-lucide="bot" class="w-3.5 h-3.5 text-purple-600 dark:text-purple-400"></i>
+            </div>
+            <div class="bg-red-50 dark:bg-red-950/30 p-2.5 rounded-xl rounded-tl-none shadow-sm max-w-[85%] text-red-600 dark:text-red-400 text-xs leading-relaxed">${errMsg}</div>
+          `;
+          container.appendChild(errDiv);
+          lucide.createIcons();
+          this.scrollFloatingChat();
+        }
       },
 
       switchMobileTab(tabName) {
@@ -1251,6 +1414,7 @@
           }
         },
 
+        // ========== 设置模块 ==========
         settings: {
           openModal() {
             const s = XiangKuApp.db.settings;
@@ -1316,6 +1480,7 @@
           }
         },
 
+        // ========== 飞书同步 ==========
         feishu: {
           async syncToFeishu() {
             const webhookUrl = XiangKuApp.db.settings.feishuWebhook;
@@ -1347,6 +1512,7 @@
           }
         },
 
+        // ========== 工作空间 ==========
         workspace: {
           render() {
             const container = document.getElementById('workspaceList');
@@ -1388,13 +1554,14 @@
                   if (window.innerWidth < 768) XiangKuApp.switchMobileTab('notes');
                 };
                 item.innerHTML = `
-                  <div class="flex items-center gap-2 truncate">
+                  <div class="flex items-center gap-2 truncate flex-1">
                     <i data-lucide="folder" class="w-3.5 h-3.5 text-zinc-400 shrink-0"></i>
                     <span class="truncate">${ws.name}</span>
                   </div>
-                  <div class="flex items-center gap-1">
+                  <div class="flex items-center gap-0.5">
                     <span class="text-[10px] font-mono text-zinc-400">${count}</span>
-                    <button onclick="event.stopPropagation(); XiangKuApp.modules.workspace.delete('${ws.id}')" class="text-zinc-400 hover:text-red-500 text-xs px-1">✕</button>
+                    <button onclick="event.stopPropagation(); XiangKuApp.modules.workspace.rename('${ws.id}')" class="text-zinc-400 hover:text-blue-500 text-xs px-1" title="重命名">✎</button>
+                    <button onclick="event.stopPropagation(); XiangKuApp.modules.workspace.delete('${ws.id}')" class="text-zinc-400 hover:text-red-500 text-xs px-1" title="删除">✕</button>
                   </div>
                 `;
                 container.appendChild(item);
@@ -1424,6 +1591,17 @@
             XiangKuApp.renderAll();
           },
 
+          rename(id) {
+            const ws = XiangKuApp.db.workspace.find(w => w.id === id);
+            if (!ws) return;
+            const newName = prompt(`重命名工作空间「${ws.name}」:`, ws.name);
+            if (newName && newName.trim() && newName.trim() !== ws.name) {
+              ws.name = newName.trim();
+              XiangKuApp.saveStorage();
+              this.select(id);
+            }
+          },
+
           openCreateModal() {
             const name = prompt('请输入新工作空间 / 项目名称:');
             if (!name || !name.trim()) return;
@@ -1443,7 +1621,7 @@
           }
         },
 
-        // ========== 工作流 工作台 (修复：归档/自定义日期/动态分区) ==========
+        // ========== 工作流 工作台 ==========
         notes: {
           renderTabs() {
             const container = document.getElementById('notesTabsContainer');
@@ -1466,7 +1644,6 @@
               container.appendChild(btn);
             });
 
-            // 更新录入选择框
             const selectEl = document.getElementById('quickTypeSelect');
             if (selectEl) {
               selectEl.innerHTML = '';
@@ -1514,11 +1691,9 @@
               const matchCat = (XiangKuApp.currentNoteCategory === 'all' || n.type === XiangKuApp.currentNoteCategory);
               const matchKw = !filterKw || n.content.toLowerCase().includes(filterKw.toLowerCase());
               
-              // 归档过滤与日期判定
               if (XiangKuApp.isNotesArchiveView) {
                 return matchWs && matchCat && matchKw && !!n.archived;
               } else {
-                // 活跃视图：未归档，且日期小于等于今天（未来任务在当天显示）
                 const noteDate = n.date || today;
                 const isDue = noteDate <= today;
                 return matchWs && matchCat && matchKw && !n.archived && isDue;
@@ -1616,7 +1791,7 @@
           }
         },
 
-        // ========== 知识库 工作台 ==========
+        // ========== 知识库 ==========
         knowledge: {
           renderTabs() {
             const container = document.getElementById('knowledgeTabsContainer');
@@ -1776,7 +1951,7 @@
           }
         },
 
-        // ========== 个人资料库模块 ==========
+        // ========== 个人资料库 ==========
         profileVault: {
           toggleDrawer() {
             document.getElementById('profileVaultDrawer').classList.toggle('translate-x-full');
@@ -1878,7 +2053,7 @@
               this.renderCardList(XiangKuApp.db.templates, filterKw, (item) => `
                 <div class="flex items-center justify-between">
                   <div class="flex items-center gap-1.5">
-                    <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800">${item.type || '模板'}</span>
+                    <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700">${item.type || '模板'}</span>
                     <h3 class="text-xs font-semibold text-zinc-900 dark:text-zinc-100">${item.title}</h3>
                   </div>
                   <button onclick="XiangKuApp.modules.profileVault.copyContent('${item.id}', 'templates')" class="text-[10px] text-zinc-500 hover:underline">复制模板</button>
@@ -2285,7 +2460,7 @@ ${XiangKuApp.db.growth.map(g => `- [${g.date}] ${g.event} -> 认知: ${g.insight
           }
         },
 
-        // ========== 智能体中枢 (修复：自动化工具自定义增删 + 产出库持久化) ==========
+        // ========== 智能体中枢 ==========
         agent: {
           currentSubTab: 'agents',
 
@@ -2313,7 +2488,6 @@ ${XiangKuApp.db.growth.map(g => `- [${g.date}] ${g.event} -> 认知: ${g.insight
             if (!container) return;
             container.innerHTML = '';
 
-            // 1. 【专属智能体列表】
             if (this.currentSubTab === 'agents') {
               const agents = XiangKuApp.db.agents.filter(a => a.type !== 'tool');
               if (agents.length === 0) {
@@ -2351,15 +2525,11 @@ ${XiangKuApp.db.growth.map(g => `- [${g.date}] ${g.event} -> 认知: ${g.insight
                 grid.appendChild(card);
               });
               container.appendChild(grid);
-            }
-
-            // 2. 【自动化工具库 (支持用户自定义增删)】
-            else if (this.currentSubTab === 'tools') {
+            } else if (this.currentSubTab === 'tools') {
               const tools = XiangKuApp.db.agents.filter(a => a.type === 'tool');
               const box = document.createElement('div');
               box.className = 'space-y-2';
 
-              // 系统内置工具
               box.innerHTML = `
                 <div class="p-2.5 bg-zinc-50 dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-lg space-y-1.5 mb-3">
                   <span class="text-[10px] font-semibold text-zinc-400 uppercase tracking-wider block">系统预置工具</span>
@@ -2410,10 +2580,7 @@ ${XiangKuApp.db.growth.map(g => `- [${g.date}] ${g.event} -> 认知: ${g.insight
                 box.appendChild(grid);
               }
               container.appendChild(box);
-            }
-
-            // 3. 【智能体产出专属资产库 (历史永久留存，不被覆盖)】
-            else if (this.currentSubTab === 'history') {
+            } else if (this.currentSubTab === 'history') {
               const historyList = XiangKuApp.db.agentOutputs || [];
               if (historyList.length === 0) {
                 container.innerHTML = `
@@ -2599,7 +2766,6 @@ ${XiangKuApp.db.growth.map(g => `- [${g.date}] ${g.event} -> 认知: ${g.insight
               const res = await XiangKuApp.requestAI("请基于所提供的数据执行你的分析任务并输出结论：", customContext);
               this.saveOutput(agent.name + ' 分析成果', agent.name, res);
 
-              // 自动联动动作执行
               if (agent.action === 'sync_feishu' && XiangKuApp.db.settings.feishuWebhook) {
                 await fetch(XiangKuApp.db.settings.feishuWebhook, {
                   method: 'POST',
@@ -2673,7 +2839,7 @@ ${XiangKuApp.db.growth.map(g => `- [${g.date}] ${g.event} -> 认知: ${g.insight
           }
         },
 
-        // ========== NIK 升级版全域智能体 (重构：结构化提炼入库，告别整句死填) ==========
+        // ========== NIK 全域智能体 ==========
         nik: {
           renderMessages() {
             const container = document.getElementById('nikChatMessages');
@@ -2684,7 +2850,7 @@ ${XiangKuApp.db.growth.map(g => `- [${g.date}] ${g.event} -> 认知: ${g.insight
                     <i data-lucide="bot" class="w-3.5 h-3.5 text-zinc-300"></i>
                   </div>
                   <div class="bg-zinc-100 dark:bg-zinc-800/80 text-zinc-800 dark:text-zinc-200 p-2.5 rounded-lg rounded-tl-none leading-relaxed max-w-[85%] whitespace-pre-wrap">
-你好！我是 NIK。我现在具备结构化分析与系统调度能力。你可以直接吩咐我：“把XX异常整理存入经验库”、“归纳成SOP存入知识库”或“记录今日流水”。
+你好！我是 NIK。我现在具备结构化分析与系统调度能力。你可以直接吩咐我："把XX异常整理存入经验库"、"归纳成SOP存入知识库"或"记录今日流水"。
                   </div>
                 </div>
               `;
@@ -2725,7 +2891,6 @@ ${XiangKuApp.db.growth.map(g => `- [${g.date}] ${g.event} -> 认知: ${g.insight
             this.renderMessages();
 
             try {
-              // 1. 先进行智能体意图与结构化参数提取 (结构化调度，绝不死填整句)
               const parsePrompt = `用户指令: "${q}"
 请判断用户是否要求执行系统操作。请返回一个纯 JSON 对象，格式如下：
 {
@@ -2747,13 +2912,10 @@ ${XiangKuApp.db.growth.map(g => `- [${g.date}] ${g.event} -> 认知: ${g.insight
                 const planJson = await XiangKuApp.requestAI(parsePrompt, '你是一个精密的系统意图解析路由器。');
                 const cleanJson = planJson.replace(/```json/g, '').replace(/```/g, '').trim();
                 actionPlan = JSON.parse(cleanJson);
-              } catch (e) {
-                // 回退为普通回复
-              }
+              } catch (e) {}
 
               let executionFeedback = "";
 
-              // 执行结构化分发
               if (actionPlan.action === 'add_experience') {
                 const d = actionPlan.extractedData || {};
                 XiangKuApp.db.experiences.unshift({
@@ -2798,7 +2960,6 @@ ${XiangKuApp.db.growth.map(g => `- [${g.date}] ${g.event} -> 认知: ${g.insight
                 executionFeedback = `[系统操作] 已提炼并记录至【今日工作流】。\n`;
               }
 
-              // 2. 生成对用户的专业回复
               const historyPayload = XiangKuApp.db.nikMessages.slice(-6);
               const systemPrompt = `你是 NIK，象库轻工作台的核心通用智能体。当前系统执行状态：${executionFeedback || '无自动入库动作'}。请以博学、直接、中肯且专业的语气给用户最终答复。`;
 
