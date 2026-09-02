@@ -32,6 +32,7 @@
   var CFG_KEY = 'niksync_cfg';
   var META_KEY = 'niksync_meta';
   var CFG = null, META = null, timer = null, ADAPTER = null;
+  var lastErr = null;
   var DEFAULT_BRANCH = 'master';
 
   /* ---------- 小工具 ---------- */
@@ -148,7 +149,7 @@
 
   /* ---------- 推送 ---------- */
   function pushNow() {
-    if (!valid()) { warn('同步未配置（请在设置中填写 owner/repo/token）'); return Promise.resolve(false); }
+    if (!valid()) { lastErr = '同步未配置：请在设置中填齐 用户名/仓库/令牌'; warn(lastErr); return Promise.resolve(false); }
     var path = filePath(), m = getMeta();
     return apiGet(path).then(async function (remote) {
       var obj = remote ? parseRemote(remote) : null;
@@ -159,23 +160,25 @@
       }
       return apiWrite(path, buildFile(await collectLocal()), remote ? remote.sha : undefined).then(function () {
         setMeta({ ts: nowTs(), device: deviceName(), pending: false });
+        lastErr = null;
         log('已上传');
         return true;
       });
     }).catch(function (e) {
-      warn('上传失败：', (e && e.message) || e);
+      lastErr = (e && e.message) || String(e);
+      warn('上传失败：', lastErr);
       return false;
     });
   }
 
   /* ---------- 拉取 ---------- */
   function pullNow(silent) {
-    if (!valid()) { warn('同步未配置'); return Promise.resolve(false); }
+    if (!valid()) { lastErr = '同步未配置：请在设置中填齐 用户名/仓库/令牌'; warn(lastErr); return Promise.resolve(false); }
     var path = filePath(), m = getMeta();
     return apiGet(path).then(async function (remote) {
       if (!remote || !remote.content) { log('云端暂无数据'); return false; }
       var obj = parseRemote(remote);
-      if (!obj || !obj.data) { warn('云端数据格式异常'); return false; }
+      if (!obj || !obj.data) { lastErr = '云端数据格式异常'; warn(lastErr); return false; }
       var remoteTs = (obj.meta && obj.meta.ts) || 0;
       if (!silent && m.pending && remoteTs > m.ts) {
         var ok = global.confirm('本机有未上传改动，云端也有更新。\n用云端覆盖将丢失本机改动，确定继续？');
@@ -183,10 +186,12 @@
       }
       var changed = await applyRemote(obj.data);
       if (changed || remoteTs > m.ts) setMeta({ ts: remoteTs || nowTs(), device: deviceName(), pending: false });
+      lastErr = null;
       log(changed ? '已应用云端数据' : '与本机一致');
       return changed;
     }).catch(function (e) {
-      if (!silent) warn('下载失败：', (e && e.message) || e);
+      lastErr = (e && e.message) || String(e);
+      if (!silent) warn('下载失败：', lastErr);
       return false;
     });
   }
@@ -211,7 +216,7 @@
         }).catch(function (e) { warn('首次上传失败：', (e && e.message) || e); return false; });
       }
       return pullNow(true);
-    }).catch(function () { return false; });
+    }).catch(function (e) { lastErr = (e && e.message) || String(e); return false; });
   }
   function cfg() { var c = getCfg(); return { app: c.app, owner: c.owner, repo: c.repo, branch: c.branch || DEFAULT_BRANCH, token: c.token || '', file: c.file, keys: (c.keys || []).slice(), device: c.device || '' }; }
   function save(c) { saveCfg(c); }
@@ -274,24 +279,31 @@
   function hideSyncUI() { if (panelEl) { panelEl.style.display = 'none'; } }
   function readPanel() {
     var c = getCfg();
-    c.owner = (document.getElementById('niksync-owner') || {}).value || c.owner;
-    c.repo = (document.getElementById('niksync-repo') || {}).value || c.repo;
-    c.device = (document.getElementById('niksync-device') || {}).value || c.device;
-    c.branch = (document.getElementById('niksync-branch') || {}).value || 'master';
-    c.token = (document.getElementById('niksync-token') || {}).value || c.token;
+    var val = function (id) {
+      var el = document.getElementById(id);
+      return (el && el.value != null) ? String(el.value).trim() : '';
+    };
+    var t;
+    if ((t = val('niksync-owner'))) c.owner = t;
+    if ((t = val('niksync-repo'))) c.repo = t;
+    if ((t = val('niksync-device'))) c.device = t;
+    if ((t = val('niksync-branch'))) c.branch = t;
+    if ((t = val('niksync-token'))) c.token = t;
     return c;
   }
   function saveFromPanel() {
     saveCfg(readPanel());
+    lastErr = null;
     msg('已保存，正在上传…', true);
-    pushNow().then(function (ok) { msg(ok ? '上传成功 ✓' : '上传失败：检查配置/网络（控制台看详情）', ok); });
+    pushNow().then(function (ok) { msg(ok ? '上传成功 ✓' : '上传失败：' + (lastErr || '检查配置/网络'), ok); });
   }
   function downloadNow() {
     saveCfg(readPanel());
+    lastErr = null;
     msg('正在下载…', true);
     pullNow(false).then(function (ok) {
       if (ok) { msg('已下载并应用 ✓', true); setTimeout(function () { location.reload(); }, 600); }
-      else msg('下载失败或无更新', false);
+      else msg('下载失败：' + (lastErr || '无更新或网络异常'), false);
     });
   }
   function ensureFAB() {
