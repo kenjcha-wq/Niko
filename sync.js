@@ -401,6 +401,7 @@
       '<div style="display:flex;gap:8px;margin-top:12px">' +
       '<button onclick="NikSync.saveFromPanel()" style="flex:1;padding:8px;border:none;border-radius:9px;background:#26221c;color:#f5f1e6;font-size:12px;cursor:pointer;font-weight:600">保存并上传</button>' +
       '<button onclick="NikSync.downloadNow()" style="flex:1;padding:8px;border:1px solid #d8d2c4;border-radius:9px;background:#fff;color:#26221c;font-size:12px;cursor:pointer">下载到本机</button></div>' +
+      '<button onclick="NikSync.createAndSync()" style="width:100%;margin-top:8px;padding:8px;border:1px dashed #a8a18d;border-radius:9px;background:#f4f1e8;color:#26221c;font-size:12px;cursor:pointer">⚡ 首次使用：一键建私有仓库并上传（需已填令牌）</button>' +
       '<div style="font-size:10px;color:#a29b8c;margin-top:10px;line-height:1.6">数据存进 Gitee 私有仓库的 data/' + esc(c.app || 'app') + '.json，自带版本历史。令牌只存本浏览器。多设备填同一仓库即可互相同步。</div>' +
       '<div id="niksync-msg" style="font-size:11px;color:#1d9e75;margin-top:6px;min-height:14px"></div>';
     return p;
@@ -450,6 +451,42 @@
       else msg('下载失败：' + (lastErr || '无更新或网络异常'), false);
     });
   }
+  function createAndSync() {
+    saveCfg(readPanel());
+    lastErr = null;
+    msg('正在创建私有仓库…', true);
+    createRepo().then(function (ok) {
+      if (!ok) { msg('建仓失败：' + (lastErr || '请检查令牌/网络'), false); return; }
+      msg('仓库就绪，正在上传…', true);
+      pushNow().then(function (up) {
+        msg(up ? '✓ 建仓并上传成功，同步已开启' : '上传失败：' + (lastErr || '检查配置'), up);
+      });
+    });
+  }
+  /* 一键建仓库：token 需有 projects 权限。repo 已存在则视为成功（可复用）。 */
+  function createRepo() {
+    if (!valid()) { lastErr = '同步未配置：请先填齐 用户名/仓库/令牌'; warn(lastErr); return Promise.resolve(false); }
+    var c = getCfg();
+    var api = 'https://gitee.com/api/v5/user/repos';
+    var desc = (c.app || 'app') + ' NikSync 云同步数据仓库（自动生成，请勿手动改 data/ 下文件）';
+    return fetch(api, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ access_token: c.token, name: c.repo, description: desc, private: true, has_issues: false, has_wiki: false, auto_init: false })
+    }).then(function (r) {
+      if (r.ok) { log('已建私有仓库', c.repo); return true; }
+      return r.json().then(function (j) {
+        var msg = (j && j.message) || '';
+        if (r.status === 422 && /already|exists/i.test(msg)) { log('仓库已存在，直接使用', c.repo); return true; }
+        if (r.status === 401) { lastErr = '令牌无效或没有 projects 权限，请在 Gitee 私人令牌页勾选 projects'; warn(lastErr); return false; }
+        if (r.status === 403) { lastErr = '令牌缺少建仓权限（projects）'; warn(lastErr); return false; }
+        if (r.status === 429) { lastErr = '触发 Gitee 限流，稍后再试'; warn(lastErr); return false; }
+        lastErr = '建仓失败 ' + r.status + ' ' + msg; warn(lastErr); return false;
+      });
+    }).catch(function (e) {
+      lastErr = (e && e.message) || String(e); warn('建仓失败：', lastErr); return false;
+    });
+  }
   function ensureFAB() {
     if (fabEl || document.getElementById('niksync-fab')) return;
     fabEl = document.createElement('div');
@@ -466,6 +503,7 @@
     pullNow: pullNow, autoPull: autoPull, cfg: cfg, save: save,
     status: status, configured: configured, setAdapter: function (a) { ADAPTER = a; },
     showSyncUI: showSyncUI, hideSyncUI: hideSyncUI, saveFromPanel: saveFromPanel,
-    downloadNow: downloadNow, ensureFAB: ensureFAB
+    downloadNow: downloadNow, ensureFAB: ensureFAB, createRepo: createRepo,
+    createAndSync: createAndSync
   };
 })(window);
