@@ -1244,6 +1244,7 @@ ${context}
 
       saveStorage() {
         localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.db));
+        if (window.NikSync) NikSync.schedulePush();
         this.updateStats();
       },
 
@@ -3079,5 +3080,15 @@ ${XiangKuApp.db.growth.map(g => `- [${g.date}] ${g.event} -> 认知: ${g.insight
       XiangKuApp.init();
     });
   </script>
+<script src="sync.js"></script>
+<script>
+function saveLS(k, v) { localStorage.setItem(k, v); if (window.NikSync) NikSync.schedulePush(); }
+try {
+  var _sc = NikSync.cfg();
+  NikSync.init({ app: 'niko', owner: _sc.owner || '', repo: _sc.repo || '', token: _sc.token || '', branch: _sc.branch || 'master', device: _sc.device || '', file: 'data/niko.json', keys: ['xiangku_workstation_db_v4'] });
+  NikSync.autoPull().then(function (changed) { if (changed) location.reload(); });
+  NikSync.ensureFAB();
+} catch (e) {}
+</script>
 </body>
 </html>
