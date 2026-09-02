@@ -24,16 +24,27 @@
  *   7) 查询状态：                NikSync.status();
  *
  * 安全：token 只存在本机浏览器 localStorage，由应用设置页录入。
- * 配置与状态共占两个 localStorage key：niksync_cfg / niksync_meta。
+ * 配置与状态共占三个 localStorage key：niksync_cfg / niksync_meta / niksync_base。
+ *
+ * 合并模式（默认开启，cfg.merge=false 可关）：
+ *   不是简单覆盖，而是三方合并（以上次同步快照 niksync_base 为基准）：
+ *   - 两边各自「新增」的内容都保留，互不覆盖
+ *   - 一边删除的内容，同步后另一边也会删（删除会被传播）
+ *   - 同一条内容两边都改过：有更新时间的取新的；都没有则取较新的一端
+ *   - 数组按元素 id 合并；普通对象按键逐层合并；其余按「谁改了用谁」
+ *   注意：所有设备都要用 v3+ 版本，旧版整包覆盖会冲掉合并结果。
  * ============================================================ */
 (function (global) {
   'use strict';
 
   var CFG_KEY = 'niksync_cfg';
   var META_KEY = 'niksync_meta';
+  var BASE_KEY = 'niksync_base'; /* 上次同步完成时的数据快照（三方合并基准） */
   var CFG = null, META = null, timer = null, ADAPTER = null;
   var lastErr = null;
   var DEFAULT_BRANCH = 'master';
+
+  function mergeMode() { return getCfg().merge !== false; } /* 默认合并模式 */
 
   /* ---------- 小工具 ---------- */
   function b64e(s) { return btoa(unescape(encodeURIComponent(s))); }
@@ -147,6 +158,124 @@
     try { return JSON.parse(b64d(remote.content)); } catch (e) { return null; }
   }
 
+  /* ============================================================
+   * 合并模式（3-way merge）：以「上次同步快照」为基准，
+   * 把本机改动与云端改动合并——新增互不覆盖，删除也同步。
+   * ============================================================ */
+  function getBaseData() { var b = jget(BASE_KEY, null); return (b && b.data) || null; }
+  function setBaseData(data) { jset(BASE_KEY, { ts: nowTs(), data: data }); }
+  function jparse(s) {
+    if (typeof s !== 'string') return { ok: false, v: s };
+    try { return { ok: true, v: JSON.parse(s) }; } catch (e) { return { ok: false, v: s }; }
+  }
+  function sameV(a, b) {
+    if (a === undefined || b === undefined) return a === b;
+    return JSON.stringify(a) === JSON.stringify(b);
+  }
+  function itemId(o) {
+    if (!o || typeof o !== 'object' || Array.isArray(o)) return null;
+    var k = o.id != null ? 'id' : o._id != null ? '_id' : o.uid != null ? 'uid' : o.uuid != null ? 'uuid' : null;
+    return k ? String(o[k]) : null;
+  }
+  function itemTsOf(o) {
+    if (!o || typeof o !== 'object') return 0;
+    var fs = ['updatedAt', 'updated_at', 'updateTime', 'modified', 'mtime', 'ts', 'time', 'createdAt', 'created_at'];
+    var best = 0;
+    for (var i = 0; i < fs.length; i++) {
+      var v = o[fs[i]];
+      if (typeof v === 'number' && v > best) best = v;
+      else if (typeof v === 'string' && v && !isNaN(+v) && +v > best) best = +v;
+    }
+    return best;
+  }
+  /* 数组三方合并：按元素 id。返回合并数组；无法逐条合并（缺 id）返回 null */
+  function mergeArray(baseA, localA, remoteA, remoteNewer) {
+    if (!localA.length && !remoteA.length) return localA;
+    var idx = function (arr) {
+      var m = {};
+      for (var i = 0; i < arr.length; i++) {
+        var k = itemId(arr[i]);
+        if (k === null) return null;
+        m[k] = arr[i];
+      }
+      return m;
+    };
+    var b = idx(baseA || []), l = idx(localA), r = idx(remoteA);
+    if (!l || !r) return null;
+    var inB = function (k) { return !!(b && b[k] !== undefined); };
+    var out = [];
+    /* 1) 按本机顺序过一遍：未删项保留，同 id 冲突择优 */
+    for (var i = 0; i < localA.length; i++) {
+      var it = localA[i], k = itemId(it);
+      if (r[k] === undefined) { if (inB(k)) continue; /* 远端已删，跳过 */ out.push(it); }
+      else if (sameV(it, r[k])) out.push(it);
+      else {
+        var tl = itemTsOf(it), tr = itemTsOf(r[k]);
+        if (tl && tr) out.push(tl >= tr ? it : r[k]);
+        else if (inB(k) && sameV(b[k], it)) out.push(r[k]);   /* 只有远端改了 */
+        else if (inB(k) && sameV(b[k], r[k])) out.push(it);   /* 只有本机改了 */
+        else out.push(remoteNewer ? r[k] : it);               /* 都改了且无时间戳 */
+      }
+    }
+    /* 2) 远端新增的（本机没有、基准也没有）追加到尾部 */
+    for (var j = 0; j < remoteA.length; j++) {
+      var rk = itemId(remoteA[j]);
+      if (l[rk] === undefined && !inB(rk)) out.push(remoteA[j]);
+    }
+    return out;
+  }
+  /* 普通对象三方合并（逐键，限深） */
+  function mergeObject(baseO, localO, remoteO, remoteNewer, depth) {
+    var out = {}, keys = {};
+    Object.keys(localO).forEach(function (k) { keys[k] = 1; });
+    Object.keys(remoteO).forEach(function (k) { keys[k] = 1; });
+    Object.keys(keys).forEach(function (k) {
+      var lv = localO[k], rv = remoteO[k];
+      var bv = (baseO && baseO[k] !== undefined) ? baseO[k] : undefined;
+      if (rv === undefined) { if (bv === undefined && lv !== undefined) out[k] = lv; return; } /* 远端删了该键 */
+      if (lv === undefined) { if (bv === undefined) out[k] = rv; return; }                     /* 本机删了该键 */
+      out[k] = mergeValue(bv, lv, rv, remoteNewer, depth);
+    });
+    return out;
+  }
+  /* 单值三方合并：数组按 id、对象按键递归，其余谁改了用谁 */
+  function mergeValue(b, l, r, remoteNewer, depth) {
+    depth = depth || 0;
+    var pl = jparse(l), pr = jparse(r);
+    if (pl.ok && pr.ok) {
+      if (Array.isArray(pl.v) && Array.isArray(pr.v)) {
+        var pb = jparse(b);
+        var marr = mergeArray((pb.ok && Array.isArray(pb.v)) ? pb.v : [], pl.v, pr.v, remoteNewer);
+        if (marr !== null) return JSON.stringify(marr);
+      }
+      if (depth < 3 && pl.v && pr.v && typeof pl.v === 'object' && typeof pr.v === 'object'
+        && !Array.isArray(pl.v) && !Array.isArray(pr.v)) {
+        var pb2 = jparse(b);
+        var pbo = (pb2.ok && pb2.v && typeof pb2.v === 'object' && !Array.isArray(pb2.v)) ? pb2.v : {};
+        return JSON.stringify(mergeObject(pbo, pl.v, pr.v, remoteNewer, depth + 1));
+      }
+    }
+    var lb = (b === undefined) ? false : sameV(b, l);
+    var rb = (b === undefined) ? false : sameV(b, r);
+    if (lb && rb) return l;
+    if (lb) return r;   /* 只有远端改了 */
+    if (rb) return l;   /* 只有本机改了 */
+    return remoteNewer ? r : l; /* 都改了：取较新一端 */
+  }
+  /* 顶层：对每个数据键做三方合并，值一律为字符串 */
+  function mergeData(baseD, localD, remoteD, remoteNewer) {
+    var out = {}, keys = {};
+    [baseD, localD, remoteD].forEach(function (d) { if (d) Object.keys(d).forEach(function (k) { keys[k] = 1; }); });
+    Object.keys(keys).forEach(function (k) {
+      var l = localD[k], r = remoteD[k];
+      var b = (baseD && baseD[k] !== undefined) ? baseD[k] : undefined;
+      if (r === undefined) { if (b === undefined && l !== undefined) out[k] = l; return; } /* 远端删了该键 */
+      if (l === undefined) { if (b === undefined) out[k] = r; return; }                   /* 本机没有：远端新增 */
+      out[k] = mergeValue(b, l, r, remoteNewer, 0);
+    });
+    return out;
+  }
+
   /* ---------- 推送 ---------- */
   function pushNow() {
     if (!valid()) { lastErr = '同步未配置：请在设置中填齐 用户名/仓库/令牌'; warn(lastErr); return Promise.resolve(false); }
@@ -154,11 +283,16 @@
     return apiGet(path).then(async function (remote) {
       var obj = remote ? parseRemote(remote) : null;
       var remoteTs = (obj && obj.meta && obj.meta.ts) || 0;
-      if (remote && remoteTs > m.ts && m.pending) {
+      if (mergeMode() && obj && obj.data) {
+        /* 合并模式：先把云端改动并进本机，再上传合并结果（互不覆盖） */
+        var merged = mergeData(getBaseData() || {}, await collectLocal(), obj.data, remoteTs > m.ts);
+        await applyRemote(merged);
+      } else if (!mergeMode() && remote && remoteTs > m.ts && m.pending) {
         var ok = global.confirm('云端数据比本机上次同步点更新，直接上传会覆盖云端新内容。\n建议先「下载」合并，仍要继续上传吗？');
         if (!ok) return false;
       }
-      return apiWrite(path, buildFile(await collectLocal()), remote ? remote.sha : undefined).then(function () {
+      return apiWrite(path, buildFile(await collectLocal()), remote ? remote.sha : undefined).then(async function () {
+        setBaseData(await collectLocal());
         setMeta({ ts: nowTs(), device: deviceName(), pending: false });
         lastErr = null;
         log('已上传');
@@ -180,11 +314,16 @@
       var obj = parseRemote(remote);
       if (!obj || !obj.data) { lastErr = '云端数据格式异常'; warn(lastErr); return false; }
       var remoteTs = (obj.meta && obj.meta.ts) || 0;
-      if (!silent && m.pending && remoteTs > m.ts) {
+      var target = obj.data;
+      if (mergeMode()) {
+        /* 合并模式：云端与本机改动三方合并，新增互不覆盖 */
+        target = mergeData(getBaseData() || {}, await collectLocal(), obj.data, remoteTs > m.ts);
+      } else if (!silent && m.pending && remoteTs > m.ts) {
         var ok = global.confirm('本机有未上传改动，云端也有更新。\n用云端覆盖将丢失本机改动，确定继续？');
         if (!ok) return false;
       }
-      var changed = await applyRemote(obj.data);
+      var changed = await applyRemote(target);
+      if (mergeMode()) setBaseData(target);
       if (changed || remoteTs > m.ts) setMeta({ ts: remoteTs || nowTs(), device: deviceName(), pending: false });
       lastErr = null;
       log(changed ? '已应用云端数据' : '与本机一致');
@@ -210,6 +349,7 @@
         var localData = await collectLocal();
         if (!Object.keys(localData).length) return false;
         return apiWrite(filePath(), buildFile(localData), undefined).then(function () {
+          setBaseData(localData);
           setMeta({ ts: nowTs(), device: deviceName(), pending: false });
           log('首次使用：已自动上传本地数据');
           return false;
@@ -218,7 +358,7 @@
       return pullNow(true);
     }).catch(function (e) { lastErr = (e && e.message) || String(e); return false; });
   }
-  function cfg() { var c = getCfg(); return { app: c.app, owner: c.owner, repo: c.repo, branch: c.branch || DEFAULT_BRANCH, token: c.token || '', file: c.file, keys: (c.keys || []).slice(), device: c.device || '' }; }
+  function cfg() { var c = getCfg(); return { app: c.app, owner: c.owner, repo: c.repo, branch: c.branch || DEFAULT_BRANCH, token: c.token || '', file: c.file, keys: (c.keys || []).slice(), device: c.device || '', merge: c.merge !== false }; }
   function save(c) { saveCfg(c); }
   function status() { var m = getMeta(); return { ts: m.ts, device: m.device, pending: m.pending, configured: valid() }; }
   function configured() { return valid(); }
@@ -255,7 +395,9 @@
       row('本设备名', 'niksync-device', c.device, '可选，如 macbook') +
       row('分支', 'niksync-branch', c.branch || 'master', '一般 master') +
       '<div style="font-size:11px;color:#8a8578;margin:6px 0 3px">私人令牌（projects 权限）</div>' +
-      '<input id="niksync-token" type="password" style="width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid #d8d2c4;border-radius:8px;background:#fff;font-size:12px;outline:none" placeholder="ghp_xxx / gitee 令牌" value="' + esc(c.token || '') + '">' +
+      '<input id="niksync-token" type="password" style="width:100%;box-sizing:border-box;padding:7px 9px;border:1px solid #d8d2c4;border-radius:8px;background:#fff;font-size:12px;outline:none" placeholder="gitee 私人令牌" value="' + esc(c.token || '') + '">' +
+      '<label style="display:flex;align-items:flex-start;gap:6px;margin-top:10px;font-size:11px;color:#5a5548;cursor:pointer;line-height:1.5">' +
+      '<input id="niksync-merge" type="checkbox"' + (c.merge !== false ? ' checked' : '') + ' style="margin-top:2px;accent-color:#26221c"> 合并模式：多设备各自新增的内容互不覆盖，删除也会同步</label>' +
       '<div style="display:flex;gap:8px;margin-top:12px">' +
       '<button onclick="NikSync.saveFromPanel()" style="flex:1;padding:8px;border:none;border-radius:9px;background:#26221c;color:#f5f1e6;font-size:12px;cursor:pointer;font-weight:600">保存并上传</button>' +
       '<button onclick="NikSync.downloadNow()" style="flex:1;padding:8px;border:1px solid #d8d2c4;border-radius:9px;background:#fff;color:#26221c;font-size:12px;cursor:pointer">下载到本机</button></div>' +
@@ -289,6 +431,8 @@
     if ((t = val('niksync-device'))) c.device = t;
     if ((t = val('niksync-branch'))) c.branch = t;
     if ((t = val('niksync-token'))) c.token = t;
+    var cb = document.getElementById('niksync-merge');
+    if (cb) c.merge = cb.checked;
     return c;
   }
   function saveFromPanel() {
