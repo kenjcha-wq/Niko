@@ -948,37 +948,28 @@
             throw new Error('MISSING_CONFIG');
           }
 
-          // —— 全域检索：汇总工作台全部数据 ——
-          const allNotes = this.db.notes.filter(n => !n.archived);
-          const todayStr = new Date().toISOString().slice(0, 10);
-          const todayNotes = allNotes.filter(n => (n.date || '').slice(0, 10) === todayStr);
-          const ctxToday = (todayNotes.map(n => `- ${n.content}`).join('\n') || '（暂无今日记录）');
-          const ctxNotes = (allNotes.slice(0, 30).map(n => `[${n.date || ''} ${n.time || ''}][${n.type || ''}] ${n.content}`).join('\n') || '（暂无）');
-          const ctxWs = (this.db.workspace.map(w => `· ${w.name}: ${(w.description || '')}`).join('\n') || '（暂无）');
-          const ctxKno = (this.db.knowledge.slice(0, 15).map(k => `【${k.title}】(${k.category || ''}): ${(k.content || '').slice(0, 120)}`).join('\n') || '（暂无）');
-          const ctxExp = (this.db.experiences.slice(0, 15).map(e => `· ${e.title}: ${(e.summary || e.content || '').slice(0, 120)}`).join('\n') || '（暂无）');
-          const ctxSkill = (this.db.skills.map(s => `· ${s.name}`).join('、') || '（暂无）');
-          const ctxTpl = (this.db.templates.slice(0, 10).map(t => `· ${t.title || t.name}`).join('、') || '（暂无）');
+          // —— 全域检索：按需注入用户工作台真实数据（不再截断/不再只给数字）——
+          const scope = this.scopeOf(msg);
+          const context = this.buildNikContext(scope, msg);
+          const nowCatId = this.currentNoteCategory === 'all' ? 'log' : this.currentNoteCategory;
+          const nowCatName = this.currentNoteCategory === 'all' ? '流水' : this.catName(this.currentNoteCategory);
+          const nowWsId = this.currentWorkspaceId === 'all' ? 'general' : this.currentWorkspaceId;
+          const nowWsName = this.currentWorkspaceId === 'all' ? '通用(general)' : (this.wsName(this.currentWorkspaceId) || this.currentWorkspaceId);
 
-          const context = `【今日工作流 (${todayNotes.length}条)】\n${ctxToday}\n\n` +
-            `【全部工作流 (近${allNotes.length}条)】\n${ctxNotes}\n\n` +
-            `【工作空间/项目 (${this.db.workspace.length}项)】\n${ctxWs}\n\n` +
-            `【知识库 (${this.db.knowledge.length}篇)】\n${ctxKno}\n\n` +
-            `【个人经验库 (${this.db.experiences.length}条)】\n${ctxExp}\n\n` +
-            `【技能库】${ctxSkill} ｜ 【模板库】${ctxTpl}`;
+          const fullPrompt = `你是【象库工作台 AI 助手】，可读取工作台全部真实内容（工作流/归档/知识库/经验库/个人资料库/工作空间）。下面是刚刚注入给你的真实数据，回答必须基于这些内容，禁止编造；数据中没有的，要明说"这里没有相关内容"。
 
-          const fullPrompt = `你是【象库工作台 AI 助手】，具备全域检索与执行能力。你可以读取并理解用户工作台的全部内容（工作流、工作空间、知识库、经验库、技能、模板、个人资料），据此回答问题、总结工作、主动生成可落地计划。
+【当前聚焦范围】${scope === 'archive' ? '归档工作流' : scope === 'knowledge' ? '知识库' : scope === 'experience' ? '经验库' : scope === 'profile' ? '个人资料库' : '全域自动'}
 
-【全域数据概览】
+【全域数据（真实内容）】
 ${context}
 
 【能力要求】
-1. 回答前先在全域数据中检索相关信息，引用具体条目，不凭空编造。
-2. 用户问"今天做了什么 / 总结一下"，基于「今日工作流」自动汇总输出日报式小结。
-3. 用户提出目标或需求时，主动拆解为可执行的工作流条目。
-4. 若需系统自动写入（新增工作空间或记录），请在回复末尾附上如下包裹的 JSON：
+1. 用户让「看/找/总结/回顾」某一类内容（工作流、归档库、知识库…）时，只基于对应数据作答。
+2. 用户说"总结一下 / 今天做了什么 / 回顾"等，基于【工作流记录】真实逐条内容汇总成文，宁可少说也不虚构。
+3. 只有当用户明确要求「记录 / 写入 / 新建 / 保存」时，才在回复末尾附 JSON 执行自动写入；总结、分析、提问类请求【绝不】执行写入。
+4. 自动写入默认落到【今日工作流 Daily Stream】：分区=${nowCatName}，工作空间=${nowWsName}。JSON 示例：
 <<<JSON
-{"actions":[{"type":"add_workspace","name":"项目名","description":"说明"},{"type":"add_note","content":"任务内容","type":"log"}]}
+{"actions":[{"type":"add_note","content":"用户让保存的完整内容(去掉'请记录'等命令词，不得改写摘抄)","category":"${nowCatId}","workspaceId":"${nowWsId}"}]}
 >>>
 5. 语气直接、专业、克制，结论先行。
 
@@ -999,8 +990,14 @@ ${context}
                   fb.push('✓ 已新增工作空间：《' + a.name + '》');
                 } else if (a && a.type === 'add_note' && a.content) {
                   const now = new Date();
-                  XiangKuApp.db.notes.unshift({ id: 'n_' + Date.now(), content: String(a.content), date: a.date || now.toISOString().slice(0, 10), time: String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0'), type: a.type || 'log', archived: false, workspaceId: XiangKuApp.currentWorkspaceId === 'all' ? 'general' : XiangKuApp.currentWorkspaceId });
-                  fb.push('✓ 已记录工作流：' + String(a.content).slice(0, 20));
+                  const catIds = (XiangKuApp.db.noteCategories || []).map(c => c.id);
+                  const wantCat = a.category || XiangKuApp.currentNoteCategory;
+                  const cat = (catIds.indexOf(wantCat) >= 0) ? wantCat : (catIds.indexOf(XiangKuApp.currentNoteCategory) >= 0 ? XiangKuApp.currentNoteCategory : 'log');
+                  const wantWs = a.workspaceId || (XiangKuApp.currentWorkspaceId === 'all' ? 'general' : XiangKuApp.currentWorkspaceId);
+                  const wsIds = (XiangKuApp.db.workspace || []).map(w => w.id);
+                  const wsId = wsIds.indexOf(wantWs) >= 0 ? wantWs : 'general';
+                  XiangKuApp.db.notes.unshift({ id: 'n_' + Date.now(), title: String(a.content).slice(0, 16), content: String(a.content), date: a.date || now.toISOString().slice(0, 10), time: String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0'), type: cat, archived: false, workspaceId: wsId });
+                  fb.push('✓ 已记录到【今日工作流】·' + XiangKuApp.catName(cat) + '分区·' + XiangKuApp.wsName(wsId) + '：' + String(a.content).slice(0, 24));
                 }
               });
               if (fb.length) {
@@ -1021,8 +1018,11 @@ ${context}
               <i data-lucide="bot" class="w-3.5 h-3.5 text-purple-600 dark:text-purple-400"></i>
             </div>
             <div class="bg-white dark:bg-zinc-800 p-2.5 rounded-xl rounded-tl-none shadow-sm max-w-[85%] text-zinc-700 dark:text-zinc-200 leading-relaxed whitespace-pre-wrap">${response}</div>
+            <button class="nik-copy-btn shrink-0 self-end mb-1 w-6 h-6 flex items-center justify-center text-[11px] text-zinc-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/40 rounded-full transition-colors" title="复制这段回答">⧉</button>
           `;
           container.appendChild(aiDiv);
+          const cpyBtn = aiDiv.querySelector('.nik-copy-btn');
+          if (cpyBtn) cpyBtn.addEventListener('click', function () { XiangKuApp.copyText(response, '✓ 回答已复制'); });
           lucide.createIcons();
           this.scrollFloatingChat();
 
@@ -1434,6 +1434,114 @@ ${context}
 
         const resData = await response.json();
         return resData.choices?.[0]?.message?.content || '未返回有效内容';
+      },
+
+      /* ============================================================
+       * 数据上下文构建器（NIK 主对话 / AI 悬浮球 / 智能体共用）
+       * 作用：把用户工作台里的「真实内容」注入给模型，而不是只给数字统计。
+       * scope: 'auto' 自动路由 | 'archive' 聚焦归档 | 'knowledge' 聚焦知识库
+       *        'experience' 聚焦经验 | 'profile' 聚焦个人资料 | 'notes' 聚焦工作流
+       * 内存限制：先保证工作流全量（用户最常总结的对象），知识/经验给"标题+节选"，
+       * 并在提示里说明共多少条、可点名让 NIK 深入看某条全文。
+       * ============================================================ */
+      catName(id) {
+        const c = (this.db.noteCategories || []).find(x => x.id === id);
+        return c ? c.name : '未分类';
+      },
+      wsName(id) {
+        const w = (this.db.workspace || []).find(x => x.id === id);
+        return w ? w.name : id;
+      },
+      scopeOf(q) {
+        const s = String(q || '');
+        if (/归档/.test(s)) return 'archive';
+        if (/知识库|资料库|文档|SOP|规范|制度|论文|文献/.test(s)) return 'knowledge';
+        if (/经验库|经验|复盘/.test(s)) return 'experience';
+        if (/画像|个人档案|资料库.*个人|我的(能力|技能|方法|模板|联系人|成长)/.test(s)) return 'profile';
+        if (/工作流|流水|记录|今日|今天|本周|上周|总结/.test(s)) return 'notes';
+        return 'auto';
+      },
+      buildNikContext(scope, q) {
+        scope = scope || (q ? this.scopeOf(q) : 'auto');
+        const db = this.db, today = new Date().toISOString().slice(0, 10);
+        const nowWsId = this.currentWorkspaceId;
+        const nowWsName = nowWsId === 'all' ? '全部工作空间' : (this.wsName(nowWsId) || nowWsId);
+        const inWs = n => (nowWsId === 'all' || (n.workspaceId || 'general') === nowWsId || (!n.workspaceId && nowWsId === 'general'));
+        const P = [];
+        const noteHead = scope === 'archive' ? '【归档工作流】' : '【工作流记录】';
+        let notes = (db.notes || []).slice();
+        if (scope === 'archive') notes = notes.filter(n => n.archived && inWs(n));
+        else notes = notes.filter(n => !n.archived && inWs(n) && (n.date || today) <= today);
+        notes.sort((a, b) => String(b.date + ' ' + (b.time || '')).localeCompare(String(a.date + ' ' + (a.time || ''))));
+        const MAX_N = scope === 'archive' ? 200 : 400;
+        const shown = notes.slice(0, MAX_N);
+        const miss = notes.length - shown.length;
+        let headTxt = `${noteHead}（当前${nowWsName}，${shown.length}条` + (miss > 0 ? `，更早还有${miss}条未列出` : '') + `）`;
+        P.push(headTxt + '\n' + (shown.map(n => `[${n.date || today} ${n.time || ''}][${this.catName(n.type)}] ${(n.content || '').trim().slice(0, 300)}`).join('\n') || '（无记录）'));
+        if (scope === 'archive') return P.join('\n\n');
+
+        /* 工作空间 */
+        P.push(`【工作空间/项目（${db.workspace.length}个）】\n` + (db.workspace.map(w => `· ${w.name}${w.description ? '：' + w.description : ''}`).join('\n') || '（暂无）'));
+
+        /* 知识库：标题全列 + 节选，注明可点名深读 */
+        if (scope !== 'profile') {
+          const kn = (db.knowledge || []).slice().sort((a, b) => (b.id || '').localeCompare(a.id || '')).slice(0, 60);
+          P.push(`【知识库（共${db.knowledge.length}篇；已列出${kn.length}篇标题；如需要某篇全文请告诉 NIK 标题）】\n` +
+            (kn.map(k => `·《${k.title || '未命名'}》（${k.category || '未分类'}${k.workspaceId && k.workspaceId !== 'general' ? '｜' + this.wsName(k.workspaceId) : ''}）：${String(k.content || '').replace(/\s+/g, ' ').slice(0, 220)}`).join('\n') || '（暂无）'));
+        }
+
+        /* 个人资料库 */
+        if (scope !== 'knowledge' && scope !== 'experience') {
+          const p = db.profile || {};
+          const profLines = [`【个人资料·档案】\n- 姓名:${p.name || '未填'} | 角色:${p.role || '未填'} | 领域:${p.field || '未填'}\n- 优势:${p.strengths || '未填'}\n- 目标:${p.goals || '未填'}\n- 简介:${p.bio || '未填'}`];
+          const pack = (label, arr, fmt, max) => {
+            const a = (arr || []).slice(0, max || 40);
+            profLines.push(`【个人资料·${label}（${(arr || []).length}项，列${a.length}）】\n` + (a.map(fmt).join('\n') || '（暂无）'));
+          };
+          pack('能力库', db.skills, s => `· ${s.name}${s.desc || s.content ? '：' + String(s.desc || s.content).slice(0, 120) : ''}`);
+          pack('经验库', db.experiences, e => `· ${e.title}${e.summary ? '：' + String(e.summary).slice(0, 200) : ''}`, 50);
+          pack('模板库', db.templates, t => `· ${t.title || t.name}${t.content ? '：' + String(t.content).replace(/\s+/g, ' ').slice(0, 100) : ''}`);
+          pack('联系人', db.contacts, c => `· ${c.name || c.title}${c.content || c.desc ? '：' + String(c.content || c.desc).slice(0, 100) : ''}`);
+          pack('方法库', db.methods, m => `· ${m.title || m.name}${m.content ? '：' + String(m.content).replace(/\s+/g, ' ').slice(0, 150) : ''}`);
+          pack('成长轨迹', db.growth, g => `· ${g.title || g.name}${g.content || g.desc ? '：' + String(g.content || g.desc).slice(0, 150) : ''}`);
+          if (scope === 'profile') return P.concat(profLines).join('\n\n');
+          P.push(profLines.join('\n'));
+        }
+
+        /* 经验聚焦时单独给足经验 */
+        if (scope === 'experience') {
+          P.push(`【经验库全文（共${db.experiences.length}条）】\n` +
+            (db.experiences.slice(0, 80).map(e => `《${e.title}》场景:${e.scene || ''} 解法:${e.solution || ''} 认知:${e.summary || ''}`).join('\n') || '（暂无）'));
+        }
+        if (scope === 'knowledge') {
+          /* knowledge 聚焦：多给正文 */
+          const kn = (db.knowledge || []).slice(0, 40);
+          P.push(`【知识库正文节选（共${db.knowledge.length}篇，每篇前500字）】\n` +
+            (kn.map(k => `《${k.title || '未命名'}》：${String(k.content || '').replace(/\s+/g, ' ').slice(0, 500)}`).join('\n') || '（暂无）'));
+        }
+        return P.join('\n\n');
+      },
+      copyText(txt, tip) {
+        const doCopy = () => {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            return navigator.clipboard.writeText(txt).then(() => 1);
+          }
+          const ta = document.createElement('textarea');
+          ta.value = txt; ta.style.position = 'fixed'; ta.style.opacity = '0';
+          document.body.appendChild(ta); ta.select();
+          let ok = false;
+          try { ok = document.execCommand('copy'); } catch (e) {}
+          document.body.removeChild(ta);
+          return Promise.resolve(ok ? 1 : 0);
+        };
+        doCopy().then(ok => {
+          const el = document.createElement('div');
+          el.textContent = ok ? (tip || '✓ 已复制') : '复制失败';
+          el.style.cssText = 'position:fixed;left:50%;bottom:120px;transform:translateX(-50%);background:#26221c;color:#f5f1e6;padding:7px 16px;border-radius:999px;font-size:12px;z-index:2147483001;opacity:0;transition:opacity .25s';
+          document.body.appendChild(el);
+          requestAnimationFrame(() => { el.style.opacity = '1'; });
+          setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 1400);
+        });
       },
 
       modules: {
@@ -2874,8 +2982,13 @@ ${XiangKuApp.db.growth.map(g => `- [${g.date}] ${g.event} -> 认知: ${g.insight
                   <div class="w-5 h-5 rounded bg-zinc-900 dark:bg-zinc-800 border border-zinc-700 text-zinc-300 flex items-center justify-center shrink-0 mt-0.5">
                     <i data-lucide="bot" class="w-3.5 h-3.5 text-zinc-300"></i>
                   </div>
-                  <div class="bg-zinc-100 dark:bg-zinc-800/80 text-zinc-800 dark:text-zinc-200 p-2.5 rounded-lg rounded-tl-none leading-relaxed max-w-[85%] whitespace-pre-wrap">${msg.content}</div>
+                  <div class="flex flex-col items-start max-w-[85%]">
+                    <div class="bg-zinc-100 dark:bg-zinc-800/80 text-zinc-800 dark:text-zinc-200 p-2.5 rounded-lg rounded-tl-none leading-relaxed whitespace-pre-wrap w-fit">${msg.content}</div>
+                    <button class="nik-copy-btn mt-0.5 text-[10px] text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 px-1.5 py-0.5 rounded hover:bg-zinc-200/50 dark:hover:bg-zinc-800 transition-colors" title="复制这段回答">⧉ 复制</button>
+                  </div>
                 `;
+                const cpyBtn = div.querySelector('.nik-copy-btn');
+                if (cpyBtn) cpyBtn.addEventListener('click', function () { XiangKuApp.copyText(msg.content, '✓ 回答已复制'); });
               }
               container.appendChild(div);
             });
@@ -2958,21 +3071,25 @@ ${XiangKuApp.db.growth.map(g => `- [${g.date}] ${g.event} -> 认知: ${g.insight
               }
 
               // ---- 2. 普通意图解析 ----
+              const _catOpts = (XiangKuApp.db.noteCategories || []).map(c => c.id + '=' + c.name).join('、') || 'log=流水';
               const parsePrompt = `用户指令: "${q}"
-请判断用户是否要求执行系统操作。请返回一个纯 JSON 对象，格式如下：
+判断用户是否【明确要求系统执行写入/记录/创建】。请只返回纯 JSON：
 {
   "action": "none" | "add_note" | "add_experience" | "add_knowledge" | "add_workspace" | "add_skill" | "sync_feishu",
   "extractedData": {
-    "title": "从用户话中提炼的精简标题",
-    "content": "提炼出的纯干货内容（去除'请帮我填入'等废话指令）",
-    "scene": "提取的场景/背景",
-    "solution": "提取的解决方法",
-    "summary": "提取的经验认知",
-    "category": "分类建议",
+    "title": "精简标题",
+    "content": "用户想让系统保存的完整原文内容（去掉'请记录/帮我写入'等命令词，保留全部实质内容，禁止改写、禁止只摘其中一句）",
+    "scene": "场景/背景",
+    "solution": "解决方法",
+    "summary": "经验认知",
+    "category": "add_note 时填工作流分区 id，可选：${_catOpts}；无法判断填 log",
     "type": "log|progress|issue|insight"
   }
 }
-如果用户只是普通闲聊或提问，action 填 "none"。请只输出纯 JSON，不要包含任何 markdown 或其他字符。`;
+判定规则：
+- 用户说「记录/保存/写入/新建/添加/归档/记一下」并给了要存的内容 → 选对应 add_*；
+- 用户说「总结/分析/回顾/看看/找找/汇报/今天做了什么」或普通提问 → action 必须是 "none"，交由总结阶段处理，【绝不能】add_note 把用户整句话当成记录存下来。
+只输出纯 JSON，不要 markdown。`;
 
               let actionPlan = { action: 'none' };
               try {
@@ -3012,19 +3129,26 @@ ${XiangKuApp.db.growth.map(g => `- [${g.date}] ${g.event} -> 认知: ${g.insight
                 const d = actionPlan.extractedData || {};
                 const now = new Date();
                 const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                const _cats = (XiangKuApp.db.noteCategories || []).map(c => c.id);
+                const wantCat = d.category || XiangKuApp.currentNoteCategory;
+                const _cat = (_cats.indexOf(wantCat) >= 0) ? wantCat : (_cats.indexOf(XiangKuApp.currentNoteCategory) >= 0 ? XiangKuApp.currentNoteCategory : 'log');
+                const wantWs = XiangKuApp.currentWorkspaceId === 'all' ? 'general' : XiangKuApp.currentWorkspaceId;
+                const _wsIds = (XiangKuApp.db.workspace || []).map(w => w.id);
+                const _ws = _wsIds.indexOf(wantWs) >= 0 ? wantWs : 'general';
+                const _text = String(d.content || q).replace(/^(请|帮我|麻烦你)?(记录|记一下|保存|写入|新建|添加|归档)[:：]?\s*/i, '').trim();
                 XiangKuApp.db.notes.unshift({
                   id: 'n_' + Date.now(),
-                  title: d.title || q.slice(0, 12),
-                  content: d.content || q,
+                  title: (d.title || _text).slice(0, 16),
+                  content: _text || q,
                   date: now.toISOString().slice(0, 10),
                   time: timeStr,
-                  type: d.type || 'log',
+                  type: _cat,
                   archived: false,
-                  workspaceId: XiangKuApp.currentWorkspaceId === 'all' ? 'general' : XiangKuApp.currentWorkspaceId
+                  workspaceId: _ws
                 });
                 XiangKuApp.saveStorage();
                 XiangKuApp.renderAll();
-                  executionFeedback = `[系统操作] 已提炼并记录至【今日工作流】。\n`;
+                executionFeedback = `[系统操作] 已记录至【今日工作流】·${XiangKuApp.catName(_cat)}分区·${XiangKuApp.wsName(_ws)}：${_text.slice(0, 30)}\n`;
               } else if (actionPlan.action === 'add_workspace') {
                 const d = actionPlan.extractedData || {};
                 XiangKuApp.db.workspace.push({
@@ -3038,8 +3162,17 @@ ${XiangKuApp.db.growth.map(g => `- [${g.date}] ${g.event} -> 认知: ${g.insight
               }
 
               const historyPayload = XiangKuApp.db.nikMessages.slice(-6);
-              const ctxSummary = `【数据概览】工作流${XiangKuApp.db.notes.filter(n=>!n.archived).length}条 / 工作空间${XiangKuApp.db.workspace.length}项 / 知识${XiangKuApp.db.knowledge.length}篇 / 经验${XiangKuApp.db.experiences.length}条 / 技能${XiangKuApp.db.skills.length}项`;
-              const systemPrompt = `你是 NIK，象库轻工作台的核心通用智能体，具备全域检索与自动执行能力。${ctxSummary}。当前系统执行状态：${executionFeedback || '无自动入库动作'}。你可以主动基于全部数据检索、总结，并按需将内容自动写入对应库（工作流/知识/经验/工作空间）。请以博学、直接、中肯且专业的语气给用户最终答复，结论先行。`;
+              const ctxScope = XiangKuApp.scopeOf(q);
+              const ctxBody = XiangKuApp.buildNikContext(ctxScope, q);
+              const ctxSummary = `【数据概览】工作流${XiangKuApp.db.notes.filter(n=>!n.archived).length}条 / 已归档${XiangKuApp.db.notes.filter(n=>n.archived).length}条 / 工作空间${XiangKuApp.db.workspace.length}项 / 知识${XiangKuApp.db.knowledge.length}篇 / 经验${XiangKuApp.db.experiences.length}条 / 技能${XiangKuApp.db.skills.length}项`;
+              const systemPrompt = `你是 NIK，象库轻工作台的核心通用智能体。以下【真实数据】已注入给你（当前聚焦：${ctxScope === 'archive' ? '归档工作流' : ctxScope === 'knowledge' ? '知识库' : ctxScope === 'experience' ? '经验库' : ctxScope === 'profile' ? '个人资料库' : '全域'}）。${ctxSummary}。当前系统执行状态：${executionFeedback || '无自动入库动作'}。请恪守：
+1. 回答/总结必须基于【真实数据】中的具体条目，禁止编造；数据里没有的，明说"这里没有记录"。
+2. 用户要工作总结/日报/回顾时：把真实工作流条目逐条核对后浓缩成文，按时间或主题组织，结论先行，可用 Markdown 排版（方便一键复制）。
+3. 用户指定范围（如"只看归档库/看知识库"）时只基于该范围回答。
+4. 语气博学、直接、中肯。
+
+【真实数据】
+${ctxBody}`;
 
               const reply = await XiangKuApp.requestAI(historyPayload, systemPrompt);
 
