@@ -120,6 +120,23 @@
       return r.json();
     });
   }
+  /* 下载走 raw 接口：Gitee Contents API 的单文件 content 字段最多返回 10MB，
+   * 超过即被截断（base64 残缺 → JSON.parse 必失败，即用户看到的"格式异常"）。
+   * raw 接口官方支持 100MB 以内的文件，直接返回文件原文（非 base64），
+   * fetch 拿全文后 JSON.parse 即可。写通道仍用 Contents(PUT 需 sha)。 */
+  function apiGetRaw(path) {
+    var c = getCfg();
+    var seg = String(path).split('/').map(function (s) { return encodeURIComponent(s); }).join('/');
+    var url = 'https://gitee.com/api/v5/repos/' + encodeURIComponent(c.owner) + '/' +
+      encodeURIComponent(c.repo) + '/raw/' + seg;
+    var qs = 'access_token=' + encodeURIComponent(c.token) +
+      '&ref=' + encodeURIComponent(c.branch || DEFAULT_BRANCH);
+    return fetch(url + '?' + qs).then(function (r) {
+      if (r.status === 404) return null;
+      if (!r.ok) return r.text().then(function (t) { throw new Error('RAW ' + r.status + ' ' + String(t).slice(0, 120)); });
+      return r.text();
+    });
+  }
 
   /* ---------- 数据打包 / 落盘 ---------- */
   async function collectLocal() {
@@ -154,8 +171,12 @@
       data: payload
     });
   }
-  function parseRemote(remote) {
-    try { return JSON.parse(b64d(remote.content)); } catch (e) { return null; }
+  function parseText(txt) {
+    if (!txt) return null;
+    try { return JSON.parse(txt); } catch (e) { return null; }
+  }
+  function parseContentB64(b64) {
+    try { return JSON.parse(b64d(b64)); } catch (e) { return null; }
   }
 
   /* ============================================================
@@ -280,8 +301,10 @@
   function pushNow() {
     if (!valid()) { lastErr = '同步未配置：请在设置中填齐 用户名/仓库/令牌'; warn(lastErr); return Promise.resolve(false); }
     var path = filePath(), m = getMeta();
-    return apiGet(path).then(async function (remote) {
-      var obj = remote ? parseRemote(remote) : null;
+    return Promise.all([apiGetRaw(path), apiGet(path)]).then(async function (rs) {
+      /* rs[0]=文件原文（raw，大文件也完整，供合并判断）；rs[1]=contents 元信息（取 sha 用于写入） */
+      var txt = rs[0], remote = rs[1];
+      var obj = txt ? parseText(txt) : null;
       var remoteTs = (obj && obj.meta && obj.meta.ts) || 0;
       if (mergeMode() && obj && obj.data) {
         /* 合并模式：先把云端改动并进本机，再上传合并结果（互不覆盖） */
@@ -306,13 +329,14 @@
   }
 
   /* ---------- 拉取 ---------- */
-  function pullNow(silent) {
+  function pullNow(silent, preTxt) {
     if (!valid()) { lastErr = '同步未配置：请在设置中填齐 用户名/仓库/令牌'; warn(lastErr); return Promise.resolve(false); }
     var path = filePath(), m = getMeta();
-    return apiGet(path).then(async function (remote) {
-      if (!remote || !remote.content) { log('云端暂无数据'); return false; }
-      var obj = parseRemote(remote);
-      if (!obj || !obj.data) { lastErr = '云端数据格式异常'; warn(lastErr); return false; }
+    var getTxt = (preTxt !== undefined) ? Promise.resolve(preTxt) : apiGetRaw(path);
+    return getTxt.then(async function (txt) {
+      if (!txt) { log('云端暂无数据'); return false; }
+      var obj = parseText(txt);
+      if (!obj || !obj.data) { lastErr = '云端数据格式异常（云端文件可能已损坏）'; warn(lastErr); return false; }
       var remoteTs = (obj.meta && obj.meta.ts) || 0;
       var target = obj.data;
       if (mergeMode()) {
@@ -344,8 +368,8 @@
   }
   function autoPull() {
     if (!valid()) return Promise.resolve(false);
-    return apiGet(filePath()).then(async function (remote) {
-      if (!remote || !remote.content) {
+    return apiGetRaw(filePath()).then(async function (txt) {
+      if (!txt) {
         var localData = await collectLocal();
         if (!Object.keys(localData).length) return false;
         return apiWrite(filePath(), buildFile(localData), undefined).then(function () {
@@ -355,7 +379,7 @@
           return false;
         }).catch(function (e) { warn('首次上传失败：', (e && e.message) || e); return false; });
       }
-      return pullNow(true);
+      return pullNow(true, txt);
     }).catch(function (e) { lastErr = (e && e.message) || String(e); return false; });
   }
   function cfg() { var c = getCfg(); return { app: c.app, owner: c.owner, repo: c.repo, branch: c.branch || DEFAULT_BRANCH, token: c.token || '', file: c.file, keys: (c.keys || []).slice(), device: c.device || '', merge: c.merge !== false }; }
@@ -388,13 +412,14 @@
     if (!valid()) { lastErr = '同步未配置：请先填齐 用户名/仓库/令牌'; warn(lastErr); return Promise.resolve(null); }
     return apiGet(filePath()).then(function (remote) {
       if (!remote) return { exists: false };
-      var obj = parseRemote(remote), sizes = {}, total = 0, raw = 0;
+      var big = remote.size != null && remote.size > 10000000; /* Contents 接口超 10MB 不返回正文 */
+      var obj = (!big && remote.content) ? parseContentB64(remote.content) : null;
+      var sizes = {}, total = 0;
       if (obj && obj.data) {
         Object.keys(obj.data).forEach(function (k) { var b = String(obj.data[k] || '').length; sizes[k] = b; total += b; });
       }
-      if (remote.size != null) raw = remote.size;
       return {
-        exists: true, bytes: raw || total, dataBytes: total,
+        exists: true, bytes: remote.size || total, dataBytes: total, metaOk: !!obj,
         ts: (obj && obj.meta && obj.meta.ts) || 0,
         device: (obj && obj.meta && obj.meta.device) || '',
         keys: sizes, sha: remote.sha
@@ -494,9 +519,14 @@
         return;
       }
       var lines = ['✓ 云端文件真实存在：' + fmtBytes(r.bytes)];
-      lines.push('上次上传：' + fmtTs(r.ts) + (r.device ? '（' + r.device + '）' : ''));
-      var ks = Object.keys(r.keys);
-      if (ks.length) lines.push('内容分块：' + ks.map(function (k) { return k + ' ' + fmtBytes(r.keys[k]); }).join('、'));
+      if (!r.metaOk) {
+        lines.push('⚠ 文件超过 10MB，接口不返回内容详情，属正常');
+        lines.push('「上次上传」以本机记录/下载结果为准');
+      } else {
+        lines.push('上次上传：' + fmtTs(r.ts) + (r.device ? '（' + r.device + '）' : ''));
+        var ks = Object.keys(r.keys);
+        if (ks.length) lines.push('内容分块：' + ks.map(function (k) { return k + ' ' + fmtBytes(r.keys[k]); }).join('、'));
+      }
       msg(lines.join('\n'), true);
     });
   }
