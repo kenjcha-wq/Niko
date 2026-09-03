@@ -126,6 +126,16 @@
         <span class="hidden sm:inline">智能体</span>
       </button>
 
+      <!-- 子弹笔记入口 -->
+      <button 
+        onclick="XiangKuApp.modules.bujo.openDesktop()" 
+        title="子弹笔记（独立手账系统：每日/月度/未来）"
+        class="hidden md:flex h-7 items-center gap-1 text-xs px-2.5 rounded border border-amber-200 dark:border-amber-900 bg-amber-50/60 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 shrink-0 font-medium shadow-sm"
+      >
+        <i data-lucide="book-open" class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400"></i>
+        <span>子弹笔记</span>
+      </button>
+
       <!-- 昼夜模式 -->
       <button 
         onclick="XiangKuApp.toggleDarkMode()" 
@@ -335,9 +345,90 @@
         <button type="submit" class="h-8 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-3.5 rounded text-xs font-medium shadow-sm">发送</button>
       </form>
     </section>
+
+    <!-- 5. 【子弹笔记 Bullet Journal】 独立手账系统：每日/月度/未来 + 符号状态机 -->
+    <section id="tabSectionBuJo" class="mobile-tab-section hidden flex-col md:col-span-12 bg-white dark:bg-[#181818] overflow-hidden h-full">
+      <div class="px-3 py-2 border-b border-zinc-200 dark:border-zinc-800 bg-amber-50/70 dark:bg-amber-950/20 flex items-center gap-2 shrink-0">
+        <button onclick="XiangKuApp.modules.bujo.closeDesktop()" title="返回工作台" class="hidden md:flex w-6 h-6 items-center justify-center text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 rounded hover:bg-zinc-200/60 dark:hover:bg-zinc-800 shrink-0">
+          <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+        </button>
+        <div class="flex items-center gap-1.5 shrink-0">
+          <i data-lucide="book-open" class="w-4 h-4 text-amber-600 dark:text-amber-400"></i>
+          <span class="text-xs font-semibold tracking-wider text-zinc-800 dark:text-zinc-100">BULLET JOURNAL<span class="text-amber-600 dark:text-amber-400"> · 子弹笔记</span></span>
+        </div>
+        <div class="flex items-center gap-1 ml-auto shrink-0">
+          <button id="bujoSubDaily" onclick="XiangKuApp.modules.bujo.setView('daily')" class="h-6 px-2.5 rounded text-[11px] text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-zinc-800">每日</button>
+          <button id="bujoSubMonthly" onclick="XiangKuApp.modules.bujo.setView('monthly')" class="h-6 px-2.5 rounded text-[11px] text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-zinc-800">月度</button>
+          <button id="bujoSubFuture" onclick="XiangKuApp.modules.bujo.setView('future')" class="h-6 px-2.5 rounded text-[11px] text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-zinc-800">未来</button>
+          <button onclick="XiangKuApp.modules.bujo.toggleLegend()" title="符号图例" class="w-6 h-6 flex items-center justify-center rounded text-[11px] text-zinc-400 hover:text-amber-600 hover:bg-amber-100/60 dark:hover:bg-amber-900/30 shrink-0">?</button>
+        </div>
+      </div>
+
+      <div id="bujoLegend" class="hidden px-3 py-1.5 text-[10px] text-zinc-500 dark:text-zinc-400 bg-amber-50/40 dark:bg-amber-950/10 border-b border-zinc-200/70 dark:border-zinc-800 flex items-center gap-2.5 flex-wrap shrink-0">
+        <span><b class="text-zinc-800 dark:text-zinc-200">•</b> 任务</span>
+        <span><b class="text-emerald-600 dark:text-emerald-400">✕</b> 完成</span>
+        <span><b class="text-sky-600 dark:text-sky-400">○</b> 事件</span>
+        <span><b class="text-zinc-400">–</b> 笔记</span>
+        <span><b class="text-amber-500">*</b> 重要</span>
+        <span><b class="text-violet-500">!</b> 灵感</span>
+        <span><b class="text-zinc-600 dark:text-zinc-300">&gt;</b> 迁移（移到明天 / 未来某月 / 排期到某天）</span>
+      </div>
+
+      <!-- 每日记录 -->
+      <div id="bujoDailyView" class="hidden flex-1 flex-col overflow-hidden">
+        <div class="px-3 py-1.5 border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-1.5 shrink-0">
+          <button onclick="XiangKuApp.modules.bujo.goDay(-1)" class="w-6 h-6 rounded text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs">‹</button>
+          <input type="date" id="bujoDayPick" onchange="XiangKuApp.modules.bujo.setDay(this.value)" class="h-6 text-[11px] bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded px-1.5 text-zinc-600 dark:text-zinc-300" />
+          <button onclick="XiangKuApp.modules.bujo.goDay(1)" class="w-6 h-6 rounded text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs">›</button>
+          <button onclick="XiangKuApp.modules.bujo.goToday()" class="h-6 px-2 rounded text-[10px] border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800">今日</button>
+          <span id="bujoDayLabel" class="ml-auto text-[11px] font-mono text-zinc-400 dark:text-zinc-500"></span>
+        </div>
+        <div id="bujoDailyList" class="flex-1 overflow-y-auto p-3 space-y-0.5"></div>
+      </div>
+
+      <!-- 月度总览 -->
+      <div id="bujoMonthlyView" class="hidden flex-1 flex-col overflow-hidden">
+        <div class="px-3 py-1.5 border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-1.5 shrink-0">
+          <button onclick="XiangKuApp.modules.bujo.goMonth(-1)" class="w-6 h-6 rounded text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs">‹</button>
+          <input type="month" id="bujoMonthPick" onchange="XiangKuApp.modules.bujo.setMonth(this.value)" class="h-6 text-[11px] bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded px-1.5 text-zinc-600 dark:text-zinc-300" />
+          <button onclick="XiangKuApp.modules.bujo.goMonth(1)" class="w-6 h-6 rounded text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs">›</button>
+          <button onclick="XiangKuApp.modules.bujo.goCurMonth()" class="h-6 px-2 rounded text-[10px] border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800">本月</button>
+          <span id="bujoMonthStats" class="ml-auto text-[11px] text-zinc-400 dark:text-zinc-500"></span>
+        </div>
+        <div id="bujoMonthlyList" class="flex-1 overflow-y-auto p-3 space-y-0.5"></div>
+      </div>
+
+      <!-- 未来记录 -->
+      <div id="bujoFutureView" class="hidden flex-1 flex-col overflow-hidden">
+        <div class="px-3 py-1.5 border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-1.5 shrink-0">
+          <span class="text-[11px] text-zinc-500 dark:text-zinc-400 shrink-0">归档到</span>
+          <select id="bujoBucket" onchange="XiangKuApp.modules.bujo.setBucket(this.value)" class="h-6 text-[11px] bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded px-1.5 text-zinc-600 dark:text-zinc-300 max-w-[130px]"></select>
+          <span id="bujoFutureStats" class="ml-auto text-[11px] text-zinc-400 dark:text-zinc-500"></span>
+        </div>
+        <div id="bujoFutureList" class="flex-1 overflow-y-auto p-3 space-y-0.5"></div>
+      </div>
+
+      <!-- 录入条 -->
+      <form onsubmit="XiangKuApp.modules.bujo.handleSubmit(event)" class="px-2.5 py-2 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50/90 dark:bg-zinc-900/80 shrink-0 space-y-1.5">
+        <div class="flex items-center gap-1" id="bujoBulletPicker">
+          <span class="text-[10px] text-zinc-400 mr-0.5">符号</span>
+          <button type="button" data-b="task" onclick="XiangKuApp.modules.bujo.pickBullet('task')" class="w-6 h-6 rounded text-xs border border-transparent text-zinc-400 flex items-center justify-center" title="任务 •">•</button>
+          <button type="button" data-b="event" onclick="XiangKuApp.modules.bujo.pickBullet('event')" class="w-6 h-6 rounded text-xs border border-transparent text-zinc-400 flex items-center justify-center" title="事件 ○">○</button>
+          <button type="button" data-b="note" onclick="XiangKuApp.modules.bujo.pickBullet('note')" class="w-6 h-6 rounded text-xs border border-transparent text-zinc-400 flex items-center justify-center" title="笔记 –">–</button>
+          <button type="button" data-b="priority" onclick="XiangKuApp.modules.bujo.pickBullet('priority')" class="w-6 h-6 rounded text-xs border border-transparent text-zinc-400 flex items-center justify-center" title="重要 *">*</button>
+          <button type="button" data-b="inspiration" onclick="XiangKuApp.modules.bujo.pickBullet('inspiration')" class="w-6 h-6 rounded text-xs border border-transparent text-zinc-400 flex items-center justify-center" title="灵感 !">!</button>
+          <span class="text-[10px] text-zinc-300 dark:text-zinc-600 ml-2">也可以直接在内容前敲符号（• ○ – * !）自动识别</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span id="bujoInputHint" class="text-[10px] text-amber-600 dark:text-amber-400 shrink-0"></span>
+          <input type="text" id="bujoInput" placeholder="记一条子弹笔记..." class="flex-1 h-8 text-xs px-2.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none focus:border-amber-500 text-zinc-800 dark:text-zinc-100" />
+          <button type="submit" class="h-8 px-3 rounded text-xs font-medium bg-amber-600 text-white hover:bg-amber-700 shadow-sm shrink-0">记录</button>
+        </div>
+      </form>
+    </section>
   </main>
 
-  <!-- ================= 移动端底部 5 栏 Tab ================= -->
+  <!-- ================= 移动端底部 6 栏 Tab ================= -->
   <nav class="md:hidden h-14 bg-white/95 dark:bg-[#181818]/95 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-around px-1 shrink-0 z-30">
     <button onclick="XiangKuApp.switchMobileTab('workspace')" id="mobileNavWorkspace" class="flex flex-col items-center gap-0.5 text-zinc-400 dark:text-zinc-500 py-1 px-2">
       <i data-lucide="folder" class="w-4 h-4"></i>
@@ -354,6 +445,10 @@
     <button onclick="XiangKuApp.switchMobileTab('nik')" id="mobileNavNik" class="flex flex-col items-center gap-0.5 text-zinc-400 dark:text-zinc-500 py-1 px-2">
       <i data-lucide="bot" class="w-4 h-4"></i>
       <span class="text-[10px]">NIK</span>
+    </button>
+    <button onclick="XiangKuApp.switchMobileTab('bujo')" id="mobileNavBujo" class="flex flex-col items-center gap-0.5 text-zinc-400 dark:text-zinc-500 py-1 px-2">
+      <i data-lucide="book-open" class="w-4 h-4"></i>
+      <span class="text-[10px]">手账</span>
     </button>
     <button onclick="XiangKuApp.modules.profileVault.toggleDrawer()" id="mobileNavProfile" class="flex flex-col items-center gap-0.5 text-zinc-400 dark:text-zinc-500 py-1 px-2">
       <i data-lucide="user-check" class="w-4 h-4"></i>
@@ -837,7 +932,8 @@
         growth: [],
         agents: [],
         agentOutputs: [],
-        nikMessages: []
+        nikMessages: [],
+        bujo: { future: [], logs: {} }
       },
 
       currentWorkspaceId: 'all',
@@ -1062,9 +1158,13 @@ ${context}
           const nikEl = document.getElementById('tabSectionNik');
           nikEl.classList.remove('hidden'); nikEl.classList.add('flex');
           this.modules.nik.scrollToBottom();
+        } else if (tabName === 'bujo') {
+          const bujoEl = document.getElementById('tabSectionBuJo');
+          bujoEl.classList.remove('hidden'); bujoEl.classList.add('flex');
+          this.modules.bujo.enter();
         }
 
-        ['workspace', 'notes', 'knowledge', 'nik'].forEach(t => {
+        ['workspace', 'notes', 'knowledge', 'nik', 'bujo'].forEach(t => {
           const btn = document.getElementById('mobileNav' + t.charAt(0).toUpperCase() + t.slice(1));
           if (btn) {
             if (t === tabName) {
@@ -1156,6 +1256,7 @@ ${context}
             this.db.agents = parsed.agents || [];
             this.db.agentOutputs = parsed.agentOutputs || [];
             this.db.nikMessages = parsed.nikMessages || [];
+            this.db.bujo = (parsed.bujo && typeof parsed.bujo === 'object') ? { future: parsed.bujo.future || [], logs: parsed.bujo.logs || {} } : { future: [], logs: {} };
           } catch (e) {
             console.error('存储解析异常', e);
           }
@@ -1291,6 +1392,7 @@ ${context}
         this.modules.profileVault.render();
         this.modules.agent.render();
         this.modules.nik.renderMessages();
+        this.modules.bujo.render();
         this.updateStats();
         lucide.createIcons();
       },
@@ -1454,6 +1556,7 @@ ${context}
       },
       scopeOf(q) {
         const s = String(q || '');
+        if (/子弹|手账|待办|任务|未完成|没做完|未来记录|月度复盘|bujo/i.test(s)) return 'bujo';
         if (/归档/.test(s)) return 'archive';
         if (/知识库|资料库|文档|SOP|规范|制度|论文|文献/.test(s)) return 'knowledge';
         if (/经验库|经验|复盘/.test(s)) return 'experience';
@@ -1477,21 +1580,25 @@ ${context}
         const shown = notes.slice(0, MAX_N);
         const miss = notes.length - shown.length;
         let headTxt = `${noteHead}（当前${nowWsName}，${shown.length}条` + (miss > 0 ? `，更早还有${miss}条未列出` : '') + `）`;
-        P.push(headTxt + '\n' + (shown.map(n => `[${n.date || today} ${n.time || ''}][${this.catName(n.type)}] ${(n.content || '').trim().slice(0, 300)}`).join('\n') || '（无记录）'));
+        if (scope !== 'bujo') {
+          P.push(headTxt + '\n' + (shown.map(n => `[${n.date || today} ${n.time || ''}][${this.catName(n.type)}] ${(n.content || '').trim().slice(0, 300)}`).join('\n') || '（无记录）'));
+        }
         if (scope === 'archive') return P.join('\n\n');
 
         /* 工作空间 */
-        P.push(`【工作空间/项目（${db.workspace.length}个）】\n` + (db.workspace.map(w => `· ${w.name}${w.description ? '：' + w.description : ''}`).join('\n') || '（暂无）'));
+        if (scope !== 'bujo') {
+          P.push(`【工作空间/项目（${db.workspace.length}个）】\n` + (db.workspace.map(w => `· ${w.name}${w.description ? '：' + w.description : ''}`).join('\n') || '（暂无）'));
+        }
 
         /* 知识库：标题全列 + 节选，注明可点名深读 */
-        if (scope !== 'profile') {
+        if (scope !== 'profile' && scope !== 'bujo') {
           const kn = (db.knowledge || []).slice().sort((a, b) => (b.id || '').localeCompare(a.id || '')).slice(0, 60);
           P.push(`【知识库（共${db.knowledge.length}篇；已列出${kn.length}篇标题；如需要某篇全文请告诉 NIK 标题）】\n` +
             (kn.map(k => `·《${k.title || '未命名'}》（${k.category || '未分类'}${k.workspaceId && k.workspaceId !== 'general' ? '｜' + this.wsName(k.workspaceId) : ''}）：${String(k.content || '').replace(/\s+/g, ' ').slice(0, 220)}`).join('\n') || '（暂无）'));
         }
 
         /* 个人资料库 */
-        if (scope !== 'knowledge' && scope !== 'experience') {
+        if (scope !== 'knowledge' && scope !== 'experience' && scope !== 'bujo') {
           const p = db.profile || {};
           const profLines = [`【个人资料·档案】\n- 姓名:${p.name || '未填'} | 角色:${p.role || '未填'} | 领域:${p.field || '未填'}\n- 优势:${p.strengths || '未填'}\n- 目标:${p.goals || '未填'}\n- 简介:${p.bio || '未填'}`];
           const pack = (label, arr, fmt, max) => {
@@ -1518,6 +1625,31 @@ ${context}
           const kn = (db.knowledge || []).slice(0, 40);
           P.push(`【知识库正文节选（共${db.knowledge.length}篇，每篇前500字）】\n` +
             (kn.map(k => `《${k.title || '未命名'}》：${String(k.content || '').replace(/\s+/g, ' ').slice(0, 500)}`).join('\n') || '（暂无）'));
+        }
+
+        /* 子弹笔记 BuJo（独立任务/计划系统） */
+        const bj = db.bujo || { future: [], logs: {} };
+        const bLogs = bj.logs || {};
+        const bToday = bLogs[today] || [];
+        const bMonthOpen = [];
+        Object.keys(bLogs).forEach(k => {
+          if (k.slice(0, 7) === today.slice(0, 7)) {
+            (bLogs[k] || []).forEach(x => {
+              if ((x.bullet === 'task' || x.bullet === 'priority') && x.status !== 'done') bMonthOpen.push(k + ' ' + x.content);
+            });
+          }
+        });
+        const bFut = (bj.future || []).filter(f => !f.done);
+        if (scope === 'bujo') {
+          P.push('【子弹笔记·今日 ' + today + '】\n' +
+            ((bToday || []).map(x => '[' + (x.bullet || 'task') + (x.status === 'done' ? '/已完成' : '') + '] ' + String(x.content || '').slice(0, 200)).join('\n') || '（今日无记录）'),
+            '【子弹笔记·本月未完成任务（' + bMonthOpen.length + ' 项）】\n' + (bMonthOpen.slice(0, 80).map(x => '· ' + x.slice(0, 160)).join('\n') || '（本月任务已清空）'),
+            '【子弹笔记·未来记录/待定（' + bFut.length + ' 项）】\n' + (bFut.slice(0, 60).map(f => '· [' + (f.month || '待定') + '] ' + String(f.content || '').slice(0, 160)).join('\n') || '（无）'));
+          return P.join('\n\n');
+        }
+        if (scope === 'auto' || scope === 'notes') {
+          P.push('【子弹笔记（任务系统）】今日未了 ' + bToday.filter(x => x.status !== 'done').length + ' 项 · 本月未完成 ' + bMonthOpen.length + ' 项 · 未来/待定 ' + bFut.length + ' 项' +
+            (bFut.length ? '，近项：' + bFut.slice(0, 6).map(f => '[' + (f.month || '待定') + ']' + String(f.content || '').slice(0, 50)).join('；') : ''));
         }
         return P.join('\n\n');
       },
@@ -3204,6 +3336,278 @@ ${ctxBody}`;
           scrollToBottom() {
             const container = document.getElementById('nikChatMessages');
             if (container) container.scrollTop = container.scrollHeight;
+          }
+        },
+
+        // ========== 子弹笔记 Bullet Journal（独立手账系统）==========
+        bujo: {
+          BUL: {
+            task: { ch: '•', done: '✕', cls: 'text-zinc-700 dark:text-zinc-300', label: '任务' },
+            event: { ch: '○', done: '○', cls: 'text-sky-600 dark:text-sky-400', label: '事件' },
+            note: { ch: '–', done: '–', cls: 'text-zinc-400 dark:text-zinc-500', label: '笔记' },
+            priority: { ch: '*', done: '✕', cls: 'text-amber-500 dark:text-amber-400', label: '重要' },
+            inspiration: { ch: '!', done: '!', cls: 'text-violet-500 dark:text-violet-400', label: '灵感' }
+          },
+          view: '', bDate: '', bMonth: '', bBucket: '__later__', bullet: 'task',
+
+          todayStr() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); },
+          shiftDay(s, delta) { const p = s.split('-'); const d = new Date(+p[0], +p[1] - 1, +p[2] + delta); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); },
+          curMonth() { return this.todayStr().slice(0, 7); },
+          shiftMonth(m, delta) { const p = m.split('-'); const d = new Date(+p[0], +p[1] - 1 + delta, 1); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); },
+          esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); },
+          newId() { return 'bj_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); },
+          ensureDb() { const b = XiangKuApp.db.bujo || (XiangKuApp.db.bujo = { future: [], logs: {} }); if (!b.logs) b.logs = {}; if (!Array.isArray(b.future)) b.future = []; return b; },
+          logsFor(date) { const b = this.ensureDb(); if (!b.logs[date]) b.logs[date] = []; return b.logs[date]; },
+          futureArr() { return this.ensureDb().future; },
+          parsePrefix(t) {
+            const m = { '•': 'task', '●': 'task', '○': 'event', '–': 'note', '-': 'note', '*': 'priority', '!': 'inspiration' };
+            const c = t.charAt(0);
+            if (m[c]) return { bullet: m[c], rest: t.slice(1).replace(/^\s+/, '') };
+            return { bullet: '', rest: t };
+          },
+
+          enter() {
+            if (!this.view) { this.view = 'daily'; this.bDate = this.todayStr(); this.bMonth = this.curMonth(); }
+            this.setView(this.view);
+          },
+          openDesktop() {
+            ['tabSectionWorkspace', 'tabSectionNotes', 'tabSectionKnowledge'].forEach(id => { const el = document.getElementById(id); if (el) { el.classList.add('hidden'); el.classList.remove('md:flex'); } });
+            const nik = document.getElementById('tabSectionNik');
+            if (nik) nik.classList.add('hidden');
+            const sec = document.getElementById('tabSectionBuJo');
+            sec.classList.remove('hidden'); sec.classList.add('flex');
+            this.enter();
+          },
+          closeDesktop() {
+            const sec = document.getElementById('tabSectionBuJo');
+            sec.classList.add('hidden'); sec.classList.remove('flex');
+            if (window.innerWidth >= 768) {
+              ['tabSectionWorkspace', 'tabSectionNotes', 'tabSectionKnowledge'].forEach(id => { const el = document.getElementById(id); if (el) { el.classList.remove('hidden'); el.classList.add('md:flex'); } });
+            } else {
+              XiangKuApp.switchMobileTab('notes');
+            }
+          },
+
+          setView(v) {
+            this.view = v;
+            const map = { daily: 'bujoDailyView', monthly: 'bujoMonthlyView', future: 'bujoFutureView' };
+            Object.keys(map).forEach(k => { const el = document.getElementById(map[k]); if (el) el.classList.toggle('hidden', k !== v); });
+            const act = 'h-6 px-2.5 rounded text-[11px] font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900';
+            const nor = 'h-6 px-2.5 rounded text-[11px] text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-zinc-800';
+            Object.keys(map).forEach(k => { const b = document.getElementById('bujoSub' + k.charAt(0).toUpperCase() + k.slice(1)); if (b) b.className = k === v ? act : nor; });
+            this.pickBullet(this.bullet);
+            this.render();
+          },
+          render() {
+            const sec = document.getElementById('tabSectionBuJo');
+            if (!sec || sec.classList.contains('hidden')) return;
+            if (this.view === 'monthly') this.renderMonthly();
+            else if (this.view === 'future') this.renderFuture();
+            else { this.view = 'daily'; this.renderDaily(); }
+          },
+
+          goDay(delta) { this.bDate = this.shiftDay(this.bDate, delta); this.render(); },
+          goToday() { this.bDate = this.todayStr(); this.render(); },
+          setDay(v) { if (v) { this.bDate = v; this.render(); } },
+          goMonth(delta) { this.bMonth = this.shiftMonth(this.bMonth, delta); this.render(); },
+          goCurMonth() { this.bMonth = this.curMonth(); this.render(); },
+          setMonth(v) { if (v) { this.bMonth = v; this.render(); } },
+          setBucket(v) { this.bBucket = v; this.render(); },
+          toggleLegend() { const el = document.getElementById('bujoLegend'); if (el) el.classList.toggle('hidden'); },
+
+          pickBullet(b) {
+            this.bullet = b;
+            const picker = document.getElementById('bujoBulletPicker');
+            if (!picker) return;
+            const active = 'w-6 h-6 rounded text-xs border border-amber-500 text-zinc-900 dark:text-zinc-100 shadow-sm flex items-center justify-center';
+            const idle = 'w-6 h-6 rounded text-xs border border-transparent text-zinc-400 flex items-center justify-center';
+            picker.querySelectorAll('button').forEach(btn => { btn.className = btn.getAttribute('data-b') === b ? active : idle; });
+          },
+
+          renderDaily() {
+            const dayPick = document.getElementById('bujoDayPick');
+            if (dayPick) dayPick.value = this.bDate;
+            const hint = document.getElementById('bujoInputHint');
+            if (hint) hint.innerText = '记入 ' + this.bDate.replace(/-/g, '.') + '：';
+            const label = document.getElementById('bujoDayLabel');
+            const list = document.getElementById('bujoDailyList');
+            const arr = this.logsFor(this.bDate);
+            const isToday = this.bDate === this.todayStr();
+            const openCnt = arr.filter(x => x.status !== 'done').length;
+            if (label) label.innerText = this.bDate.replace(/-/g, '.') + (isToday ? ' · 今天' : '') + (openCnt ? ' · ' + openCnt + ' 项未了' : '');
+            if (!arr.length) { list.innerHTML = '<div class="h-40 flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-500 text-xs gap-1"><i data-lucide="book-open" class="w-5 h-5 text-amber-300 dark:text-amber-700"></i><span>这一天还没有记录 · 用下方符号快速记一条</span></div>'; lucide.createIcons(); return; }
+            list.innerHTML = arr.slice().reverse().map(it => this.rowHtml(this.bDate, it)).join('');
+          },
+
+          rowHtml(date, it) {
+            const meta = this.BUL[it.bullet] || this.BUL.task;
+            const canDo = it.bullet === 'task' || it.bullet === 'priority';
+            const done = it.status === 'done';
+            const ch = done ? meta.done : meta.ch;
+            const chPart = canDo
+              ? '<button onclick="XiangKuApp.modules.bujo.toggle(\'' + date + '\',\'' + it.id + '\')" class="w-4 shrink-0 text-center text-sm leading-none ' + (done ? 'text-emerald-400 dark:text-emerald-500' : meta.cls + ' hover:opacity-60') + '" title="' + (done ? '标记为未完成' : '标记完成') + '">' + ch + '</button>'
+              : '<span class="w-4 shrink-0 text-center text-sm leading-none ' + meta.cls + '" title="' + meta.label + '">' + ch + '</span>';
+            const tPart = '<p class="flex-1 text-xs leading-relaxed whitespace-pre-wrap ' + (done ? 'line-through text-zinc-300 dark:text-zinc-600' : 'text-zinc-700 dark:text-zinc-200') + '">' + this.esc(it.content) + '</p>';
+            const actPart = '<div class="flex items-center shrink-0">'
+              + '<button onclick="XiangKuApp.modules.bujo.migrateDay(\'' + date + '\',\'' + it.id + '\')" class="text-[10px] text-zinc-400 hover:text-sky-600 dark:hover:text-sky-400 px-1" title="迁移到明天">&gt;明</button>'
+              + '<button onclick="XiangKuApp.modules.bujo.migrateMonth(\'' + date + '\',\'' + it.id + '\')" class="text-[10px] text-zinc-400 hover:text-amber-600 dark:hover:text-amber-400 px-1" title="迁移到未来某月 / 待定">&gt;未来</button>'
+              + '<button onclick="XiangKuApp.modules.bujo.del(\'' + date + '\',\'' + it.id + '\')" class="text-[10px] text-zinc-300 hover:text-red-500 px-1" title="删除">删</button></div>';
+            return '<div class="flex items-start gap-2 py-1 border-b border-zinc-100 dark:border-zinc-800/60">' + chPart + tPart + actPart + '</div>';
+          },
+
+          toggle(date, id) {
+            const arr = this.logsFor(date);
+            const it = arr.find(x => x.id === id);
+            if (it) { it.status = it.status === 'done' ? 'open' : 'done'; XiangKuApp.saveStorage(); this.render(); }
+          },
+          migrateDay(date, id) {
+            const arr = this.logsFor(date);
+            const i = arr.findIndex(x => x.id === id);
+            if (i < 0) return;
+            const it = arr.splice(i, 1)[0];
+            it.status = 'open';
+            this.logsFor(this.shiftDay(date, 1)).push(it);
+            XiangKuApp.saveStorage(); this.render();
+          },
+          migrateMonth(date, id) {
+            const arr = this.logsFor(date);
+            const i = arr.findIndex(x => x.id === id);
+            if (i < 0) return;
+            const v = window.prompt('迁移到未来哪个月份？格式 YYYY-MM（留空 = 待定 / 以后）', '');
+            const it = arr.splice(i, 1)[0];
+            it.month = v && /^\d{4}-\d{2}$/.test(v) ? v : null;
+            it.status = 'open'; it.done = false;
+            this.futureArr().push(it);
+            XiangKuApp.saveStorage(); this.render();
+          },
+          del(date, id) {
+            if (!confirm('删除这条子弹记录？')) return;
+            const arr = this.logsFor(date);
+            const i = arr.findIndex(x => x.id === id);
+            if (i >= 0) { arr.splice(i, 1); XiangKuApp.saveStorage(); this.render(); }
+          },
+
+          renderMonthly() {
+            const mp = document.getElementById('bujoMonthPick');
+            if (mp) mp.value = this.bMonth;
+            const hint = document.getElementById('bujoInputHint');
+            if (hint) hint.innerText = '记入 ' + this.bMonth.replace('-', '.') + ' 月度计划（未来记录）：';
+            const b = this.ensureDb();
+            const keys = Object.keys(b.logs).filter(k => k.slice(0, 7) === this.bMonth).sort();
+            const rows = [];
+            let openT = 0, doneT = 0, oth = 0;
+            keys.forEach(k => {
+              (b.logs[k] || []).forEach(it => {
+                const isT = it.bullet === 'task' || it.bullet === 'priority';
+                if (isT) { if (it.status === 'done') doneT++; else openT++; } else oth++;
+                rows.push({ date: k, it: it });
+              });
+            });
+            const fut = this.futureArr().filter(f => (f.month || '') === this.bMonth);
+            const st = document.getElementById('bujoMonthStats');
+            if (st) st.innerText = '任务 ' + (openT + doneT) + ' · 未完 ' + openT + ' / 完成 ' + doneT + (oth ? ' · 其他 ' + oth : '') + (fut.length ? ' · 当月计划 ' + fut.length : '');
+            const list = document.getElementById('bujoMonthlyList');
+            if (!rows.length && !fut.length) { list.innerHTML = '<div class="h-40 flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-500 text-xs gap-1"><span>这个月还没有子弹记录 · 每日里记的会自动汇总到这里</span></div>'; return; }
+            let html = '';
+            let last = '';
+            rows.sort((a, b2) => a.date.localeCompare(b2.date)).forEach(r => {
+              if (r.date !== last) { html += '<div class="mt-2 mb-0.5 text-[10px] font-mono text-zinc-400 dark:text-zinc-500 px-1">' + r.date.replace(/-/g, '.') + '</div>'; last = r.date; }
+              html += this.rowHtml(r.date, r.it);
+            });
+            if (fut.length) {
+              html += '<div class="mt-2 mb-0.5 text-[10px] font-mono text-amber-600 dark:text-amber-400 px-1">当月计划（记在未来记录）</div>';
+              fut.forEach(f => { html += this.futureRow(f); });
+            }
+            list.innerHTML = html;
+          },
+
+          renderFuture() {
+            const fut = this.futureArr();
+            const months = Array.from(new Set(fut.map(f => f.month || '__later__').filter(Boolean)));
+            if (!months.includes('__later__')) months.push('__later__');
+            if (!months.includes(this.shiftMonth(this.curMonth(), 1))) months.push(this.shiftMonth(this.curMonth(), 1));
+            months.sort();
+            if (months.indexOf(this.bBucket) < 0) this.bBucket = months[0];
+            const sel = document.getElementById('bujoBucket');
+            if (sel) {
+              const cur = this.bBucket;
+              sel.innerHTML = months.map(m => '<option value="' + m + '">' + (m === '__later__' ? '待定 · 以后' : m.replace('-', '.') + ' 月') + '</option>').join('');
+              sel.value = cur;
+            }
+            const hint = document.getElementById('bujoInputHint');
+            if (hint) hint.innerText = '记入「' + (this.bBucket === '__later__' ? '待定 · 以后' : this.bBucket.replace('-', '.') + ' 月') + '」：';
+            const st = document.getElementById('bujoFutureStats');
+            const pend = fut.filter(f => !f.done).length;
+            if (st) st.innerText = '未完成 ' + pend + ' 项 · 共 ' + fut.length + ' 项';
+            const list = document.getElementById('bujoFutureList');
+            const arr = fut.filter(f => (f.month || '__later__') === this.bBucket);
+            if (!arr.length) {
+              list.innerHTML = '<div class="h-40 flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-500 text-xs gap-1"><span>' + (this.bBucket === '__later__' ? '待定区空的 · 长期计划、灵感、以后再说的事丢这里' : '这个月还没有未来计划') + '</span></div>';
+              return;
+            }
+            list.innerHTML = arr.map(f => this.futureRow(f)).join('');
+          },
+
+          futureRow(f) {
+            const meta = this.BUL[f.bullet] || this.BUL.task;
+            const canDo = f.bullet === 'task' || f.bullet === 'priority';
+            const done = !!f.done;
+            const ch = done ? (meta.done || meta.ch) : meta.ch;
+            const chPart = canDo
+              ? '<button onclick="XiangKuApp.modules.bujo.toggleFuture(\'' + f.id + '\')" class="w-4 shrink-0 text-center text-sm leading-none ' + (done ? 'text-emerald-400 dark:text-emerald-500' : meta.cls + ' hover:opacity-60') + '" title="' + (done ? '标记未完成' : '标记完成') + '">' + ch + '</button>'
+              : '<span class="w-4 shrink-0 text-center text-sm leading-none ' + meta.cls + '" title="' + meta.label + '">' + ch + '</span>';
+            const tPart = '<p class="flex-1 text-xs leading-relaxed whitespace-pre-wrap ' + (done ? 'line-through text-zinc-300 dark:text-zinc-600' : 'text-zinc-700 dark:text-zinc-200') + '">' + this.esc(f.content) + '</p>';
+            const actPart = '<div class="flex items-center shrink-0">'
+              + '<button onclick="XiangKuApp.modules.bujo.schedule(\'' + f.id + '\')" class="text-[10px] text-zinc-400 hover:text-sky-600 dark:hover:text-sky-400 px-1" title="排期到某一天">&gt;排期</button>'
+              + '<button onclick="XiangKuApp.modules.bujo.delFuture(\'' + f.id + '\')" class="text-[10px] text-zinc-300 hover:text-red-500 px-1" title="删除">删</button></div>';
+            return '<div class="flex items-start gap-2 py-1 border-b border-zinc-100 dark:border-zinc-800/60">' + chPart + tPart + actPart + '</div>';
+          },
+
+          toggleFuture(id) {
+            const f = this.futureArr().find(x => x.id === id);
+            if (f) { f.done = !f.done; XiangKuApp.saveStorage(); this.render(); }
+          },
+          schedule(id) {
+            const fut = this.futureArr();
+            const i = fut.findIndex(x => x.id === id);
+            if (i < 0) return;
+            const v = window.prompt('安排到哪一天？格式 YYYY-MM-DD（留空 = 明天）', '');
+            const date = v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : this.shiftDay(this.todayStr(), 1);
+            const it = fut.splice(i, 1)[0];
+            it.done = false; it.status = 'open'; delete it.month;
+            this.logsFor(date).push(it);
+            XiangKuApp.saveStorage(); this.render();
+          },
+          delFuture(id) {
+            if (!confirm('删除这条未来记录？')) return;
+            const fut = this.futureArr();
+            const i = fut.findIndex(x => x.id === id);
+            if (i >= 0) { fut.splice(i, 1); XiangKuApp.saveStorage(); this.render(); }
+          },
+
+          handleSubmit(e) {
+            e.preventDefault();
+            const input = document.getElementById('bujoInput');
+            if (!input) return;
+            const raw = input.value.trim();
+            if (!raw) return;
+            const pd = this.parsePrefix(raw);
+            const bullet = pd.bullet || this.bullet;
+            const content = pd.bullet ? pd.rest : raw;
+            const item = { id: this.newId(), bullet: bullet, status: 'open', done: false, content: content, t: Date.now() };
+            if (this.view === 'monthly') {
+              item.month = this.bMonth;
+              this.futureArr().push(item);
+            } else if (this.view === 'future') {
+              item.month = this.bBucket === '__later__' ? null : this.bBucket;
+              this.futureArr().push(item);
+            } else {
+              this.logsFor(this.bDate || this.todayStr()).push(item);
+            }
+            input.value = '';
+            XiangKuApp.saveStorage();
+            this.render();
+            input.focus();
           }
         }
       }
