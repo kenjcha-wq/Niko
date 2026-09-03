@@ -377,6 +377,30 @@
     var d = new Date(ts), p = function (n) { return n < 10 ? '0' + n : n; };
     return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
   }
+  function fmtBytes(n) {
+    if (n === undefined || n === null) return '?';
+    if (n < 1024) return n + 'B';
+    if (n < 1048576) return (n / 1024).toFixed(1) + 'KB';
+    return (n / 1048576).toFixed(1) + 'MB';
+  }
+  /* 云端核查：读取 Gitee 上真实文件，返回 是否存在/大小/上次上传时间与设备/各分块体积 */
+  function inspectCloud() {
+    if (!valid()) { lastErr = '同步未配置：请先填齐 用户名/仓库/令牌'; warn(lastErr); return Promise.resolve(null); }
+    return apiGet(filePath()).then(function (remote) {
+      if (!remote) return { exists: false };
+      var obj = parseRemote(remote), sizes = {}, total = 0, raw = 0;
+      if (obj && obj.data) {
+        Object.keys(obj.data).forEach(function (k) { var b = String(obj.data[k] || '').length; sizes[k] = b; total += b; });
+      }
+      if (remote.size != null) raw = remote.size;
+      return {
+        exists: true, bytes: raw || total, dataBytes: total,
+        ts: (obj && obj.meta && obj.meta.ts) || 0,
+        device: (obj && obj.meta && obj.meta.device) || '',
+        keys: sizes, sha: remote.sha
+      };
+    }).catch(function (e) { lastErr = (e && e.message) || String(e); warn('查看云端失败：', lastErr); return null; });
+  }
   function buildPanel() {
     var c = getCfg(), st = status();
     var p = document.createElement('div');
@@ -389,7 +413,7 @@
       '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">' +
       '<b style="font-size:14px">云同步 · Gitee</b>' +
       '<span onclick="NikSync.hideSyncUI()" style="cursor:pointer;font-size:16px;line-height:1;color:#8a8578">×</span></div>' +
-      '<div style="font-size:11px;color:#8a8578;margin-bottom:10px">' + esc(stTxt) + ' · 上次同步 ' + fmtTs(st.ts) + '</div>' +
+      '<div style="font-size:11px;color:#8a8578;margin-bottom:10px">' + esc(stTxt) + ' · 上次同步 ' + fmtTs(st.ts) + (st.device ? '（' + esc(st.device) + '）' : '') + '</div>' +
       row('Gitee 用户名', 'niksync-owner', c.owner, '用户名') +
       row('仓库名', 'niksync-repo', c.repo, '如 data-sync') +
       row('本设备名', 'niksync-device', c.device, '可选，如 macbook') +
@@ -402,8 +426,9 @@
       '<button onclick="NikSync.saveFromPanel()" style="flex:1;padding:8px;border:none;border-radius:9px;background:#26221c;color:#f5f1e6;font-size:12px;cursor:pointer;font-weight:600">保存并上传</button>' +
       '<button onclick="NikSync.downloadNow()" style="flex:1;padding:8px;border:1px solid #d8d2c4;border-radius:9px;background:#fff;color:#26221c;font-size:12px;cursor:pointer">下载到本机</button></div>' +
       '<button onclick="NikSync.createAndSync()" style="width:100%;margin-top:8px;padding:8px;border:1px dashed #a8a18d;border-radius:9px;background:#f4f1e8;color:#26221c;font-size:12px;cursor:pointer">⚡ 首次使用：一键建私有仓库并上传（需已填令牌）</button>' +
+      '<button onclick="NikSync.inspectUI()" style="width:100%;margin-top:6px;padding:8px;border:1px solid #d8d2c4;border-radius:9px;background:#fff;color:#26221c;font-size:12px;cursor:pointer">🔍 查看云端状态（确认是否真的传上去了）</button>' +
       '<div style="font-size:10px;color:#a29b8c;margin-top:10px;line-height:1.6">数据存进 Gitee 私有仓库的 data/' + esc(c.app || 'app') + '.json，自带版本历史。令牌只存本浏览器。多设备填同一仓库即可互相同步。</div>' +
-      '<div id="niksync-msg" style="font-size:11px;color:#1d9e75;margin-top:6px;min-height:14px"></div>';
+      '<div id="niksync-msg" style="font-size:11px;color:#1d9e75;margin-top:6px;min-height:14px;white-space:pre-line"></div>';
     return p;
   }
   function row(label, id, val, ph) {
@@ -440,15 +465,39 @@
     saveCfg(readPanel());
     lastErr = null;
     msg('已保存，正在上传…', true);
-    pushNow().then(function (ok) { msg(ok ? '上传成功 ✓' : '上传失败：' + (lastErr || '检查配置/网络'), ok); });
+    pushNow().then(function (ok) { msg(ok ? '上传成功 ✓（点「查看云端状态」可核对真伪）' : '上传失败：' + (lastErr || '检查配置/网络'), ok); });
   }
   function downloadNow() {
     saveCfg(readPanel());
     lastErr = null;
     msg('正在下载…', true);
     pullNow(false).then(function (ok) {
-      if (ok) { msg('已下载并应用 ✓', true); setTimeout(function () { location.reload(); }, 600); }
-      else msg('下载失败：' + (lastErr || '无更新或网络异常'), false);
+      if (ok) {
+        msg('已下载并应用 ✓', true);
+        setTimeout(function () {
+          /* 宿主若提供静默刷新钩子（如 Alter-Note）则不整页刷新，避免跳回首页 */
+          if (typeof window.AlterRefresh === 'function') { try { window.AlterRefresh(); } catch (e) {} }
+          else location.reload();
+        }, 600);
+      } else if (lastErr) msg('下载失败：' + lastErr, false);
+      else msg('云端与本机一致，没有新内容（刚上传完就下载，这是正常的）', true);
+    });
+  }
+  function inspectUI() {
+    saveCfg(readPanel());
+    lastErr = null;
+    msg('正在读取云端真实文件…', true);
+    inspectCloud().then(function (r) {
+      if (r === null) { msg('读取失败：' + (lastErr || '网络异常'), false); return; }
+      if (!r.exists) {
+        msg('⚠ 云端还没有这个文件 —— 说明从未上传成功过。\n点「保存并上传」后再回来点这里核对。', false);
+        return;
+      }
+      var lines = ['✓ 云端文件真实存在：' + fmtBytes(r.bytes)];
+      lines.push('上次上传：' + fmtTs(r.ts) + (r.device ? '（' + r.device + '）' : ''));
+      var ks = Object.keys(r.keys);
+      if (ks.length) lines.push('内容分块：' + ks.map(function (k) { return k + ' ' + fmtBytes(r.keys[k]); }).join('、'));
+      msg(lines.join('\n'), true);
     });
   }
   function createAndSync() {
@@ -504,6 +553,7 @@
     status: status, configured: configured, setAdapter: function (a) { ADAPTER = a; },
     showSyncUI: showSyncUI, hideSyncUI: hideSyncUI, saveFromPanel: saveFromPanel,
     downloadNow: downloadNow, ensureFAB: ensureFAB, createRepo: createRepo,
-    createAndSync: createAndSync
+    createAndSync: createAndSync, inspectCloud: inspectCloud, inspectUI: inspectUI,
+    getLastErr: function () { return lastErr; }
   };
 })(window);
