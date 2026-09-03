@@ -572,7 +572,12 @@
     fabEl.id = 'niksync-fab';
     fabEl.textContent = '☁';
     fabEl.title = '云同步设置';
-    fabEl.style.cssText = 'position:fixed;top:12px;right:12px;z-index:2147482000;width:34px;height:34px;border-radius:50%;background:#26221c;color:#f5f1e6;display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer;opacity:.55;box-shadow:0 2px 8px rgba(0,0,0,.2);font-family:sans-serif';
+    /* 位置默认放视口左缘、中下部（原右上角会压住各应用 header 的 设置/关闭/资料库
+     * 等按钮；底部又会压输入区/底栏）。桌面抬到 96px 避开左侧栏底部指标，移动端
+     * 抬到 128px 避开底部导航栏与输入条。 */
+    var isM = typeof window.matchMedia === 'function' && window.matchMedia('(max-width:767px)').matches;
+    var pos = isM ? 'bottom:128px;left:12px' : 'bottom:96px;left:16px';
+    fabEl.style.cssText = 'position:fixed;' + pos + ';z-index:2147482000;width:34px;height:34px;border-radius:50%;background:#26221c;color:#f5f1e6;display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer;opacity:.55;box-shadow:0 2px 8px rgba(0,0,0,.2);font-family:sans-serif';
     fabEl.addEventListener('click', function (e) { e.stopPropagation(); showSyncUI(); });
     document.body.appendChild(fabEl);
   }
