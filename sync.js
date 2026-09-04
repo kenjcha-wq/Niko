@@ -574,12 +574,21 @@
     fabEl.title = '云同步设置';
     /* 位置默认放视口左缘、中下部（原右上角会压住各应用 header 的 设置/关闭/资料库
      * 等按钮；底部又会压输入区/底栏）。桌面抬到 96px 避开左侧栏底部指标，移动端
-     * 抬到 128px 避开底部导航栏与输入条。 */
+     * 抬到 128px 避开底部导航栏与输入条。
+     * 宿主可在 init 配置里传 fab:{m:'移动端css位置', d:'桌面css位置'} 覆盖默认
+     * （如 Alter-Note 左侧有常驻图标栏，需挪到右缘）。 */
+    var c = getCfg();
     var isM = typeof window.matchMedia === 'function' && window.matchMedia('(max-width:767px)').matches;
-    var pos = isM ? 'bottom:128px;left:12px' : 'bottom:96px;left:16px';
+    var defPos = isM ? 'bottom:128px;left:12px' : 'bottom:96px;left:16px';
+    var fabCfg = (c && c.fab) || {};
+    var pos = fabCfg[isM ? 'm' : 'd'] || defPos;
     fabEl.style.cssText = 'position:fixed;' + pos + ';z-index:2147482000;width:34px;height:34px;border-radius:50%;background:#26221c;color:#f5f1e6;display:flex;align-items:center;justify-content:center;font-size:15px;cursor:pointer;opacity:.55;box-shadow:0 2px 8px rgba(0,0,0,.2);font-family:sans-serif';
     fabEl.addEventListener('click', function (e) { e.stopPropagation(); showSyncUI(); });
     document.body.appendChild(fabEl);
+  }
+  /* 宿主浮层（如 AI 面板）打开时可临时隐藏悬浮球，避免浮在上面挡操作 */
+  function setFabVisible(v) {
+    if (fabEl) fabEl.style.display = v ? '' : 'none';
   }
 
   global.NikSync = {
@@ -587,8 +596,8 @@
     pullNow: pullNow, autoPull: autoPull, cfg: cfg, save: save,
     status: status, configured: configured, setAdapter: function (a) { ADAPTER = a; },
     showSyncUI: showSyncUI, hideSyncUI: hideSyncUI, saveFromPanel: saveFromPanel,
-    downloadNow: downloadNow, ensureFAB: ensureFAB, createRepo: createRepo,
-    createAndSync: createAndSync, inspectCloud: inspectCloud, inspectUI: inspectUI,
-    getLastErr: function () { return lastErr; }
+downloadNow: downloadNow, ensureFAB: ensureFAB, createRepo: createRepo,
+createAndSync: createAndSync, inspectCloud: inspectCloud, inspectUI: inspectUI,
+setFabVisible: setFabVisible, getLastErr: function () { return lastErr; }
   };
 })(window);
