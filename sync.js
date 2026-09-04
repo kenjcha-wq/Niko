@@ -342,9 +342,16 @@
       if (mergeMode()) {
         /* 合并模式：云端与本机改动三方合并，新增互不覆盖 */
         target = mergeData(getBaseData() || {}, await collectLocal(), obj.data, remoteTs > m.ts);
-      } else if (!silent && m.pending && remoteTs > m.ts) {
-        var ok = global.confirm('本机有未上传改动，云端也有更新。\n用云端覆盖将丢失本机改动，确定继续？');
-        if (!ok) return false;
+      } else {
+        /* 朴素覆盖模式（merge:false）：下载 = 云端整份覆盖本机。
+         * 静默拉取（页面启动 autoPull）只在云端确实比本机上次同步点新时执行，
+         * 避免每次开页面都用旧云端把本机较新数据/未上传改动吞掉。
+         * 手动下载（downloadNow）仍是无条件取云端，但本机有待上传改动时先确认。 */
+        if (silent && !(remoteTs > m.ts)) { log('云端未更新，跳过自动拉取'); return false; }
+        if (!silent && m.pending) {
+          var ok = global.confirm('本机有未上传的改动，下载将用云端数据覆盖它们。\n确定继续？（想保留本机改动请先点「保存并上传」）');
+          if (!ok) return false;
+        }
       }
       var changed = await applyRemote(target);
       if (mergeMode()) setBaseData(target);
