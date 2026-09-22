@@ -1,0 +1,3287 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title id="htmlTitle">象库 · 轻工作台</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com">
+
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+    }
+  </script>
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <!-- PDF.js 纯前端解析库 -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <!-- Mammoth.js：docx 解析（含表格） -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  <!-- SheetJS：xlsx / xls / csv 解析（表格结构化） -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+  <script>
+    if (window.pdfjsLib) {
+      window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+  
+
+// ── 象元轻OS 能力桥注册 ──
+if (window.xianglan && typeof window.xianglan.register === 'function') {
+  window.xianglan.register({
+    description: '工作台（Niko）：个人工作流/知识库/经验方法能力库/子弹笔记 BuJo 的记录与检索。模型通过本桥存取工作台数据，写操作都走应用自己的表单与保存通道。',
+    settings: [
+      { key:'aiBase', label:'接口地址', type:'text', def:'https://api.deepseek.com/v1', hint:'留空则用系统统一配置' },
+      { key:'aiKey', label:'接口 Key', type:'secret', hint:'留空则用系统统一配置（只存宿主，不给 AI 看）' },
+      { key:'aiModel', label:'模型', type:'text', def:'deepseek-chat' }
+    ],
+    actions: {
+      // ── 查询工作流记录 ──
+      query_notes: {
+        description: '查询工作流记录（只读）。可按分类、关键词、日期范围筛选。返回记录列表。',
+        params: {
+          category: { type: 'string', description: '分类过滤，取值：log/progress/issue/insight；不传=全部', required: false },
+          keyword: { type: 'string', description: '关键词，匹配标题或内容，可选', required: false },
+          dateFrom: { type: 'string', description: '起始日期 YYYY-MM-DD，可选', required: false },
+          dateTo: { type: 'string', description: '结束日期 YYYY-MM-DD，可选', required: false },
+          limit: { type: 'number', description: '返回条数，默认 20，上限 50，可选', required: false }
+        },
+        run: async function (args) {
+          var a = args || {};
+          var limit = Math.min(50, Math.max(1, parseInt(a.limit) || 20));
+          
+          // 获取工作流记录
+          var notes = XiangKuApp.db.notes || [];
+          
+          // 过滤
+          var filtered = notes.filter(function(note) {
+            // 分类过滤
+            if (a.category && note.category !== a.category) return false;
+            
+            // 关键词过滤
+            if (a.keyword) {
+              var kw = a.keyword.toLowerCase();
+              var title = (note.title || '').toLowerCase();
+              var content = (note.content || '').toLowerCase();
+              if (title.indexOf(kw) === -1 && content.indexOf(kw) === -1) return false;
+            }
+            
+            // 日期范围过滤
+            if (a.dateFrom || a.dateTo) {
+              var noteDate = note.date || '';
+              if (a.dateFrom && noteDate < a.dateFrom) return false;
+              if (a.dateTo && noteDate > a.dateTo) return false;
+            }
+            
+            return true;
+          });
+          
+          // 排序（最新的在前）
+          filtered.sort(function(a, b) { return (b.id || 0) - (a.id || 0); });
+          
+          // 限制条数
+          var result = filtered.slice(0, limit);
+          
+          return {
+            total: filtered.length,
+            returned: result.length,
+            notes: result.map(function(note) {
+              return {
+                id: note.id,
+                title: note.title || '',
+                content: (note.content || '').substring(0, 200),
+                category: note.category || 'log',
+                date: note.date || '',
+                createdAt: note.createdAt || ''
+              };
+            })
+          };
+        }
+      },
+
+      // ── 编辑工作流记录 ──
+      edit_note: {
+        description: '编辑已有工作流记录的标题、内容和/或分类（写）。noteId 必填，来自 query_notes。title、content、category 至少传一个；不传的字段不改。',
+        params: {
+          noteId: { type: 'string', description: '目标记录 id，必填，来自 query_notes 返回', required: true },
+          title: { type: 'string', description: '新的记录标题，可选；不传则不改标题', required: false },
+          content: { type: 'string', description: '新的记录内容，可选，上限 4000 字；不传则不改内容', required: false },
+          category: { type: 'string', description: '新的记录分类，可选，取值：log/progress/issue/insight', required: false }
+        },
+        run: async function (args) {
+          var a = args || {};
+          if (!a.noteId) throw new Error('edit_note 缺少必填参数 noteId');
+          if (a.title === undefined && a.content === undefined && a.category === undefined) 
+            throw new Error('edit_note 至少需要 title、content 或 category 之一');
+          
+          // 查找记录
+          var notes = XiangKuApp.db.notes || [];
+          var note = null;
+          for (var i = 0; i < notes.length; i++) {
+            if (String(notes[i].id) === String(a.noteId)) {
+              note = notes[i];
+              break;
+            }
+          }
+          
+          if (!note) throw new Error('未找到 id=' + a.noteId + ' 的记录');
+          
+          // 修改字段
+          if (a.title !== undefined && a.title !== null) {
+            note.title = String(a.title).trim();
+          }
+          if (a.content !== undefined && a.content !== null) {
+            var newContent = String(a.content).trim();
+            if (newContent.length > 4000) throw new Error('content 超长（' + newContent.length + ' 字，上限 4000）');
+            note.content = newContent;
+          }
+          if (a.category !== undefined && a.category !== null) {
+            var validCategories = ['log', 'progress', 'issue', 'insight'];
+            if (validCategories.indexOf(a.category) === -1) throw new Error('category 必须是：' + validCategories.join('/'));
+            note.category = a.category;
+          }
+          
+          note.updatedAt = Date.now();
+          XiangKuApp.saveStorage();
+          
+          return {
+            id: note.id,
+            title: note.title || '',
+            content: (note.content || '').substring(0, 200),
+            category: note.category || 'log',
+            date: note.date || '',
+            verified: true
+          };
+        }
+      },
+
+      // ── 删除工作流记录 ──
+      delete_note: {
+        description: '删除一条工作流记录（写）。noteId 必填，来自 query_notes。默认软删除（标记 deleted）；传 permanent:true 则永久删除（不可恢复）。',
+        params: {
+          noteId: { type: 'string', description: '目标记录 id，必填，来自 query_notes 返回', required: true },
+          permanent: { type: 'boolean', description: '是否永久删除，默认 false（软删除）；true=永久删除不可恢复，可选', required: false }
+        },
+        run: async function (args) {
+          var a = args || {};
+          if (!a.noteId) throw new Error('delete_note 缺少必填参数 noteId');
+          
+          // 查找记录
+          var notes = XiangKuApp.db.notes || [];
+          var noteIndex = -1;
+          for (var i = 0; i < notes.length; i++) {
+            if (String(notes[i].id) === String(a.noteId)) {
+              noteIndex = i;
+              break;
+            }
+          }
+          
+          if (noteIndex === -1) throw new Error('未找到 id=' + a.noteId + ' 的记录');
+          
+          var note = notes[noteIndex];
+          
+          if (a.permanent) {
+            // 永久删除：从数组中移除
+            notes.splice(noteIndex, 1);
+            XiangKuApp.saveStorage();
+            return {
+              id: a.noteId,
+              permanent: true,
+              verified: true,
+              note: '记录已永久删除，不可恢复'
+            };
+          } else {
+            // 软删除：标记 deleted
+            note.deleted = true;
+            note.deletedAt = Date.now();
+            XiangKuApp.saveStorage();
+            return {
+              id: a.noteId,
+              permanent: false,
+              verified: true,
+              note: '记录已标记为删除（软删除）'
+            };
+          }
+        }
+      }
+    }
+  });
+}
+</script>
+  <style>
+    body {
+      font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+      -webkit-tap-highlight-color: transparent;
+    }
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(156, 163, 175, 0.4);
+      border-radius: 2px;
+    }
+
+    /* 背景纹理 */
+    .bg-theme-plain { background-image: none; }
+    .bg-theme-grid {
+      background-size: 20px 20px;
+      background-image: linear-gradient(to right, rgba(120, 120, 120, 0.08) 1px, transparent 1px),
+                        linear-gradient(to bottom, rgba(120, 120, 120, 0.08) 1px, transparent 1px);
+    }
+    .dark .bg-theme-grid {
+      background-image: linear-gradient(to right, rgba(255, 255, 255, 0.04) 1px, transparent 1px),
+                        linear-gradient(to bottom, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
+    }
+    .bg-theme-dots {
+      background-size: 16px 16px;
+      background-image: radial-gradient(rgba(120, 120, 120, 0.15) 1px, transparent 1px);
+    }
+    .dark .bg-theme-dots {
+      background-image: radial-gradient(rgba(255, 255, 255, 0.08) 1px, transparent 1px);
+    }
+    .bg-theme-paper { background-color: #f4f1ea !important; }
+    .dark .bg-theme-paper { background-color: #121314 !important; }
+
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+    /* 悬浮球脉冲动画 */
+    @keyframes float-pulse {
+      0%, 100% { transform: scale(1); opacity: 0.6; }
+      50% { transform: scale(1.15); opacity: 0.2; }
+    }
+    .float-ring {
+      animation: float-pulse 2s ease-in-out infinite;
+    }
+
+    /* 文档模式 Markdown 预览排版 */
+    #kbDocPreview h1 { font-size: 1.5rem; font-weight: 700; margin: 0.8rem 0 0.5rem; }
+    #kbDocPreview h2 { font-size: 1.25rem; font-weight: 600; margin: 0.7rem 0 0.4rem; }
+    #kbDocPreview h3 { font-size: 1.05rem; font-weight: 600; margin: 0.6rem 0 0.3rem; }
+    #kbDocPreview h4, #kbDocPreview h5, #kbDocPreview h6 { font-weight: 600; margin: 0.5rem 0 0.3rem; }
+    #kbDocPreview p { margin: 0.4rem 0; }
+    #kbDocPreview ul { list-style: disc; padding-left: 1.4rem; margin: 0.4rem 0; }
+    #kbDocPreview ol { list-style: decimal; padding-left: 1.4rem; margin: 0.4rem 0; }
+    #kbDocPreview table { border-collapse: collapse; margin: 0.6rem 0; font-size: 0.82rem; }
+    #kbDocPreview th, #kbDocPreview td { border: 1px solid rgba(120,120,120,0.35); padding: 0.3rem 0.6rem; }
+    #kbDocPreview th { background: rgba(120,120,120,0.12); font-weight: 600; }
+    #kbDocPreview pre { background: rgba(120,120,120,0.1); padding: 0.7rem; border-radius: 0.4rem; overflow-x: auto; margin: 0.5rem 0; }
+    #kbDocPreview code { background: rgba(120,120,120,0.12); padding: 0.1rem 0.3rem; border-radius: 0.25rem; font-size: 0.85em; }
+    #kbDocPreview pre code { background: none; padding: 0; }
+  </style>
+</head>
+<body id="mainBody" class="bg-[#F8F9FA] dark:bg-[#121212] text-[#1A1A1A] dark:text-[#EDEDED] font-sans antialiased h-[100dvh] flex flex-col overflow-hidden select-none transition-colors duration-200 bg-theme-plain">
+
+  <!-- 隐藏的数据导入 input -->
+  <input type="file" id="importFileInput" accept=".json" class="hidden" onchange="XiangKuApp.handleImportFile(event)" />
+
+  <!-- ================= 顶部状态栏 (TOP BAR) ================= -->
+  <header class="h-12 bg-white/95 dark:bg-[#181818]/95 backdrop-blur border-b border-zinc-200/80 dark:border-zinc-800 px-3 md:px-4 flex items-center justify-between shrink-0 z-20 gap-2">
+    <div class="flex items-center gap-1.5 shrink-0">
+      <div class="flex items-center gap-1.5 cursor-pointer" onclick="XiangKuApp.modules.workspace.select('all')">
+        <div class="w-6 h-6 rounded bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 flex items-center justify-center font-bold text-xs tracking-tighter shrink-0">
+          象
+        </div>
+        <span id="topAppName" class="font-semibold text-xs tracking-wider text-zinc-900 dark:text-zinc-100 truncate">象库</span>
+      </div>
+      <div class="hidden sm:block h-3.5 w-px bg-zinc-200 dark:bg-zinc-700 mx-1"></div>
+      <div class="hidden sm:flex items-center gap-1 text-[11px] text-zinc-500 dark:text-zinc-400 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 px-2 py-0.5 rounded">
+        <i data-lucide="folder" class="w-3 h-3 text-zinc-400"></i>
+        <span id="currentWorkspaceBadge" class="font-medium text-zinc-700 dark:text-zinc-200 truncate max-w-[90px]">全部工作域</span>
+      </div>
+    </div>
+
+    <!-- 顶部快捷操作 -->
+    <div class="flex items-center gap-1.5 md:gap-2 overflow-x-auto no-scrollbar py-1">
+      <!-- 全局检索 -->
+      <div class="relative flex items-center shrink-0">
+        <i data-lucide="search" class="w-3.5 h-3.5 absolute left-2 text-zinc-400"></i>
+        <input 
+          type="text" 
+          id="globalSearchInput" 
+          oninput="XiangKuApp.handleSearch()" 
+          placeholder="全局检索 (/) " 
+          class="w-20 sm:w-28 md:w-36 h-7 pl-6 pr-2 text-xs bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none focus:border-zinc-400 text-zinc-800 dark:text-zinc-100 transition-all placeholder:text-zinc-400"
+        />
+      </div>
+
+      <!-- 个人资料库入口 -->
+      <button 
+        onclick="XiangKuApp.modules.profileVault.toggleDrawer()" 
+        title="个人资料库"
+        class="hidden md:flex h-7 items-center gap-1 text-xs px-2.5 rounded border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium shrink-0 bg-white dark:bg-zinc-800 shadow-sm"
+      >
+        <i data-lucide="user-check" class="w-3.5 h-3.5 text-zinc-500 dark:text-zinc-400"></i>
+        <span>个人资料库</span>
+      </button>
+
+      <!-- 智能体中心入口 -->
+      <button 
+        onclick="XiangKuApp.modules.agent.toggleDrawer()" 
+        title="智能体与自动化中枢"
+        class="h-7 flex items-center gap-1 text-xs px-2.5 rounded border border-purple-200 dark:border-purple-900 bg-purple-50/50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 shrink-0 font-medium shadow-sm"
+      >
+        <i data-lucide="cpu" class="w-3.5 h-3.5 text-purple-600 dark:text-purple-400"></i>
+        <span class="hidden sm:inline">智能体</span>
+      </button>
+
+      <!-- 子弹笔记入口 -->
+      <button 
+        onclick="XiangKuApp.modules.bujo.openDesktop()" 
+        title="子弹笔记（独立手账系统：每日/月度/未来）"
+        class="hidden md:flex h-7 items-center gap-1 text-xs px-2.5 rounded border border-amber-200 dark:border-amber-900 bg-amber-50/60 dark:bg-amber-950/30 text-amber-700 dark:text-amber-300 shrink-0 font-medium shadow-sm"
+      >
+        <i data-lucide="book-open" class="w-3.5 h-3.5 text-amber-600 dark:text-amber-400"></i>
+        <span>子弹笔记</span>
+      </button>
+
+      <!-- 昼夜模式 -->
+      <button 
+        onclick="XiangKuApp.toggleDarkMode()" 
+        title="切换夜晚/日间模式"
+        class="w-7 h-7 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded flex items-center justify-center shrink-0"
+      >
+        <i data-lucide="moon" id="darkModeIcon" class="w-3.5 h-3.5"></i>
+      </button>
+
+      <!-- 飞书同步 -->
+      <button 
+        onclick="XiangKuApp.modules.feishu.syncToFeishu()" 
+        title="同步飞书"
+        class="h-7 flex items-center gap-1 text-xs px-2 rounded border border-blue-200 dark:border-blue-900 bg-blue-50/50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 shrink-0 font-medium"
+      >
+        <i data-lucide="send" class="w-3.5 h-3.5 text-blue-600 dark:text-blue-400"></i>
+        <span class="hidden sm:inline">同步</span>
+      </button>
+
+      <!-- 设置入口 -->
+      <button 
+        onclick="XiangKuApp.modules.settings.openModal()" 
+        title="设置"
+        class="w-7 h-7 border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-50 dark:hover:bg-zinc-800 rounded flex items-center justify-center shrink-0"
+      >
+        <i data-lucide="settings" class="w-3.5 h-3.5"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- ================= 首页三大工作台 ================= -->
+  <main class="flex-1 grid grid-cols-1 md:grid-cols-12 gap-0 overflow-hidden relative">
+    
+    <!-- 1. 【工作空间 工作台】 -->
+    <aside id="tabSectionWorkspace" class="mobile-tab-section hidden md:flex md:col-span-2 border-r border-zinc-200/80 dark:border-zinc-800 bg-[#FAFAFA]/95 dark:bg-[#141414]/95 flex-col justify-between overflow-hidden h-full">
+      <div class="flex-1 flex flex-col overflow-hidden">
+        <div class="p-3 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between text-xs font-semibold text-zinc-400 dark:text-zinc-500 tracking-wider">
+          <span>工作空间 / 目录</span>
+          <button onclick="XiangKuApp.modules.workspace.openCreateModal()" class="w-6 h-6 flex items-center justify-center hover:text-zinc-800 dark:hover:text-zinc-200 text-zinc-400 rounded hover:bg-zinc-200/50 dark:hover:bg-zinc-800" title="新建工作空间">
+            <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+        <div id="workspaceList" class="flex-1 overflow-y-auto p-2 space-y-1">
+          <!-- 动态渲染空间列表 -->
+        </div>
+      </div>
+
+      <!-- 底部系统指标 -->
+      <div class="p-3 border-t border-zinc-200/80 dark:border-zinc-800 bg-white/80 dark:bg-[#181818]/80 text-[11px] text-zinc-400 dark:text-zinc-500 flex flex-col gap-1">
+        <div class="flex justify-between">
+          <span>工作活跃记录</span>
+          <span id="statNotesCount" class="font-mono text-zinc-700 dark:text-zinc-300 font-medium">0</span>
+        </div>
+        <div class="flex justify-between">
+          <span>已归档历史</span>
+          <span id="statArchivedCount" class="font-mono text-zinc-700 dark:text-zinc-300 font-medium">0</span>
+        </div>
+        <div class="flex justify-between">
+          <span>知识库条目</span>
+          <span id="statKnowledgeCount" class="font-mono text-zinc-700 dark:text-zinc-300 font-medium">0</span>
+        </div>
+      </div>
+    </aside>
+
+    <!-- 2. 【工作流 工作台】 -->
+    <section id="tabSectionNotes" class="mobile-tab-section flex md:col-span-5 border-r border-zinc-200/80 dark:border-zinc-800 flex-col bg-white/95 dark:bg-[#181818]/95 overflow-hidden h-full">
+      <!-- 快速录入区 -->
+      <div class="p-2.5 md:p-3 border-b border-zinc-200/80 dark:border-zinc-800 bg-zinc-50/60 dark:bg-zinc-900/60 shrink-0">
+        <div class="flex items-center justify-between mb-1.5 gap-2">
+          <span class="text-xs font-semibold text-zinc-600 dark:text-zinc-300 flex items-center gap-1.5 shrink-0">
+            <i data-lucide="zap" class="w-3.5 h-3.5 text-zinc-400"></i>
+            快速知识捕获
+          </span>
+          <div class="flex items-center gap-1.5">
+            <input 
+              type="date" 
+              id="quickInputDate" 
+              class="h-6 text-[10px] bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded px-1.5 text-zinc-600 dark:text-zinc-300 focus:outline-none"
+            />
+            <select id="quickTypeSelect" class="h-6 text-[11px] bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded px-1.5 text-zinc-600 dark:text-zinc-300 focus:outline-none">
+            </select>
+          </div>
+        </div>
+        <form onsubmit="XiangKuApp.modules.notes.handleSubmit(event)" class="space-y-1.5">
+          <textarea 
+            id="quickInputContent" 
+            rows="2" 
+            placeholder="随时记录正在推进的事、异常、参数或现场心得..." 
+            class="w-full text-xs p-2 bg-white dark:bg-zinc-800/90 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none focus:border-zinc-400 dark:focus:border-zinc-500 transition-all resize-none leading-relaxed placeholder:text-zinc-400 dark:placeholder:text-zinc-500 text-zinc-800 dark:text-zinc-100"
+            required
+            onkeydown="if((event.ctrlKey||event.metaKey)&&event.keyCode===13){XiangKuApp.modules.notes.handleSubmit(event);}"
+          ></textarea>
+          <div class="flex items-center justify-between pt-0.5">
+            <input 
+              type="text" 
+              id="quickInputTags" 
+              placeholder="#标签 (例如: #巡检)" 
+              class="text-[11px] bg-transparent border-none focus:outline-none text-zinc-600 dark:text-zinc-400 w-36 md:w-56 placeholder:text-zinc-400 dark:placeholder:text-zinc-500"
+            />
+            <button 
+              type="submit" 
+              class="h-7 text-xs bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-3 rounded hover:bg-zinc-800 dark:hover:bg-white font-medium flex items-center gap-1 shadow-sm"
+            >
+              <span>沉淀记录</span>
+              <i data-lucide="corner-down-left" class="w-3 h-3 text-zinc-400 dark:text-zinc-600"></i>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- 工作流分类过滤 -->
+      <div class="px-2.5 md:px-3 py-1.5 bg-white/90 dark:bg-[#181818]/90 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between gap-1 text-[11px] shrink-0">
+        <div id="notesTabsContainer" class="flex items-center gap-1 overflow-x-auto no-scrollbar flex-1">
+        </div>
+        <div class="flex items-center gap-1 shrink-0 ml-1">
+          <button 
+            id="notesArchiveToggleBtn"
+            onclick="XiangKuApp.modules.notes.toggleArchiveView()"
+            class="h-6 px-2 rounded border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-1"
+          >
+            <i data-lucide="archive" class="w-3 h-3"></i>
+            <span id="archiveToggleText">归档库</span>
+          </button>
+          <button 
+            onclick="XiangKuApp.modules.categoryManager.openModal('noteCategories', '工作流分区管理')" 
+            title="管理工作流分类"
+            class="h-6 px-1.5 text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center"
+          >
+            <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i>
+          </button>
+        </div>
+      </div>
+
+      <!-- 工作流时间轴 -->
+      <div class="flex-1 flex flex-col overflow-hidden">
+        <div class="px-3 md:px-4 py-1.5 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between bg-[#FAFAFA]/70 dark:bg-[#151515]/70 shrink-0">
+          <span id="notesStreamHeaderTitle" class="text-xs font-semibold text-zinc-500 dark:text-zinc-400 tracking-wider">今日工作流 (DAILY STREAM)</span>
+          <span id="currentDateStr" class="text-[11px] font-mono text-zinc-400 dark:text-zinc-500">--</span>
+        </div>
+        <div id="dailyLogStream" class="flex-1 overflow-y-auto p-3 md:p-4 space-y-3 pb-24 md:pb-4">
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. 【知识库 工作台】 -->
+    <section id="tabSectionKnowledge" class="mobile-tab-section hidden md:flex md:col-span-5 flex-col bg-[#FAFAFA]/90 dark:bg-[#141414]/90 overflow-hidden h-full">
+      <div class="p-2.5 md:p-3 border-b border-zinc-200/80 dark:border-zinc-800 bg-white/90 dark:bg-[#181818]/90 flex items-center justify-between shrink-0">
+        <div>
+          <h2 class="text-xs font-semibold text-zinc-800 dark:text-zinc-200 flex items-center gap-1.5">
+            <i data-lucide="layers" class="w-3.5 h-3.5 text-zinc-500"></i>
+            知识库
+          </h2>
+          <p class="text-[10px] text-zinc-400 dark:text-zinc-500">支持上传并解析 PDF / Word / Excel / CSV 等文档</p>
+        </div>
+        <button 
+          onclick="XiangKuApp.modules.knowledge.openModal()" 
+          class="h-7 text-xs border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-50 dark:hover:bg-zinc-800 px-2.5 rounded text-zinc-700 dark:text-zinc-300 font-medium bg-white dark:bg-zinc-800 flex items-center gap-1 shadow-sm"
+        >
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+          <span>新建知识</span>
+        </button>
+      </div>
+
+      <div class="px-2.5 md:px-3 py-1.5 bg-white/90 dark:bg-[#181818]/90 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between gap-1 text-[11px] shrink-0">
+        <div id="knowledgeTabsContainer" class="flex items-center gap-1 overflow-x-auto no-scrollbar flex-1">
+        </div>
+        <button 
+          onclick="XiangKuApp.modules.knowledge.toggleHiddenView()" 
+          id="kbHiddenToggleBtn"
+          title="隐藏单条知识管理"
+          class="h-6 px-1.5 text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center shrink-0"
+        >
+          <i data-lucide="eye-off" class="w-3.5 h-3.5"></i>
+        </button>
+        <button 
+          onclick="XiangKuApp.modules.categoryManager.openModal('knowledgeCategories', '知识库分区管理')" 
+          title="管理知识库分区"
+          class="h-6 px-1.5 text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center shrink-0 ml-1"
+        >
+          <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+
+      <div id="knowledgeCardList" class="flex-1 overflow-y-auto p-2.5 md:p-3 space-y-2.5 pb-24 md:pb-4">
+      </div>
+    </section>
+
+    <!-- 4. 【NIK 全域智能体对话】 -->
+    <section id="tabSectionNik" class="mobile-tab-section hidden flex-col bg-white dark:bg-[#181818] overflow-hidden h-full">
+      <div class="p-2.5 bg-zinc-900 text-white flex items-center justify-between shrink-0 border-b border-zinc-800">
+        <div class="flex items-center gap-2">
+          <div class="w-5 h-5 rounded bg-zinc-800 border border-zinc-700 flex items-center justify-center">
+            <i data-lucide="bot" class="w-3.5 h-3.5 text-zinc-200"></i>
+          </div>
+          <div>
+            <span class="text-xs font-semibold">NIK · 智能体对话中枢</span>
+            <span class="text-[9px] text-zinc-400 block -mt-0.5">支持自然语言自动结构化操作与沉淀</span>
+          </div>
+        </div>
+        <button onclick="XiangKuApp.modules.nik.clearChat()" title="清空对话" class="w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-white text-xs">
+          <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+
+      <div id="nikChatMessages" class="flex-1 overflow-y-auto p-3 space-y-2.5 text-xs pb-6">
+      </div>
+
+      <form onsubmit="XiangKuApp.modules.nik.sendMessage(event)" class="p-2 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 flex gap-1.5 items-center shrink-0 mb-14 md:mb-0">
+        <input 
+          type="text" 
+          id="nikChatInput" 
+          placeholder="给 NIK 下达指令..." 
+          class="flex-1 h-8 text-xs px-2.5 border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 rounded focus:outline-none focus:border-zinc-500 text-zinc-800 dark:text-zinc-100"
+        />
+        <button type="submit" class="h-8 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 px-3.5 rounded text-xs font-medium shadow-sm">发送</button>
+      </form>
+    </section>
+
+    <!-- 5. 【子弹笔记 Bullet Journal】 独立手账系统：每日/月度/未来 + 符号状态机 -->
+    <section id="tabSectionBuJo" class="mobile-tab-section hidden flex-col md:col-span-12 bg-white dark:bg-[#181818] overflow-hidden h-full">
+      <div class="px-3 py-2 border-b border-zinc-200 dark:border-zinc-800 bg-amber-50/70 dark:bg-amber-950/20 flex items-center gap-2 shrink-0">
+        <button onclick="XiangKuApp.modules.bujo.closeDesktop()" title="返回工作台" class="hidden md:flex w-6 h-6 items-center justify-center text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 rounded hover:bg-zinc-200/60 dark:hover:bg-zinc-800 shrink-0">
+          <i data-lucide="arrow-left" class="w-3.5 h-3.5"></i>
+        </button>
+        <div class="flex items-center gap-1.5 shrink-0">
+          <i data-lucide="book-open" class="w-4 h-4 text-amber-600 dark:text-amber-400"></i>
+          <span class="text-xs font-semibold tracking-wider text-zinc-800 dark:text-zinc-100">BULLET JOURNAL<span class="text-amber-600 dark:text-amber-400"> · 子弹笔记</span></span>
+        </div>
+        <div class="flex items-center gap-1 ml-auto shrink-0">
+          <button id="bujoSubDaily" onclick="XiangKuApp.modules.bujo.setView('daily')" class="h-6 px-2.5 rounded text-[11px] text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-zinc-800">每日</button>
+          <button id="bujoSubMonthly" onclick="XiangKuApp.modules.bujo.setView('monthly')" class="h-6 px-2.5 rounded text-[11px] text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-zinc-800">月度</button>
+          <button id="bujoSubFuture" onclick="XiangKuApp.modules.bujo.setView('future')" class="h-6 px-2.5 rounded text-[11px] text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-zinc-800">未来</button>
+          <button onclick="XiangKuApp.modules.bujo.toggleLegend()" title="符号图例" class="w-6 h-6 flex items-center justify-center rounded text-[11px] text-zinc-400 hover:text-amber-600 hover:bg-amber-100/60 dark:hover:bg-amber-900/30 shrink-0">?</button>
+        </div>
+      </div>
+
+      <div id="bujoLegend" class="hidden px-3 py-1.5 text-[10px] text-zinc-500 dark:text-zinc-400 bg-amber-50/40 dark:bg-amber-950/10 border-b border-zinc-200/70 dark:border-zinc-800 flex items-center gap-2.5 flex-wrap shrink-0">
+        <span><b class="text-zinc-800 dark:text-zinc-200">•</b> 任务</span>
+        <span><b class="text-emerald-600 dark:text-emerald-400">✕</b> 完成</span>
+        <span><b class="text-sky-600 dark:text-sky-400">○</b> 事件</span>
+        <span><b class="text-zinc-400">–</b> 笔记</span>
+        <span><b class="text-amber-500">*</b> 重要</span>
+        <span><b class="text-violet-500">!</b> 灵感</span>
+        <span><b class="text-zinc-600 dark:text-zinc-300">&gt;</b> 迁移（移到明天 / 未来某月 / 排期到某天）</span>
+      </div>
+
+      <!-- 每日记录 -->
+      <div id="bujoDailyView" class="hidden flex-1 flex-col overflow-hidden">
+        <div class="px-3 py-1.5 border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-1.5 shrink-0">
+          <button onclick="XiangKuApp.modules.bujo.goDay(-1)" class="w-6 h-6 rounded text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs">‹</button>
+          <input type="date" id="bujoDayPick" onchange="XiangKuApp.modules.bujo.setDay(this.value)" class="h-6 text-[11px] bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded px-1.5 text-zinc-600 dark:text-zinc-300" />
+          <button onclick="XiangKuApp.modules.bujo.goDay(1)" class="w-6 h-6 rounded text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs">›</button>
+          <button onclick="XiangKuApp.modules.bujo.goToday()" class="h-6 px-2 rounded text-[10px] border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800">今日</button>
+          <span id="bujoDayLabel" class="ml-auto text-[11px] font-mono text-zinc-400 dark:text-zinc-500"></span>
+        </div>
+        <div id="bujoDailyList" class="flex-1 overflow-y-auto p-3 space-y-0.5"></div>
+      </div>
+
+      <!-- 月度总览 -->
+      <div id="bujoMonthlyView" class="hidden flex-1 flex-col overflow-hidden">
+        <div class="px-3 py-1.5 border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-1.5 shrink-0">
+          <button onclick="XiangKuApp.modules.bujo.goMonth(-1)" class="w-6 h-6 rounded text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs">‹</button>
+          <input type="month" id="bujoMonthPick" onchange="XiangKuApp.modules.bujo.setMonth(this.value)" class="h-6 text-[11px] bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded px-1.5 text-zinc-600 dark:text-zinc-300" />
+          <button onclick="XiangKuApp.modules.bujo.goMonth(1)" class="w-6 h-6 rounded text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 hover:bg-zinc-100 dark:hover:bg-zinc-800 text-xs">›</button>
+          <button onclick="XiangKuApp.modules.bujo.goCurMonth()" class="h-6 px-2 rounded text-[10px] border border-zinc-200 dark:border-zinc-700 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800">本月</button>
+          <span id="bujoMonthStats" class="ml-auto text-[11px] text-zinc-400 dark:text-zinc-500"></span>
+        </div>
+        <div id="bujoMonthlyList" class="flex-1 overflow-y-auto p-3 space-y-0.5"></div>
+      </div>
+
+      <!-- 未来记录 -->
+      <div id="bujoFutureView" class="hidden flex-1 flex-col overflow-hidden">
+        <div class="px-3 py-1.5 border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-1.5 shrink-0">
+          <span class="text-[11px] text-zinc-500 dark:text-zinc-400 shrink-0">归档到</span>
+          <select id="bujoBucket" onchange="XiangKuApp.modules.bujo.setBucket(this.value)" class="h-6 text-[11px] bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded px-1.5 text-zinc-600 dark:text-zinc-300 max-w-[130px]"></select>
+          <span id="bujoFutureStats" class="ml-auto text-[11px] text-zinc-400 dark:text-zinc-500"></span>
+        </div>
+        <div id="bujoFutureList" class="flex-1 overflow-y-auto p-3 space-y-0.5"></div>
+      </div>
+
+      <!-- 录入条 -->
+      <form onsubmit="XiangKuApp.modules.bujo.handleSubmit(event)" class="px-2.5 py-2 border-t border-zinc-200 dark:border-zinc-800 bg-zinc-50/90 dark:bg-zinc-900/80 shrink-0 space-y-1.5">
+        <div class="flex items-center gap-1" id="bujoBulletPicker">
+          <span class="text-[10px] text-zinc-400 mr-0.5">符号</span>
+          <button type="button" data-b="task" onclick="XiangKuApp.modules.bujo.pickBullet('task')" class="w-6 h-6 rounded text-xs border border-transparent text-zinc-400 flex items-center justify-center" title="任务 •">•</button>
+          <button type="button" data-b="event" onclick="XiangKuApp.modules.bujo.pickBullet('event')" class="w-6 h-6 rounded text-xs border border-transparent text-zinc-400 flex items-center justify-center" title="事件 ○">○</button>
+          <button type="button" data-b="note" onclick="XiangKuApp.modules.bujo.pickBullet('note')" class="w-6 h-6 rounded text-xs border border-transparent text-zinc-400 flex items-center justify-center" title="笔记 –">–</button>
+          <button type="button" data-b="priority" onclick="XiangKuApp.modules.bujo.pickBullet('priority')" class="w-6 h-6 rounded text-xs border border-transparent text-zinc-400 flex items-center justify-center" title="重要 *">*</button>
+          <button type="button" data-b="inspiration" onclick="XiangKuApp.modules.bujo.pickBullet('inspiration')" class="w-6 h-6 rounded text-xs border border-transparent text-zinc-400 flex items-center justify-center" title="灵感 !">!</button>
+          <span class="text-[10px] text-zinc-300 dark:text-zinc-600 ml-2">也可以直接在内容前敲符号（• ○ – * !）自动识别</span>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <span id="bujoInputHint" class="text-[10px] text-amber-600 dark:text-amber-400 shrink-0"></span>
+          <input type="text" id="bujoInput" placeholder="记一条子弹笔记..." class="flex-1 h-8 text-xs px-2.5 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none focus:border-amber-500 text-zinc-800 dark:text-zinc-100" />
+          <button type="submit" class="h-8 px-3 rounded text-xs font-medium bg-amber-600 text-white hover:bg-amber-700 shadow-sm shrink-0">记录</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <!-- ================= 移动端底部 6 栏 Tab ================= -->
+  <nav class="md:hidden h-14 bg-white/95 dark:bg-[#181818]/95 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-around px-1 shrink-0 z-30">
+    <button onclick="XiangKuApp.switchMobileTab('workspace')" id="mobileNavWorkspace" class="flex flex-col items-center gap-0.5 text-zinc-400 dark:text-zinc-500 py-1 px-2">
+      <i data-lucide="folder" class="w-4 h-4"></i>
+      <span class="text-[10px]">空间</span>
+    </button>
+    <button onclick="XiangKuApp.switchMobileTab('notes')" id="mobileNavNotes" class="flex flex-col items-center gap-0.5 text-zinc-900 dark:text-zinc-100 font-semibold py-1 px-2">
+      <i data-lucide="edit-3" class="w-4 h-4"></i>
+      <span class="text-[10px]">工作流</span>
+    </button>
+    <button onclick="XiangKuApp.switchMobileTab('knowledge')" id="mobileNavKnowledge" class="flex flex-col items-center gap-0.5 text-zinc-400 dark:text-zinc-500 py-1 px-2">
+      <i data-lucide="layers" class="w-4 h-4"></i>
+      <span class="text-[10px]">知识库</span>
+    </button>
+    <button onclick="XiangKuApp.switchMobileTab('nik')" id="mobileNavNik" class="flex flex-col items-center gap-0.5 text-zinc-400 dark:text-zinc-500 py-1 px-2">
+      <i data-lucide="bot" class="w-4 h-4"></i>
+      <span class="text-[10px]">NIK</span>
+    </button>
+    <button onclick="XiangKuApp.switchMobileTab('bujo')" id="mobileNavBujo" class="flex flex-col items-center gap-0.5 text-zinc-400 dark:text-zinc-500 py-1 px-2">
+      <i data-lucide="book-open" class="w-4 h-4"></i>
+      <span class="text-[10px]">手账</span>
+    </button>
+    <button onclick="XiangKuApp.modules.profileVault.toggleDrawer()" id="mobileNavProfile" class="flex flex-col items-center gap-0.5 text-zinc-400 dark:text-zinc-500 py-1 px-2">
+      <i data-lucide="user-check" class="w-4 h-4"></i>
+      <span class="text-[10px]">资料库</span>
+    </button>
+  </nav>
+
+  <!-- ================= 【AI 悬浮球】 ================= -->
+  <div id="aiFloatingBall" class="hidden md:block fixed bottom-6 right-6 z-40 cursor-pointer group" onclick="XiangKuApp.toggleFloatingBall()">
+    <div class="relative w-14 h-14 md:w-16 md:h-16 rounded-full bg-gradient-to-br from-purple-600 to-indigo-600 shadow-2xl shadow-purple-500/30 hover:shadow-purple-500/50 transition-all duration-300 flex items-center justify-center hover:scale-105 active:scale-95">
+      <i data-lucide="bot" class="w-7 h-7 text-white"></i>
+      <div class="absolute -top-1 -right-1 w-4 h-4 bg-green-400 rounded-full border-2 border-white dark:border-zinc-800 animate-pulse"></div>
+      <div class="absolute inset-0 rounded-full border-2 border-purple-400/30 float-ring"></div>
+    </div>
+    <span class="absolute -top-2 -right-2 text-[10px] font-bold bg-white dark:bg-zinc-800 text-purple-600 dark:text-purple-400 px-1.5 py-0.5 rounded-full shadow-md border border-purple-200 dark:border-purple-800">NIK</span>
+  </div>
+
+  <!-- ================= AI 悬浮球对话窗 ================= -->
+  <div id="aiFloatingChat" class="fixed bottom-32 right-4 md:bottom-28 md:right-6 w-[92vw] max-w-[420px] h-[500px] max-h-[70vh] bg-white dark:bg-[#1a1a1a] rounded-2xl shadow-2xl border border-zinc-200 dark:border-zinc-700 hidden flex-col z-40 overflow-hidden transition-all duration-300">
+    <div class="p-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white flex items-center justify-between shrink-0">
+      <div class="flex items-center gap-2">
+        <i data-lucide="bot" class="w-4 h-4"></i>
+        <span class="text-sm font-semibold">AI 助手</span>
+        <span class="text-[10px] bg-white/20 px-2 py-0.5 rounded-full">在线</span>
+      </div>
+      <div class="flex items-center gap-1">
+        <button onclick="XiangKuApp.minimizeFloatingChat()" class="w-6 h-6 flex items-center justify-center hover:bg-white/20 rounded text-white/80 hover:text-white transition">
+          <i data-lucide="minus" class="w-3.5 h-3.5"></i>
+        </button>
+        <button onclick="XiangKuApp.closeFloatingChat()" class="w-6 h-6 flex items-center justify-center hover:bg-white/20 rounded text-white/80 hover:text-white transition">
+          <i data-lucide="x" class="w-3.5 h-3.5"></i>
+        </button>
+      </div>
+    </div>
+
+    <div id="floatingChatMessages" class="flex-1 overflow-y-auto p-3 space-y-2.5 text-xs bg-zinc-50/50 dark:bg-zinc-900/30">
+      <div class="flex gap-2">
+        <div class="w-7 h-7 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center shrink-0">
+          <i data-lucide="bot" class="w-3.5 h-3.5 text-purple-600 dark:text-purple-400"></i>
+        </div>
+        <div class="bg-white dark:bg-zinc-800 p-2.5 rounded-xl rounded-tl-none shadow-sm max-w-[85%] text-zinc-700 dark:text-zinc-200 leading-relaxed">
+          你好！我是象元，你的智能工作助理。<br>可以问我任何工作相关的问题，或让我帮你整理工作内容。
+        </div>
+      </div>
+    </div>
+
+    <form onsubmit="XiangKuApp.sendFloatingMessage(event)" class="p-2.5 border-t border-zinc-200 dark:border-zinc-700 bg-white dark:bg-[#1a1a1a] flex gap-1.5 items-center shrink-0">
+      <input 
+        type="text" 
+        id="floatingChatInput" 
+        placeholder="输入工作问题..." 
+        class="flex-1 h-9 text-xs px-3 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-full focus:outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-400/20 text-zinc-800 dark:text-zinc-100 transition-all"
+      />
+      <button type="submit" class="h-9 w-9 rounded-full bg-gradient-to-r from-purple-600 to-indigo-600 text-white flex items-center justify-center hover:shadow-lg hover:shadow-purple-500/30 transition-all shrink-0">
+        <i data-lucide="send" class="w-4 h-4"></i>
+      </button>
+    </form>
+  </div>
+
+  <!-- ================= 【抽屉】智能体中心 ================= -->
+  <div id="agentDrawer" class="fixed inset-y-0 right-0 w-full sm:w-[500px] md:w-[580px] bg-white dark:bg-[#181818] border-l border-zinc-200 dark:border-zinc-800 shadow-2xl transform translate-x-full transition-transform duration-200 z-50 flex flex-col">
+    <div class="p-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between bg-zinc-50 dark:bg-zinc-900">
+      <div class="flex items-center gap-2">
+        <i data-lucide="cpu" class="w-4 h-4 text-purple-600"></i>
+        <span class="text-xs font-semibold text-zinc-800 dark:text-zinc-100">智能体中心</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <button 
+          onclick="XiangKuApp.modules.agent.openCreateModal()" 
+          class="h-7 text-xs border border-purple-300 dark:border-purple-800 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 px-2.5 rounded font-medium flex items-center gap-1 shadow-sm hover:bg-purple-100"
+        >
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+          <span>新建智能体</span>
+        </button>
+        <button onclick="XiangKuApp.modules.agent.toggleDrawer()" class="w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 text-xs">✕</button>
+      </div>
+    </div>
+
+    <div class="px-3 py-2 bg-white dark:bg-[#181818] border-b border-zinc-100 dark:border-zinc-800 flex items-center gap-1 text-[11px] shrink-0">
+      <button onclick="XiangKuApp.modules.agent.switchSubTab('agents')" id="agentSubTabAgents" class="h-6 px-2.5 rounded bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium">我的智能体</button>
+      <button onclick="XiangKuApp.modules.agent.switchSubTab('history')" id="agentSubTabHistory" class="h-6 px-2.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400">产出资产库</button>
+    </div>
+
+    <div id="agentMainViewContainer" class="flex-1 overflow-y-auto p-3 space-y-3">
+    </div>
+  </div>
+
+  <!-- ================= 个人资料库抽屉 ================= -->
+  <div id="profileVaultDrawer" class="fixed inset-y-0 right-0 w-full sm:w-[500px] md:w-[560px] bg-white dark:bg-[#181818] border-l border-zinc-200 dark:border-zinc-800 shadow-2xl transform translate-x-full transition-transform duration-200 z-50 flex flex-col">
+    <div class="p-3 border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between bg-zinc-50 dark:bg-zinc-900">
+      <div class="flex items-center gap-2">
+        <i data-lucide="user-check" class="w-4 h-4 text-zinc-600 dark:text-zinc-300"></i>
+        <span class="text-xs font-semibold text-zinc-800 dark:text-zinc-100">个人资料库 (数字分身底座)</span>
+      </div>
+      <div class="flex items-center gap-2">
+        <button 
+          onclick="XiangKuApp.modules.profileVault.generateAiPortrait()" 
+          title="生成 AI 个人画像报告"
+          class="h-7 text-[11px] px-2.5 border border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 rounded font-medium flex items-center gap-1 shadow-sm"
+        >
+          <i data-lucide="sparkles" class="w-3.5 h-3.5 text-amber-500"></i>
+          <span>AI 画像</span>
+        </button>
+        <button 
+          id="pvRecordBtn"
+          onclick="XiangKuApp.modules.profileVault.openItemModal()" 
+          class="h-7 text-xs border border-zinc-200 dark:border-zinc-700 hover:bg-zinc-100 dark:hover:bg-zinc-800 px-2.5 rounded text-zinc-700 dark:text-zinc-300 font-medium bg-white dark:bg-zinc-800 flex items-center gap-1 shadow-sm"
+        >
+          <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+          <span>记录</span>
+        </button>
+        <button onclick="XiangKuApp.modules.profileVault.toggleDrawer()" class="w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 text-xs">✕</button>
+      </div>
+    </div>
+
+    <div class="px-3 py-2 bg-white dark:bg-[#181818] border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between gap-1 text-[11px] shrink-0">
+      <div id="profileTabsContainer" class="flex items-center gap-1 overflow-x-auto no-scrollbar flex-1">
+      </div>
+      <button 
+        onclick="XiangKuApp.modules.categoryManager.openModal('profileCategories', '个人资料库维度管理')" 
+        title="管理与增删个人维度"
+        class="h-6 px-1.5 text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center shrink-0 ml-1"
+      >
+        <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i>
+      </button>
+    </div>
+
+    <div id="profileVaultContainer" class="flex-1 overflow-y-auto p-3 space-y-3">
+    </div>
+  </div>
+
+  <!-- ================= 设置中心弹窗 ================= -->
+  <div id="settingsModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-2 sm:p-4">
+    <div class="bg-white dark:bg-[#1a1a1a] border border-zinc-200 dark:border-zinc-800 rounded-lg w-full max-w-[560px] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+      <div class="p-3 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <i data-lucide="settings" class="w-4 h-4 text-zinc-600 dark:text-zinc-400"></i>
+          <span class="text-xs font-semibold text-zinc-800 dark:text-zinc-100">设置中心</span>
+        </div>
+        <button onclick="XiangKuApp.modules.settings.closeModal()" class="w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 text-xs">✕</button>
+      </div>
+
+      <div class="p-3 sm:p-4 overflow-y-auto space-y-4 text-xs">
+        <section class="space-y-2">
+          <div class="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-1">
+            <h3 class="font-semibold text-zinc-800 dark:text-zinc-200">象库矩阵 (XiangKu Matrix)</h3>
+            <span class="text-[10px] text-zinc-400">跨系统互联</span>
+          </div>
+          <div class="grid grid-cols-3 gap-2 pt-1">
+            <a href="https://nik-pro.pages.dev/" target="_blank" class="p-2 bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/80 dark:border-zinc-700/80 rounded hover:border-zinc-400 transition-all flex flex-col justify-between">
+              <span class="font-semibold text-zinc-800 dark:text-zinc-100 truncate">象语</span>
+              <p class="text-[9px] text-zinc-400 truncate">心智表达</p>
+            </a>
+            <a href="https://nik-pro.pages.dev/" target="_blank" class="p-2 bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/80 dark:border-zinc-700/80 rounded hover:border-zinc-400 transition-all flex flex-col justify-between">
+              <span class="font-semibold text-zinc-800 dark:text-zinc-100 truncate">象库</span>
+              <p class="text-[9px] text-zinc-400 truncate">总知识库</p>
+            </a>
+            <a href="https://logosnik.pages.dev/" target="_blank" class="p-2 bg-zinc-50 dark:bg-zinc-800/60 border border-zinc-200/80 dark:border-zinc-700/80 rounded hover:border-zinc-400 transition-all flex flex-col justify-between">
+              <span class="font-semibold text-zinc-800 dark:text-zinc-100 truncate">写字台</span>
+              <p class="text-[9px] text-zinc-400 truncate">长文创作</p>
+            </a>
+          </div>
+        </section>
+
+        <section class="space-y-2">
+          <h3 class="font-semibold text-zinc-800 dark:text-zinc-200 border-b border-zinc-100 dark:border-zinc-800 pb-1">1. 基础与外观</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div>
+              <label class="block text-zinc-500 dark:text-zinc-400 mb-1">工作台名称</label>
+              <input type="text" id="settingAppName" class="w-full h-8 text-xs px-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100" />
+            </div>
+            <div>
+              <label class="block text-zinc-500 dark:text-zinc-400 mb-1">底板风格</label>
+              <select id="settingBgTheme" class="w-full h-8 text-xs px-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100">
+                <option value="bg-theme-plain">极简纯白 / 纯黑</option>
+                <option value="bg-theme-grid">工程细线网格</option>
+                <option value="bg-theme-dots">极简点阵</option>
+                <option value="bg-theme-paper">工作纸纹暖调</option>
+              </select>
+            </div>
+          </div>
+        </section>
+
+        <section class="space-y-2">
+          <h3 class="font-semibold text-zinc-800 dark:text-zinc-200 border-b border-zinc-100 dark:border-zinc-800 pb-1">2. 数据管理</h3>
+          <div class="flex gap-2">
+            <button onclick="document.getElementById('importFileInput').click()" class="flex-1 h-8 border border-zinc-200 dark:border-zinc-700 rounded hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium">导入备份 (增量)</button>
+            <button onclick="XiangKuApp.exportBackup()" class="flex-1 h-8 border border-zinc-200 dark:border-zinc-700 rounded hover:bg-zinc-50 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 font-medium">导出全量数据</button>
+          </div>
+        </section>
+
+        <section class="space-y-2">
+          <div class="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-1">
+            <h3 class="font-semibold text-zinc-800 dark:text-zinc-200">3. 飞书接入中枢</h3>
+            <span class="text-[10px] text-blue-600 dark:text-blue-400">支持 Webhook / 自建应用</span>
+          </div>
+          <div>
+            <label class="block text-zinc-500 dark:text-zinc-400 mb-0.5">飞书 Webhook 地址</label>
+            <input type="text" id="settingFeishuWebhook" class="w-full h-8 text-xs px-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100 font-mono text-[10px]" placeholder="https://open.feishu.cn/open-apis/bot/v2/hook/..." />
+          </div>
+        </section>
+
+        <section class="space-y-2">
+          <h3 class="font-semibold text-zinc-800 dark:text-zinc-200 border-b border-zinc-100 dark:border-zinc-800 pb-1">4. AI 模型与智能体配置</h3>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div>
+              <label class="block text-zinc-500 dark:text-zinc-400 mb-1">AI 预设</label>
+              <select id="settingAiProvider" onchange="XiangKuApp.modules.settings.handleProviderChange()" class="w-full h-8 text-xs px-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100">
+                <option value="custom">自定义模型</option>
+                <option value="openai">OpenAI</option>
+                <option value="deepseek">DeepSeek</option>
+                <option value="qwen">通义千问</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-zinc-500 dark:text-zinc-400 mb-1">模型名称</label>
+              <input type="text" id="settingAiModel" class="w-full h-8 text-xs px-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100" />
+            </div>
+          </div>
+          <div>
+            <label class="block text-zinc-500 dark:text-zinc-400 mb-1">Base URL</label>
+            <input type="text" id="settingAiBaseUrl" class="w-full h-8 text-xs px-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100 font-mono text-[10px]" />
+          </div>
+          <div>
+            <label class="block text-zinc-500 dark:text-zinc-400 mb-1">API Key</label>
+            <input type="password" id="settingAiApiKey" class="w-full h-8 text-xs px-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100 font-mono" placeholder="sk-..." />
+          </div>
+        </section>
+      </div>
+
+      <div class="p-3 border-t border-zinc-100 dark:border-zinc-800 flex justify-between items-center bg-zinc-50 dark:bg-zinc-900 shrink-0">
+        <button onclick="XiangKuApp.modules.settings.resetToDefault()" class="text-xs text-red-500 hover:underline">清空重置</button>
+        <div class="flex gap-2">
+          <button onclick="XiangKuApp.modules.settings.closeModal()" class="h-8 text-xs px-3.5 border border-zinc-200 dark:border-zinc-700 rounded text-zinc-600 dark:text-zinc-300">取消</button>
+          <button onclick="XiangKuApp.modules.settings.saveFromUI()" class="h-8 text-xs px-4 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded font-medium shadow-sm">保存</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 通用分类管理弹窗 ================= -->
+  <div id="categoryManagerModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-2 sm:p-4">
+    <div class="bg-white dark:bg-[#1a1a1a] border border-zinc-200 dark:border-zinc-800 rounded-lg w-full max-w-[460px] shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+      <div class="p-3 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+        <span id="catManagerModalTitle" class="text-xs font-semibold text-zinc-800 dark:text-zinc-100">分类与分区管理</span>
+        <button onclick="XiangKuApp.modules.categoryManager.closeModal()" class="w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 text-xs">✕</button>
+      </div>
+
+      <div class="p-3 sm:p-4 space-y-3 overflow-y-auto flex-1">
+        <div class="flex gap-1.5">
+          <input 
+            type="text" 
+            id="newCategoryNameInput" 
+            placeholder="输入新分类/分区名称..." 
+            class="flex-1 h-8 text-xs px-2.5 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100"
+          />
+          <button 
+            type="button" 
+            onclick="XiangKuApp.modules.categoryManager.addCategory()" 
+            class="h-8 px-3 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded text-xs font-medium shrink-0"
+          >
+            + 添加
+          </button>
+        </div>
+
+        <div class="border-t border-zinc-100 dark:border-zinc-800 pt-2 space-y-1.5">
+          <span class="text-[10px] text-zinc-400 uppercase tracking-wider block">现有分类清单 (修改即时生效):</span>
+          <div id="categoriesListContainer" class="space-y-1.5 max-h-56 overflow-y-auto">
+          </div>
+        </div>
+      </div>
+
+      <div class="p-3 border-t border-zinc-100 dark:border-zinc-800 flex justify-between items-center bg-zinc-50 dark:bg-zinc-900 shrink-0">
+        <button onclick="XiangKuApp.modules.categoryManager.resetCategories()" class="text-[11px] text-zinc-500 hover:text-red-500 underline">恢复默认分类</button>
+        <button onclick="XiangKuApp.modules.categoryManager.closeModal()" class="h-7 text-xs px-4 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded font-medium">完成</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= 工作流条目编辑弹窗 ================= -->
+  <div id="notesEditModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-2 sm:p-4">
+    <div class="bg-white dark:bg-[#1a1a1a] border border-zinc-200 dark:border-zinc-800 rounded-lg w-full max-w-[480px] shadow-2xl overflow-hidden">
+      <div class="p-3 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+        <span class="text-xs font-semibold text-zinc-800 dark:text-zinc-100">编辑工作流条目</span>
+        <button onclick="XiangKuApp.modules.notes.closeEdit()" class="w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 text-xs">✕</button>
+      </div>
+      <form onsubmit="XiangKuApp.modules.notes.saveEdit(event)" class="p-3 sm:p-4 space-y-3">
+        <input type="hidden" id="notesEditFormId" value="" />
+        <div>
+          <label class="block text-[11px] text-zinc-500 dark:text-zinc-400 mb-1">内容</label>
+          <textarea id="notesEditFormContent" rows="5" placeholder="条目内容..." class="w-full p-2 text-xs bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none resize-none leading-relaxed text-zinc-800 dark:text-zinc-100" required></textarea>
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[11px] text-zinc-500 dark:text-zinc-400 mb-1">工作流分区</label>
+            <select id="notesEditFormType" class="w-full h-8 text-xs px-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100"></select>
+          </div>
+          <div>
+            <label class="block text-[11px] text-zinc-500 dark:text-zinc-400 mb-1">日期</label>
+            <input type="date" id="notesEditFormDate" class="w-full h-8 text-xs px-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100" />
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 pt-1">
+          <button type="button" onclick="XiangKuApp.modules.notes.closeEdit()" class="h-8 text-xs px-3.5 border border-zinc-200 dark:border-zinc-700 rounded text-zinc-600 dark:text-zinc-300">取消</button>
+          <button type="submit" class="h-8 text-xs px-4 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded font-medium shadow-sm">保存修改</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= 知识库新建/编辑弹窗 ================= -->
+  <div id="knowledgeModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-2 sm:p-4">
+    <div class="bg-white dark:bg-[#1a1a1a] border border-zinc-200 dark:border-zinc-800 rounded-lg w-full max-w-[500px] shadow-2xl overflow-hidden">
+      <div class="p-3 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+        <span id="knowledgeModalTitle" class="text-xs font-semibold text-zinc-800 dark:text-zinc-100">新建/上传知识条目</span>
+        <button onclick="XiangKuApp.modules.knowledge.closeModal()" class="w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 text-xs">✕</button>
+      </div>
+      <form onsubmit="XiangKuApp.modules.knowledge.handleSubmit(event)" class="p-3 sm:p-4 space-y-3">
+        <input type="hidden" id="knowledgeFormId" value="" />
+
+        <div class="p-2 border border-dashed border-zinc-300 dark:border-zinc-700 rounded bg-zinc-50 dark:bg-zinc-900/50 flex items-center justify-between">
+          <div class="flex items-center gap-1.5 text-[11px] text-zinc-500">
+            <i data-lucide="file-up" class="w-4 h-4 text-zinc-400"></i>
+            <span>导入文件（PDF / Word / Excel / CSV / 文本），表格自动转 Markdown</span>
+          </div>
+          <label class="cursor-pointer h-6 px-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:border-zinc-400 rounded text-[10px] text-zinc-700 dark:text-zinc-200 font-medium flex items-center shadow-sm">
+            <span>选择文件</span>
+            <input type="file" accept=".txt,.md,.markdown,.pdf,.json,.docx,.xlsx,.xls,.csv,.html,.htm,.xml,.log" class="hidden" onchange="XiangKuApp.handleDocumentUpload(event, 'knowledge')" />
+          </label>
+        </div>
+
+        <div>
+          <label class="block text-[11px] text-zinc-500 dark:text-zinc-400 mb-1">知识标题 / 条目名称</label>
+          <input type="text" id="knowledgeFormTitle" placeholder="例如：设备应急维保操作规范 (SOP-01)" class="w-full h-8 text-xs px-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100" required />
+        </div>
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[11px] text-zinc-500 dark:text-zinc-400 mb-1">资料与知识分区</label>
+            <select id="knowledgeFormCategory" class="w-full h-8 text-xs px-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100"></select>
+          </div>
+          <div>
+            <label class="block text-[11px] text-zinc-500 dark:text-zinc-400 mb-1">所属工作空间</label>
+            <select id="knowledgeFormWorkspace" class="w-full h-8 text-xs px-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100"></select>
+          </div>
+        </div>
+        <div>
+          <label class="block text-[11px] text-zinc-500 dark:text-zinc-400 mb-1">知识正文 / 提取内容（支持 Markdown）</label>
+          <textarea id="knowledgeFormContent" rows="6" placeholder="输入或通过上方直接解析文件..." class="w-full p-2 text-xs bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none resize-none font-mono leading-relaxed text-zinc-800 dark:text-zinc-100" required></textarea>
+        </div>
+        <div class="flex justify-end gap-2 pt-1">
+          <button type="button" onclick="XiangKuApp.modules.knowledge.closeModal()" class="h-8 text-xs px-3.5 border border-zinc-200 dark:border-zinc-700 rounded text-zinc-600 dark:text-zinc-300">取消</button>
+          <button type="submit" class="h-8 text-xs px-4 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded font-medium shadow-sm">沉淀在库</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= 知识库·文档模式编辑器 ================= -->
+  <div id="knowledgeDocModal" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-[60] hidden flex-col">
+    <div class="h-12 bg-white dark:bg-[#181818] border-b border-zinc-200 dark:border-zinc-800 flex items-center justify-between px-3 shrink-0">
+      <div class="flex items-center gap-2 min-w-0">
+        <i data-lucide="file-text" class="w-4 h-4 text-sky-600 shrink-0"></i>
+        <input id="kbDocTitle" type="text" placeholder="文档标题..." class="text-sm font-semibold bg-transparent border-none focus:outline-none text-zinc-900 dark:text-zinc-100 w-40 sm:w-80 truncate" />
+        <span id="kbDocSavedTip" class="text-[10px] text-emerald-500 hidden">已保存</span>
+      </div>
+      <div class="flex items-center gap-1.5">
+        <button onclick="XiangKuApp.modules.knowledge.toggleDocPreview()" id="kbDocPreviewBtn" class="h-7 px-2.5 text-xs rounded border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800">预览</button>
+        <button onclick="XiangKuApp.modules.knowledge.saveDoc()" class="h-7 px-3 text-xs rounded bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium">保存</button>
+        <button onclick="XiangKuApp.modules.knowledge.closeDoc()" class="w-7 h-7 flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200">✕</button>
+      </div>
+    </div>
+    <div class="flex-1 flex overflow-hidden">
+      <textarea id="kbDocEditor" class="flex-1 p-4 md:p-8 text-sm leading-relaxed bg-white dark:bg-[#121212] text-zinc-800 dark:text-zinc-100 font-mono resize-none focus:outline-none" placeholder="在此撰写文档，支持 Markdown 语法（# 标题 / 表格 / 列表 / **加粗** / `代码`）..."></textarea>
+      <div id="kbDocPreview" class="hidden flex-1 p-4 md:p-8 overflow-y-auto bg-zinc-50 dark:bg-[#0f0f0f] text-sm leading-relaxed text-zinc-800 dark:text-zinc-100"></div>
+    </div>
+    <div class="h-7 px-3 bg-zinc-50 dark:bg-zinc-900 border-t border-zinc-200 dark:border-zinc-800 flex items-center justify-between text-[10px] text-zinc-400 shrink-0">
+      <span id="kbDocStats">0 字</span>
+      <span>Ctrl/Cmd + S 保存 · Esc 关闭</span>
+    </div>
+  </div>
+
+  <!-- ================= 个人资料库单项录入/编辑弹窗 ================= -->
+  <div id="profileItemModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-2 sm:p-4">
+    <div class="bg-white dark:bg-[#1a1a1a] border border-zinc-200 dark:border-zinc-800 rounded-lg w-full max-w-[500px] shadow-2xl overflow-hidden">
+      <div class="p-3 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+        <span id="profileItemModalTitle" class="text-xs font-semibold text-zinc-800 dark:text-zinc-100">记录个人资料</span>
+        <button onclick="XiangKuApp.modules.profileVault.closeItemModal()" class="w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 text-xs">✕</button>
+      </div>
+      <form onsubmit="XiangKuApp.modules.profileVault.handleItemSubmit(event)" class="p-3 sm:p-4 space-y-3">
+        <input type="hidden" id="pvFormId" value="" />
+        <input type="hidden" id="pvFormSection" value="skills" />
+
+        <div class="p-2 border border-dashed border-zinc-300 dark:border-zinc-700 rounded bg-zinc-50 dark:bg-zinc-900/50 flex items-center justify-between">
+          <div class="flex items-center gap-1.5 text-[11px] text-zinc-500">
+            <i data-lucide="file-text" class="w-4 h-4 text-zinc-400"></i>
+            <span>导入文件填充内容</span>
+          </div>
+          <label class="cursor-pointer h-6 px-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 hover:border-zinc-400 rounded text-[10px] text-zinc-700 dark:text-zinc-200 font-medium flex items-center shadow-sm">
+            <span>选择文件</span>
+            <input type="file" accept=".txt,.md,.markdown,.pdf,.json,.docx,.xlsx,.xls,.csv,.html,.htm,.xml,.log" class="hidden" onchange="XiangKuApp.handleDocumentUpload(event, 'profile')" />
+          </label>
+        </div>
+
+        <div id="pvDynamicFields" class="space-y-3 text-xs">
+        </div>
+
+        <div class="flex justify-end gap-2 pt-2 border-t border-zinc-100 dark:border-zinc-800">
+          <button type="button" onclick="XiangKuApp.modules.profileVault.closeItemModal()" class="h-8 text-xs px-3.5 border border-zinc-200 dark:border-zinc-700 rounded text-zinc-600 dark:text-zinc-300">取消</button>
+          <button type="submit" class="h-8 text-xs px-4 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded font-medium shadow-sm">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= 自建智能体弹窗 ================= -->
+  <div id="customAgentModal" class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-2 sm:p-4">
+    <div class="bg-white dark:bg-[#1a1a1a] border border-zinc-200 dark:border-zinc-800 rounded-lg w-full max-w-[500px] shadow-2xl overflow-hidden">
+      <div class="p-3 border-b border-zinc-100 dark:border-zinc-800 flex items-center justify-between">
+        <span id="customAgentModalTitle" class="text-xs font-semibold text-zinc-800 dark:text-zinc-100">新建专属智能体</span>
+        <button onclick="XiangKuApp.modules.agent.closeCreateModal()" class="w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 text-xs">✕</button>
+      </div>
+      <form onsubmit="XiangKuApp.modules.agent.handleSaveAgent(event)" class="p-3 sm:p-4 space-y-3">
+        <input type="hidden" id="customAgentFormId" value="" />
+        <div class="grid grid-cols-2 gap-2">
+          <div>
+            <label class="block text-[10px] text-zinc-400 mb-0.5">名称</label>
+            <input type="text" id="customAgentName" placeholder="例如：设备排错顾问" class="w-full h-8 text-xs px-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100" required />
+          </div>
+          <div>
+            <label class="block text-[10px] text-zinc-400 mb-0.5">代表图标 (Lucide 图标名)</label>
+            <input type="text" id="customAgentIcon" placeholder="bot / wrench / zap" value="bot" class="w-full h-8 text-xs px-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100" />
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-[10px] text-zinc-400 mb-0.5">职责 / 工具简介</label>
+          <input type="text" id="customAgentDesc" placeholder="例如：根据今日异常记录快速输出排错三步法" class="w-full h-8 text-xs px-2 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none text-zinc-800 dark:text-zinc-100" />
+        </div>
+
+        <div>
+          <label class="block text-[10px] text-zinc-400 mb-0.5">人设与核心系统提示词 (System Prompt)</label>
+          <textarea id="customAgentPrompt" rows="4" placeholder="详细定义此智能体的角色定位、提取维度与格式要求..." class="w-full p-2 text-xs bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none resize-none font-mono leading-relaxed text-zinc-800 dark:text-zinc-100" required></textarea>
+        </div>
+
+        <div class="p-2.5 bg-zinc-50 dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 rounded space-y-1.5">
+          <span class="text-[10px] font-semibold text-zinc-500 dark:text-zinc-400 block">允许读取的数据上下文:</span>
+          <div class="grid grid-cols-3 gap-2 text-[11px] text-zinc-700 dark:text-zinc-300">
+            <label class="flex items-center gap-1.5 cursor-pointer">
+              <input type="checkbox" id="agentAuthNotes" checked class="rounded" />
+              <span>工作流记录</span>
+            </label>
+            <label class="flex items-center gap-1.5 cursor-pointer">
+              <input type="checkbox" id="agentAuthKnowledge" checked class="rounded" />
+              <span>知识库</span>
+            </label>
+            <label class="flex items-center gap-1.5 cursor-pointer">
+              <input type="checkbox" id="agentAuthProfile" checked class="rounded" />
+              <span>个人资料库</span>
+            </label>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-2 pt-1">
+          <button type="button" onclick="XiangKuApp.modules.agent.closeCreateModal()" class="h-8 text-xs px-3.5 border border-zinc-200 dark:border-zinc-700 rounded text-zinc-600 dark:text-zinc-300">取消</button>
+          <button type="submit" class="h-8 text-xs px-4 bg-purple-600 text-white rounded font-medium shadow-sm hover:bg-purple-700">保存</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ================= 核心架构、智能体引擎与业务逻辑 ================= -->
+  <script>
+    window.XiangKuApp = {
+      STORAGE_KEY: 'xiangku_workstation_db_v5',
+
+      DEFAULT_NOTE_CATEGORIES: [
+        { id: 'log', name: '流水' },
+        { id: 'progress', name: '进展' },
+        { id: 'issue', name: '异常' },
+        { id: 'insight', name: '心得' }
+      ],
+
+      DEFAULT_KNOWLEDGE_CATEGORIES: [
+        { id: 'sop', name: '流程规范' },
+        { id: 'policy', name: '制度规章' },
+        { id: 'tech', name: '技术文档' },
+        { id: 'reading', name: '摘录文献' },
+        { id: 'project_doc', name: '项目资料' },
+        { id: 'note_archive', name: '工作笔记' }
+      ],
+
+      DEFAULT_PROFILE_CATEGORIES: [
+        { id: 'profile', name: '个人档案', isSystem: true },
+        { id: 'skills', name: '能力库' },
+        { id: 'experiences', name: '经验库' },
+        { id: 'templates', name: '模板库' },
+        { id: 'contacts', name: '联系人' },
+        { id: 'methods', name: '方法库' },
+        { id: 'growth', name: '成长轨迹' }
+      ],
+
+      db: {
+        settings: {
+          appName: '象库 · 轻工作台',
+          feishuWebhook: '',
+          darkMode: false,
+          bgTheme: 'bg-theme-plain',
+          aiConfig: {
+            provider: 'custom',
+            baseUrl: 'https://api.openai.com/v1',
+            apiKey: '',
+            model: 'gpt-4o-mini',
+            temperature: 0.7
+          }
+        },
+        workspace: [],
+        notes: [],
+        knowledge: [],
+        noteCategories: [],
+        knowledgeCategories: [],
+        profileCategories: [],
+        profile: {
+          name: '',
+          role: '',
+          field: '',
+          strengths: '',
+          goals: '',
+          bio: ''
+        },
+        skills: [],
+        experiences: [],
+        templates: [],
+        contacts: [],
+        methods: [],
+        growth: [],
+        agents: [],
+        agentOutputs: [],
+        nikMessages: [],
+        bujo: { future: [], logs: {} }
+      },
+
+      currentWorkspaceId: 'all',
+      currentNoteCategory: 'all',
+      currentKnowledgeCategory: 'all',
+      currentProfileSection: 'profile',
+      activeMobileTab: 'notes',
+      isNotesArchiveView: false,
+
+      // ===== 初始化 =====
+      init() {
+        this.loadStorage();
+        this.applyThemeAndBg();
+        this.applySettingsUI();
+        this.renderAll();
+        
+        const todayStr = new Date().toISOString().slice(0, 10);
+        document.getElementById('currentDateStr').innerText = todayStr.replace(/-/g, '.');
+        document.getElementById('quickInputDate').value = todayStr;
+
+        // 文档模式：输入统计 + 脏标记 + 快捷键
+        const docEditor = document.getElementById('kbDocEditor');
+        if (docEditor) {
+          docEditor.addEventListener('input', () => {
+            XiangKuApp.modules.knowledge._docDirty = true;
+            XiangKuApp.modules.knowledge.updateDocStats();
+          });
+        }
+        document.addEventListener('keydown', (e) => {
+          const modal = document.getElementById('knowledgeDocModal');
+          if (!modal || modal.classList.contains('hidden')) return;
+          if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+            e.preventDefault();
+            XiangKuApp.modules.knowledge.saveDoc();
+          }
+          if (e.key === 'Escape') {
+            XiangKuApp.modules.knowledge.closeDoc();
+          }
+        });
+      },
+
+      // ===== 工具方法 =====
+      escapeHtml(s) {
+        return String(s == null ? '' : s)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      },
+
+      // ===== AI 悬浮球控制 =====
+      aiFloatingChatOpen: false,
+      aiFloatingMinimized: false,
+
+      toggleFloatingBall() {
+        const chat = document.getElementById('aiFloatingChat');
+        const ball = document.getElementById('aiFloatingBall');
+        
+        if (this.aiFloatingChatOpen) {
+          chat.classList.add('hidden');
+          this.aiFloatingChatOpen = false;
+          ball.style.display = 'flex';
+        } else {
+          chat.classList.remove('hidden');
+          this.aiFloatingChatOpen = true;
+          if (this.aiFloatingMinimized) {
+            chat.style.height = '500px';
+            this.aiFloatingMinimized = false;
+          }
+          setTimeout(() => this.scrollFloatingChat(), 100);
+        }
+      },
+
+      closeFloatingChat() {
+        document.getElementById('aiFloatingChat').classList.add('hidden');
+        this.aiFloatingChatOpen = false;
+        document.getElementById('aiFloatingBall').style.display = 'flex';
+      },
+
+      minimizeFloatingChat() {
+        const chat = document.getElementById('aiFloatingChat');
+        if (this.aiFloatingMinimized) {
+          chat.style.height = '500px';
+          this.aiFloatingMinimized = false;
+        } else {
+          chat.style.height = '60px';
+          this.aiFloatingMinimized = true;
+        }
+      },
+
+      scrollFloatingChat() {
+        const container = document.getElementById('floatingChatMessages');
+        if (container) container.scrollTop = container.scrollHeight;
+      },
+
+      async sendFloatingMessage(e) {
+        e.preventDefault();
+        const input = document.getElementById('floatingChatInput');
+        const msg = input.value.trim();
+        if (!msg) return;
+
+        const container = document.getElementById('floatingChatMessages');
+        
+        const userDiv = document.createElement('div');
+        userDiv.className = 'flex gap-2 justify-end';
+        userDiv.innerHTML = `
+          <div class="bg-purple-600 text-white p-2.5 rounded-xl rounded-tr-none max-w-[85%] leading-relaxed">${msg}</div>
+        `;
+        container.appendChild(userDiv);
+        input.value = '';
+        this.scrollFloatingChat();
+
+        // 正在思考
+        const thinkingDiv = document.createElement('div');
+        thinkingDiv.className = 'flex gap-2';
+        thinkingDiv.id = 'floatingThinking';
+        thinkingDiv.innerHTML = `
+          <div class="w-7 h-7 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center shrink-0">
+            <i data-lucide="bot" class="w-3.5 h-3.5 text-purple-600 dark:text-purple-400"></i>
+          </div>
+          <div class="bg-white dark:bg-zinc-800 p-2.5 rounded-xl rounded-tl-none shadow-sm flex items-center gap-1.5">
+            <span class="text-zinc-500 dark:text-zinc-400 text-xs">思考中</span>
+            <span class="flex gap-1">
+              <span class="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style="animation-delay:0s"></span>
+              <span class="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style="animation-delay:0.2s"></span>
+              <span class="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style="animation-delay:0.4s"></span>
+            </span>
+          </div>
+        `;
+        container.appendChild(thinkingDiv);
+        lucide.createIcons();
+        this.scrollFloatingChat();
+
+        try {
+          const ai = this.db.settings.aiConfig || {};
+          if (!ai.apiKey || !ai.baseUrl) {
+            throw new Error('MISSING_CONFIG');
+          }
+
+          // —— 全域检索：按需注入用户工作台真实数据 ——
+          const scope = this.scopeOf(msg);
+          const context = this.buildNikContext(scope, msg);
+          const nowCatId = this.currentNoteCategory === 'all' ? 'log' : this.currentNoteCategory;
+          const nowCatName = this.currentNoteCategory === 'all' ? '流水' : this.catName(this.currentNoteCategory);
+          const nowWsId = this.currentWorkspaceId === 'all' ? 'general' : this.currentWorkspaceId;
+          const nowWsName = this.currentWorkspaceId === 'all' ? '通用(general)' : (this.wsName(this.currentWorkspaceId) || this.currentWorkspaceId);
+
+          const fullPrompt = `你是【象库工作台 AI 助手】，可读取工作台全部真实内容（工作流/归档/知识库/经验库/个人资料库/工作空间）。下面是刚刚注入给你的真实数据，回答必须基于这些内容，禁止编造；数据中没有的，要明说"这里没有相关内容"。
+
+【当前聚焦范围】${scope === 'archive' ? '归档工作流' : scope === 'knowledge' ? '知识库' : scope === 'experience' ? '经验库' : scope === 'profile' ? '个人资料库' : '全域自动'}
+
+【全域数据（真实内容）】
+${context}
+
+【能力要求】
+1. 用户让「看/找/总结/回顾」某一类内容（工作流、归档库、知识库…）时，只基于对应数据作答。
+2. 用户说"总结一下 / 今天做了什么 / 回顾"等，基于【工作流记录】真实逐条内容汇总成文，宁可少说也不虚构。
+3. 只有当用户明确要求「记录 / 写入 / 新建 / 保存」时，才在回复末尾附 JSON 执行自动写入；总结、分析、提问类请求【绝不】执行写入。
+4. 自动写入默认落到【今日工作流 Daily Stream】：分区=${nowCatName}，工作空间=${nowWsName}。JSON 示例：
+<<<JSON
+{"actions":[{"type":"add_note","content":"用户让保存的完整内容(去掉'请记录'等命令词，不得改写摘抄)","category":"${nowCatId}","workspaceId":"${nowWsId}"}]}
+>>>
+5. 语气直接、专业、克制，结论先行。
+
+用户问题：${msg}`;
+
+          let response = await this.requestAI(fullPrompt);
+
+          // —— 解析 AI 下推的可执行动作 ——
+          try {
+            const m = response.match(/<<<JSON\s*([\s\S]*?)\s*>>>/);
+            if (m) {
+              const plan = JSON.parse(m[1]);
+              const acts = Array.isArray(plan.actions) ? plan.actions : [];
+              const fb = [];
+              acts.forEach(a => {
+                if (a && a.type === 'add_workspace' && a.name) {
+                  XiangKuApp.db.workspace.push({ id: 'ws_' + Date.now() + Math.random().toString(36).slice(2, 6), name: String(a.name), description: a.description ? String(a.description) : '' });
+                  fb.push('✓ 已新增工作空间：《' + a.name + '》');
+                } else if (a && a.type === 'add_note' && a.content) {
+                  const now = new Date();
+                  const catIds = (XiangKuApp.db.noteCategories || []).map(c => c.id);
+                  const wantCat = a.category || XiangKuApp.currentNoteCategory;
+                  const cat = (catIds.indexOf(wantCat) >= 0) ? wantCat : (catIds.indexOf(XiangKuApp.currentNoteCategory) >= 0 ? XiangKuApp.currentNoteCategory : 'log');
+                  const wantWs = a.workspaceId || (XiangKuApp.currentWorkspaceId === 'all' ? 'general' : XiangKuApp.currentWorkspaceId);
+                  const wsIds = (XiangKuApp.db.workspace || []).map(w => w.id);
+                  const wsId = wsIds.indexOf(wantWs) >= 0 ? wantWs : 'general';
+                  XiangKuApp.db.notes.unshift({ id: 'n_' + Date.now(), title: String(a.content).slice(0, 16), content: String(a.content), date: a.date || now.toISOString().slice(0, 10), time: String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0'), type: cat, archived: false, workspaceId: wsId });
+                  fb.push('✓ 已记录到【今日工作流】·' + XiangKuApp.catName(cat) + '分区·' + XiangKuApp.wsName(wsId) + '：' + String(a.content).slice(0, 24));
+                }
+              });
+              if (fb.length) {
+                XiangKuApp.saveStorage();
+                XiangKuApp.renderAll();
+                response = response.replace(/<<<JSON[\s\S]*?>>>/, '').trim() + '\n\n' + fb.join('\n');
+              }
+            }
+          } catch (e) {}
+
+          const thinkingEl = document.getElementById('floatingThinking');
+          if (thinkingEl) thinkingEl.remove();
+
+          const aiDiv = document.createElement('div');
+          aiDiv.className = 'flex gap-2';
+          aiDiv.innerHTML = `
+            <div class="w-7 h-7 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center shrink-0">
+              <i data-lucide="bot" class="w-3.5 h-3.5 text-purple-600 dark:text-purple-400"></i>
+            </div>
+            <div class="bg-white dark:bg-zinc-800 p-2.5 rounded-xl rounded-tl-none shadow-sm max-w-[85%] text-zinc-700 dark:text-zinc-200 leading-relaxed whitespace-pre-wrap">${response}</div>
+            <button class="nik-copy-btn shrink-0 self-end mb-1 w-6 h-6 flex items-center justify-center text-[11px] text-zinc-400 hover:text-purple-600 hover:bg-purple-50 dark:hover:bg-purple-900/40 rounded-full transition-colors" title="复制这段回答">⧉</button>
+          `;
+          container.appendChild(aiDiv);
+          const cpyBtn = aiDiv.querySelector('.nik-copy-btn');
+          if (cpyBtn) cpyBtn.addEventListener('click', function () { XiangKuApp.copyText(response, '✓ 回答已复制'); });
+          lucide.createIcons();
+          this.scrollFloatingChat();
+
+        } catch (err) {
+          const thinkingEl = document.getElementById('floatingThinking');
+          if (thinkingEl) thinkingEl.remove();
+
+          const errMsg = err.message === 'MISSING_CONFIG' ? '⚠️ 请先在设置中配置 API Key' : `❌ ${err.message}`;
+          const errDiv = document.createElement('div');
+          errDiv.className = 'flex gap-2';
+          errDiv.innerHTML = `
+            <div class="w-7 h-7 rounded-full bg-purple-100 dark:bg-purple-900/50 flex items-center justify-center shrink-0">
+              <i data-lucide="bot" class="w-3.5 h-3.5 text-purple-600 dark:text-purple-400"></i>
+            </div>
+            <div class="bg-red-50 dark:bg-red-950/30 p-2.5 rounded-xl rounded-tl-none shadow-sm max-w-[85%] text-red-600 dark:text-red-400 text-xs leading-relaxed">${errMsg}</div>
+          `;
+          container.appendChild(errDiv);
+          lucide.createIcons();
+          this.scrollFloatingChat();
+        }
+      },
+
+      switchMobileTab(tabName) {
+        this.activeMobileTab = tabName;
+        document.querySelectorAll('.mobile-tab-section').forEach(el => el.classList.add('hidden'));
+        
+        if (tabName === 'workspace') {
+          const wsEl = document.getElementById('tabSectionWorkspace');
+          wsEl.classList.remove('hidden'); wsEl.classList.add('flex');
+        } else if (tabName === 'notes') {
+          const notesEl = document.getElementById('tabSectionNotes');
+          notesEl.classList.remove('hidden'); notesEl.classList.add('flex');
+        } else if (tabName === 'knowledge') {
+          const kEl = document.getElementById('tabSectionKnowledge');
+          kEl.classList.remove('hidden'); kEl.classList.add('flex');
+        } else if (tabName === 'nik') {
+          const nikEl = document.getElementById('tabSectionNik');
+          nikEl.classList.remove('hidden'); nikEl.classList.add('flex');
+          this.modules.nik.scrollToBottom();
+        } else if (tabName === 'bujo') {
+          const bujoEl = document.getElementById('tabSectionBuJo');
+          bujoEl.classList.remove('hidden'); bujoEl.classList.add('flex');
+          this.modules.bujo.enter();
+        }
+
+        ['workspace', 'notes', 'knowledge', 'nik', 'bujo'].forEach(t => {
+          const btn = document.getElementById('mobileNav' + t.charAt(0).toUpperCase() + t.slice(1));
+          if (btn) {
+            if (t === tabName) {
+              btn.className = 'flex flex-col items-center gap-0.5 text-zinc-900 dark:text-zinc-100 font-semibold py-1 px-2';
+            } else {
+              btn.className = 'flex flex-col items-center gap-0.5 text-zinc-400 dark:text-zinc-500 py-1 px-2';
+            }
+          }
+        });
+
+        lucide.createIcons();
+      },
+
+      async handleDocumentUpload(event, targetContext) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const fileName = file.name.replace(/\.[^/.]+$/, "");
+        const ext = (file.name.split('.').pop() || '').toLowerCase();
+        let extractedText = "";
+
+        try {
+          // ---- PDF：逐页抽文字（不做表格结构）----
+          if (ext === 'pdf') {
+            if (!window.pdfjsLib) { alert('PDF 解析库正在加载，请稍候重试'); return; }
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            let fullText = "";
+            for (let i = 1; i <= pdf.numPages; i++) {
+              const page = await pdf.getPage(i);
+              const textContent = await page.getTextContent();
+              const pageStr = textContent.items.map(item => item.str).join(' ');
+              fullText += `[Page ${i}]\n` + pageStr + "\n\n";
+            }
+            extractedText = fullText;
+          }
+          // ---- docx：mammoth 转 HTML → Markdown（表格保留）----
+          else if (ext === 'docx') {
+            if (!window.mammoth) { alert('docx 解析库正在加载，请稍候重试'); return; }
+            const arrayBuffer = await file.arrayBuffer();
+            const result = await mammoth.convertToHtml({ arrayBuffer });
+            extractedText = this.htmlToMarkdown(result.value);
+          }
+          // ---- xlsx / xls / csv：SheetJS 逐表转 Markdown ----
+          else if (['xlsx', 'xls', 'csv'].includes(ext)) {
+            if (!window.XLSX) { alert('表格解析库正在加载，请稍候重试'); return; }
+            const arrayBuffer = await file.arrayBuffer();
+            const wb = XLSX.read(arrayBuffer, { type: 'array' });
+            const parts = [];
+            wb.SheetNames.forEach(sheetName => {
+              const ws = wb.Sheets[sheetName];
+              const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+              if (!rows.length) return;
+              parts.push(`## ${sheetName}\n\n` + this.rowsToMarkdownTable(rows));
+            });
+            extractedText = parts.join('\n\n') || '（空表格）';
+          }
+          // ---- 纯文本类：直接读 ----
+          else if (['txt', 'md', 'markdown', 'json', 'html', 'htm', 'xml', 'log'].includes(ext)) {
+            extractedText = await file.text();
+          }
+          // ---- 其他：兜底当文本读 ----
+          else {
+            extractedText = await file.text();
+          }
+
+          if (targetContext === 'knowledge') {
+            const titleInput = document.getElementById('knowledgeFormTitle');
+            const contentInput = document.getElementById('knowledgeFormContent');
+            if (titleInput && !titleInput.value) titleInput.value = fileName;
+            if (contentInput) contentInput.value = extractedText;
+          } else if (targetContext === 'profile') {
+            const sec = document.getElementById('pvFormSection').value;
+            if (sec === 'templates') {
+              const t1 = document.getElementById('pv_tpl_title');
+              const c1 = document.getElementById('pv_tpl_content');
+              if (t1 && !t1.value) t1.value = fileName;
+              if (c1) c1.value = extractedText;
+            } else if (sec === 'methods') {
+              const t2 = document.getElementById('pv_mth_title');
+              const c2 = document.getElementById('pv_mth_content');
+              if (t2 && !t2.value) t2.value = fileName;
+              if (c2) c2.value = extractedText;
+            } else {
+              const anyTextarea = document.querySelector('#pvDynamicFields textarea');
+              if (anyTextarea) anyTextarea.value = extractedText;
+            }
+          }
+          alert(`✅ 已成功从 [${file.name}] 提取 ${extractedText.length} 字并填充！`);
+        } catch (err) {
+          alert(`文档解析失败: ${err.message}`);
+        }
+        event.target.value = '';
+      },
+
+      // 2D 数组 → Markdown 表格
+      rowsToMarkdownTable(rows) {
+        if (!rows || !rows.length) return '';
+        const maxCols = Math.max(...rows.map(r => (r || []).length));
+        const norm = rows.map(r => {
+          const a = (r || []).slice();
+          while (a.length < maxCols) a.push('');
+          return a.map(c => String(c == null ? '' : c).replace(/\|/g, '\\|').replace(/\n/g, ' '));
+        });
+        const header = '| ' + norm[0].join(' | ') + ' |';
+        const sep = '| ' + norm[0].map(() => '---').join(' | ') + ' |';
+        const body = norm.slice(1).map(r => '| ' + r.join(' | ') + ' |').join('\n');
+        return [header, sep, body].filter(Boolean).join('\n');
+      },
+
+      // HTML → Markdown（覆盖 mammoth 常见的标题/段落/列表/表格/加粗斜体）
+      htmlToMarkdown(html) {
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const walk = (node) => {
+          if (node.nodeType === 3) return node.textContent;
+          if (node.nodeType !== 1) return '';
+          const tag = node.tagName.toLowerCase();
+          const kids = Array.from(node.childNodes).map(walk).join('');
+          switch (tag) {
+            case 'h1': return '\n# ' + kids + '\n';
+            case 'h2': return '\n## ' + kids + '\n';
+            case 'h3': return '\n### ' + kids + '\n';
+            case 'h4': return '\n#### ' + kids + '\n';
+            case 'p':  return '\n' + kids + '\n';
+            case 'br': return '\n';
+            case 'strong': case 'b': return '**' + kids + '**';
+            case 'em': case 'i': return '*' + kids + '*';
+            case 'ul': return '\n' + Array.from(node.children).map(li => '- ' + walk(li)).join('\n') + '\n';
+            case 'ol': return '\n' + Array.from(node.children).map((li, i) => (i + 1) + '. ' + walk(li)).join('\n') + '\n';
+            case 'li': return kids;
+            case 'table': {
+              const rows = Array.from(node.querySelectorAll('tr')).map(tr =>
+                Array.from(tr.children).map(td => walk(td).replace(/\n/g, ' ').trim())
+              );
+              return '\n' + this.rowsToMarkdownTable(rows) + '\n';
+            }
+            case 'a': return '[' + kids + '](' + (node.getAttribute('href') || '') + ')';
+            case 'code': return '`' + kids + '`';
+            case 'pre': return '\n```\n' + kids + '\n```\n';
+            default: return kids;
+          }
+        };
+        return walk(doc.body).replace(/\n{3,}/g, '\n\n').trim();
+      },
+
+      loadStorage() {
+        const saved = localStorage.getItem(this.STORAGE_KEY) || localStorage.getItem('xiangku_workstation_db_v4') || localStorage.getItem('xiangku_workstation_db_v3') || localStorage.getItem('xiangku_workstation_db_v2');
+        if (!localStorage.getItem(this.STORAGE_KEY)) {
+          const legacyKeys = ['xiangku_workstation_db_v4', 'xiangku_workstation_db_v3', 'xiangku_workstation_db_v2'];
+          const legacySrc = legacyKeys.find(k => localStorage.getItem(k) !== null);
+          if (legacySrc) {
+            let moved = false;
+            try { localStorage.setItem(this.STORAGE_KEY, localStorage.getItem(legacySrc)); moved = true; } catch (e) { console.error('v5 迁移写入失败', e); }
+            if (moved) legacyKeys.forEach(k => { try { localStorage.removeItem(k); } catch (e) {} });
+          }
+        }
+        if (saved) {
+          try {
+            const parsed = JSON.parse(saved);
+            this.db.settings = { ...this.db.settings, ...(parsed.settings || {}) };
+            this.db.workspace = parsed.workspace || [];
+            this.db.notes = parsed.notes || [];
+            this.db.knowledge = parsed.knowledge || parsed.assets || [];
+            this.db.noteCategories = (parsed.noteCategories && parsed.noteCategories.length) ? parsed.noteCategories : this.DEFAULT_NOTE_CATEGORIES;
+            this.db.knowledgeCategories = (parsed.knowledgeCategories && parsed.knowledgeCategories.length) ? parsed.knowledgeCategories : this.DEFAULT_KNOWLEDGE_CATEGORIES;
+            this.db.profileCategories = (parsed.profileCategories && parsed.profileCategories.length) ? parsed.profileCategories : this.DEFAULT_PROFILE_CATEGORIES;
+            this.db.profile = { ...this.db.profile, ...(parsed.profile || { name: parsed.settings?.userName || '', role: parsed.settings?.userRole || '', bio: parsed.settings?.userBio || '' }) };
+            this.db.skills = parsed.skills || [];
+            this.db.experiences = parsed.experiences || [];
+            this.db.templates = parsed.templates || [];
+            this.db.contacts = parsed.contacts || [];
+            this.db.methods = parsed.methods || [];
+            this.db.growth = parsed.growth || [];
+            this.db.agents = parsed.agents || [];
+            this.db.agentOutputs = parsed.agentOutputs || [];
+            this.db.nikMessages = parsed.nikMessages || [];
+            this.db.bujo = (parsed.bujo && typeof parsed.bujo === 'object') ? { future: parsed.bujo.future || [], logs: parsed.bujo.logs || {} } : { future: [], logs: {} };
+          } catch (e) {
+            console.error('存储解析异常', e);
+          }
+        } else {
+          this.db.noteCategories = this.DEFAULT_NOTE_CATEGORIES;
+          this.db.knowledgeCategories = this.DEFAULT_KNOWLEDGE_CATEGORIES;
+          this.db.profileCategories = this.DEFAULT_PROFILE_CATEGORIES;
+        }
+
+        this.seedBuiltinAgents();
+      },
+
+      seedBuiltinAgents() {
+        this.db.agents = this.db.agents || [];
+        const builtins = [
+          {
+            id: 'ag_daily_report',
+            name: '日报生成器',
+            icon: 'calendar-clock',
+            desc: '汇总当日全部工作台数据，自动产出结构化日报',
+            prompt: `你是「日报生成器」智能体。基于授权范围内的全部数据，自动生成当日结构化工作日报。
+
+要求：
+1. 汇总今日（按日期筛选）所有工作流记录、空间进度、知识沉淀、经验更新。
+2. 按「今日完成 / 进行中 / 阻塞与风险 / 明日计划 / 关键洞察」五段式输出。
+3. 量化成果（条数、项目、产出），不空泛、不编造。
+4. 数据不足时明确标注「暂无记录」而非虚构。
+5. 末尾附「一句话复盘」。
+
+输出为干净 Markdown，可直接复制归档。`,
+            authAll: true,
+            authNotes: true,
+            authKnowledge: true,
+            authProfile: true
+          },
+          {
+            id: 'ag_workflow_arch',
+            name: '工作流编排师',
+            icon: 'git-branch',
+            desc: '读需求后自动拆条，生成可落地的空间/任务清单',
+            prompt: `你是「工作流编排师」智能体。把用户的模糊目标或需求，拆解成可立即执行的工作流条目。
+
+要求：
+1. 先复述你理解的核心目标（1 句）。
+2. 拆解为「项目/空间 → 任务卡片」两级结构，每条任务含：标题、产出物、截止建议。
+3. 标注优先级（P0/P1/P2）与依赖关系。
+4. 若用户未给时间，给出合理排期建议。
+5. 可主动建议把条目写入「工作空间」或「今日工作流」。
+
+输出为干净 Markdown 清单，便于直接落地。`,
+            authAll: true,
+            authNotes: true,
+            authKnowledge: true,
+            authProfile: true
+          },
+          {
+            id: 'ag_weekly_review',
+            name: '周报复盘萃取师',
+            icon: 'sparkles',
+            desc: '跨日聚合产出周报，并从经历中萃取可复用经验',
+            prompt: `你是「周报复盘萃取师」智能体。聚合近期（本周）全部数据，产出周报并萃取可复用经验。
+
+要求：
+1. 周报四段：本周概览（量化）、重点项目进展、问题与卡点、下周重心。
+2. 从本周工作流/知识/空间中，提炼 3-5 条「可复用经验」，每条含：场景、做法、认知。
+3. 标注哪些经验值得存入「个人经验库」（给出标题与摘要草案）。
+4. 识别重复出现的问题，给出一条系统性改进建议。
+5. 不编造数据，缺失处明确标注。
+
+输出为干净 Markdown。`,
+            authAll: true,
+            authNotes: true,
+            authKnowledge: true,
+            authProfile: true
+          }
+        ];
+        let added = 0;
+        builtins.forEach(b => {
+          if (!this.db.agents.some(a => a.id === b.id)) {
+            this.db.agents.unshift(b);
+            added++;
+          }
+        });
+        if (added > 0) this.saveStorage();
+      },
+
+      saveStorage() {
+        localStorage.setItem(this.STORAGE_KEY, JSON.stringify(this.db));
+        if (window.NikSync) NikSync.schedulePush();
+        this.updateStats();
+      },
+
+      toggleDarkMode() {
+        this.db.settings.darkMode = !this.db.settings.darkMode;
+        this.saveStorage();
+        this.applyThemeAndBg();
+      },
+
+      applyThemeAndBg() {
+        const isDark = !!this.db.settings.darkMode;
+        const html = document.documentElement;
+        const icon = document.getElementById('darkModeIcon');
+        const body = document.getElementById('mainBody');
+
+        if (isDark) {
+          html.classList.add('dark');
+          if (icon) icon.setAttribute('data-lucide', 'sun');
+        } else {
+          html.classList.remove('dark');
+          if (icon) icon.setAttribute('data-lucide', 'moon');
+        }
+
+        const theme = this.db.settings.bgTheme || 'bg-theme-plain';
+        body.className = body.className.replace(/bg-theme-\w+/g, '');
+        body.classList.add(theme);
+
+        lucide.createIcons();
+      },
+
+      applySettingsUI() {
+        const { appName } = this.db.settings;
+        document.getElementById('htmlTitle').innerText = appName || '象库 · 轻工作台';
+        document.getElementById('topAppName').innerText = appName || '象库 · 轻工作台';
+      },
+
+      renderAll() {
+        this.modules.workspace.render();
+        this.modules.notes.renderTabs();
+        this.modules.notes.render();
+        this.modules.knowledge.renderTabs();
+        this.modules.knowledge.render();
+        this.modules.profileVault.renderTabs();
+        this.modules.profileVault.render();
+        this.modules.agent.render();
+        this.modules.nik.renderMessages();
+        this.modules.bujo.render();
+        this.updateStats();
+        lucide.createIcons();
+      },
+
+      updateStats() {
+        const activeNotes = this.db.notes.filter(n => !n.archived).length;
+        const archivedNotes = this.db.notes.filter(n => !!n.archived).length;
+        document.getElementById('statNotesCount').innerText = activeNotes;
+        document.getElementById('statArchivedCount').innerText = archivedNotes;
+        document.getElementById('statKnowledgeCount').innerText = this.db.knowledge.length;
+        const agentEl = document.getElementById('statAgentsCount');
+        if (agentEl) agentEl.innerText = this.db.agents.length;
+      },
+
+      handleSearch() {
+        const kw = document.getElementById('globalSearchInput').value.trim();
+        this.modules.notes.render(kw);
+        this.modules.knowledge.render(kw);
+        this.modules.profileVault.render(kw);
+      },
+
+      exportBackup() {
+        const dataStr = JSON.stringify(this.db, null, 2);
+        const blob = new Blob([dataStr], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `xiangku_backup_${new Date().toISOString().slice(0, 10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+      },
+
+      handleImportFile(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (e) => {
+          try {
+            const imported = JSON.parse(e.target.result);
+            this.mergeDatabase(imported);
+            event.target.value = '';
+          } catch (err) {
+            alert('导入失败：文件不是合法的 JSON 格式');
+          }
+        };
+        reader.readAsText(file);
+      },
+
+      mergeDatabase(imported) {
+        let addedWs = 0, addedNotes = 0, addedKnowledge = 0, addedProfileItems = 0, addedAgents = 0;
+
+        if (Array.isArray(imported.workspace)) {
+          imported.workspace.forEach(ws => {
+            if (!this.db.workspace.some(item => item.id === ws.id || item.name === ws.name)) {
+              this.db.workspace.push(ws);
+              addedWs++;
+            }
+          });
+        }
+
+        if (Array.isArray(imported.notes)) {
+          imported.notes.forEach(note => {
+            if (!this.db.notes.some(item => item.id === note.id || (item.time === note.time && item.content === note.content))) {
+              this.db.notes.push(note);
+              addedNotes++;
+            }
+          });
+          this.db.notes.sort((a, b) => (b.id || '').localeCompare(a.id || ''));
+        }
+
+        const knowList = imported.knowledge || imported.assets || imported.library || [];
+        if (Array.isArray(knowList)) {
+          knowList.forEach(k => {
+            if (!this.db.knowledge.some(item => item.id === k.id || item.title === k.title)) {
+              this.db.knowledge.push(k);
+              addedKnowledge++;
+            }
+          });
+        }
+
+        if (imported.profile) {
+          this.db.profile = { ...this.db.profile, ...imported.profile };
+        }
+
+        ['skills', 'experiences', 'templates', 'contacts', 'methods', 'growth'].forEach(key => {
+          if (Array.isArray(imported[key])) {
+            imported[key].forEach(item => {
+              if (!this.db[key].some(existing => existing.id === item.id || existing.title === item.title || existing.name === item.name)) {
+                this.db[key].push(item);
+                addedProfileItems++;
+              }
+            });
+          }
+        });
+
+        if (Array.isArray(imported.agents)) {
+          imported.agents.forEach(agent => {
+            if (!this.db.agents.some(existing => existing.id === agent.id || existing.name === agent.name)) {
+              this.db.agents.push(agent);
+              addedAgents++;
+            }
+          });
+        }
+
+        this.saveStorage();
+        this.renderAll();
+        alert(`增量合并成功！\n- 空间: +${addedWs}\n- 记录: +${addedNotes}\n- 知识: +${addedKnowledge}\n- 个人资料: +${addedProfileItems}\n- 智能体: +${addedAgents}`);
+      },
+
+      async requestAI(messages, systemContext = '') {
+        const ai = this.db.settings.aiConfig || {};
+        if (!ai.apiKey || !ai.baseUrl) {
+          throw new Error('MISSING_CONFIG');
+        }
+
+        const url = ai.baseUrl.replace(/\/+$/, '') + '/chat/completions';
+        const payloadMessages = [];
+        if (systemContext) payloadMessages.push({ role: 'system', content: systemContext });
+
+        if (Array.isArray(messages)) payloadMessages.push(...messages);
+        else payloadMessages.push({ role: 'user', content: String(messages) });
+
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${ai.apiKey}`
+          },
+          body: JSON.stringify({
+            model: ai.model || 'gpt-4o-mini',
+            messages: payloadMessages,
+            temperature: parseFloat(ai.temperature) || 0.7
+          })
+        });
+
+        if (!response.ok) {
+          const errText = await response.text();
+          throw new Error(`API 响应错误: ${errText}`);
+        }
+
+        const resData = await response.json();
+        return resData.choices?.[0]?.message?.content || '未返回有效内容';
+      },
+
+      catName(id) {
+        const c = (this.db.noteCategories || []).find(x => x.id === id);
+        return c ? c.name : '未分类';
+      },
+      wsName(id) {
+        const w = (this.db.workspace || []).find(x => x.id === id);
+        return w ? w.name : id;
+      },
+      scopeOf(q) {
+        const s = String(q || '');
+        if (/子弹|手账|待办|任务|未完成|没做完|未来记录|月度复盘|bujo/i.test(s)) return 'bujo';
+        if (/归档/.test(s)) return 'archive';
+        if (/知识库|资料库|文档|SOP|规范|制度|论文|文献/.test(s)) return 'knowledge';
+        if (/经验库|经验|复盘/.test(s)) return 'experience';
+        if (/画像|个人档案|资料库.*个人|我的(能力|技能|方法|模板|联系人|成长)/.test(s)) return 'profile';
+        if (/工作流|流水|记录|今日|今天|本周|上周|总结/.test(s)) return 'notes';
+        return 'auto';
+      },
+      buildNikContext(scope, q) {
+        scope = scope || (q ? this.scopeOf(q) : 'auto');
+        const db = this.db, today = new Date().toISOString().slice(0, 10);
+        const nowWsId = this.currentWorkspaceId;
+        const nowWsName = nowWsId === 'all' ? '全部工作空间' : (this.wsName(nowWsId) || nowWsId);
+        const inWs = n => (nowWsId === 'all' || (n.workspaceId || 'general') === nowWsId || (!n.workspaceId && nowWsId === 'general'));
+        const P = [];
+        const noteHead = scope === 'archive' ? '【归档工作流】' : '【工作流记录】';
+        let notes = (db.notes || []).slice();
+        if (scope === 'archive') notes = notes.filter(n => n.archived && inWs(n));
+        else notes = notes.filter(n => !n.archived && inWs(n) && (n.date || today) <= today);
+        notes.sort((a, b) => String(b.date + ' ' + (b.time || '')).localeCompare(String(a.date + ' ' + (a.time || ''))));
+        const MAX_N = scope === 'archive' ? 200 : 400;
+        const shown = notes.slice(0, MAX_N);
+        const miss = notes.length - shown.length;
+        let headTxt = `${noteHead}（当前${nowWsName}，${shown.length}条` + (miss > 0 ? `，更早还有${miss}条未列出` : '') + `）`;
+        if (scope !== 'bujo') {
+          P.push(headTxt + '\n' + (shown.map(n => `[${n.date || today} ${n.time || ''}][${this.catName(n.type)}] ${(n.content || '').trim().slice(0, 300)}`).join('\n') || '（无记录）'));
+        }
+        if (scope === 'archive') return P.join('\n\n');
+
+        /* 工作空间 */
+        if (scope !== 'bujo') {
+          P.push(`【工作空间/项目（${db.workspace.length}个）】\n` + (db.workspace.map(w => `· ${w.name}${w.description ? '：' + w.description : ''}`).join('\n') || '（暂无）'));
+        }
+
+        /* 知识库 */
+        if (scope !== 'profile' && scope !== 'bujo') {
+          const hiddenCat = {};
+          (db.knowledgeCategories || []).forEach(c => { if (c.hidden) hiddenCat[c.id] = true; });
+          const pool = (db.knowledge || []).filter(k => scope === 'knowledge' ? true : (!hiddenCat[k.category] && !k.hidden));
+          const hideN = (db.knowledge || []).length - pool.length;
+          const kn = pool.slice().sort((a, b) => (b.id || '').localeCompare(a.id || '')).slice(0, 60);
+          P.push(`【知识库（共${pool.length}篇${hideN > 0 ? '；另有' + hideN + '篇已隐藏（分区或单条），点名标题即可查' : ''}；已列出${kn.length}篇标题；如需要某篇全文请告诉 NIK 标题）】\n` +
+            (kn.map(k => `·《${k.title || '未命名'}》（${k.category || '未分类'}${k.workspaceId && k.workspaceId !== 'general' ? '｜' + this.wsName(k.workspaceId) : ''}）：${String(k.content || '').replace(/\s+/g, ' ').slice(0, 220)}`).join('\n') || '（暂无）'));
+        }
+
+        /* 个人资料库 */
+        if (scope !== 'knowledge' && scope !== 'experience' && scope !== 'bujo') {
+          const p = db.profile || {};
+          const profLines = [`【个人资料·档案】\n- 姓名:${p.name || '未填'} | 角色:${p.role || '未填'} | 领域:${p.field || '未填'}\n- 优势:${p.strengths || '未填'}\n- 目标:${p.goals || '未填'}\n- 简介:${p.bio || '未填'}`];
+          const pack = (label, arr, fmt, max) => {
+            const a = (arr || []).slice(0, max || 40);
+            profLines.push(`【个人资料·${label}（${(arr || []).length}项，列${a.length}）】\n` + (a.map(fmt).join('\n') || '（暂无）'));
+          };
+          pack('能力库', db.skills, s => `· ${s.name}${s.desc || s.content ? '：' + String(s.desc || s.content).slice(0, 120) : ''}`);
+          pack('经验库', db.experiences, e => `· ${e.title}${e.summary ? '：' + String(e.summary).slice(0, 200) : ''}`, 50);
+          pack('模板库', db.templates, t => `· ${t.title || t.name}${t.content ? '：' + String(t.content).replace(/\s+/g, ' ').slice(0, 100) : ''}`);
+          pack('联系人', db.contacts, c => `· ${c.name || c.title}${c.content || c.desc ? '：' + String(c.content || c.desc).slice(0, 100) : ''}`);
+          pack('方法库', db.methods, m => `· ${m.title || m.name}${m.content ? '：' + String(m.content).replace(/\s+/g, ' ').slice(0, 150) : ''}`);
+          pack('成长轨迹', db.growth, g => `· ${g.title || g.name}${g.content || g.desc ? '：' + String(g.content || g.desc).slice(0, 150) : ''}`);
+          if (scope === 'profile') return P.concat(profLines).join('\n\n');
+          P.push(profLines.join('\n'));
+        }
+
+        /* 经验聚焦时单独给足经验 */
+        if (scope === 'experience') {
+          P.push(`【经验库全文（共${db.experiences.length}条）】\n` +
+            (db.experiences.slice(0, 80).map(e => `《${e.title}》场景:${e.scene || ''} 解法:${e.solution || ''} 认知:${e.summary || ''}`).join('\n') || '（暂无）'));
+        }
+        if (scope === 'knowledge') {
+          const kn = (db.knowledge || []).slice(0, 40);
+          P.push(`【知识库正文节选（共${db.knowledge.length}篇，每篇前500字）】\n` +
+            (kn.map(k => `《${k.title || '未命名'}》：${String(k.content || '').replace(/\s+/g, ' ').slice(0, 500)}`).join('\n') || '（暂无）'));
+        }
+
+        /* 子弹笔记 BuJo */
+        const bj = db.bujo || { future: [], logs: {} };
+        const bLogs = bj.logs || {};
+        const bToday = bLogs[today] || [];
+        const bMonthOpen = [];
+        Object.keys(bLogs).forEach(k => {
+          if (k.slice(0, 7) === today.slice(0, 7)) {
+            (bLogs[k] || []).forEach(x => {
+              if ((x.bullet === 'task' || x.bullet === 'priority') && x.status !== 'done') bMonthOpen.push(k + ' ' + x.content);
+            });
+          }
+        });
+        const bFut = (bj.future || []).filter(f => !f.done);
+        if (scope === 'bujo') {
+          P.push('【子弹笔记·今日 ' + today + '】\n' +
+            ((bToday || []).map(x => '[' + (x.bullet || 'task') + (x.status === 'done' ? '/已完成' : '') + '] ' + String(x.content || '').slice(0, 200)).join('\n') || '（今日无记录）'),
+            '【子弹笔记·本月未完成任务（' + bMonthOpen.length + ' 项）】\n' + (bMonthOpen.slice(0, 80).map(x => '· ' + x.slice(0, 160)).join('\n') || '（本月任务已清空）'),
+            '【子弹笔记·未来记录/待定（' + bFut.length + ' 项）】\n' + (bFut.slice(0, 60).map(f => '· [' + (f.month || '待定') + '] ' + String(f.content || '').slice(0, 160)).join('\n') || '（无）'));
+          return P.join('\n\n');
+        }
+        if (scope === 'auto' || scope === 'notes') {
+          P.push('【子弹笔记（任务系统）】今日未了 ' + bToday.filter(x => x.status !== 'done').length + ' 项 · 本月未完成 ' + bMonthOpen.length + ' 项 · 未来/待定 ' + bFut.length + ' 项' +
+            (bFut.length ? '，近项：' + bFut.slice(0, 6).map(f => '[' + (f.month || '待定') + ']' + String(f.content || '').slice(0, 50)).join('；') : ''));
+        }
+        return P.join('\n\n');
+      },
+      copyText(txt, tip) {
+        const doCopy = () => {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            return navigator.clipboard.writeText(txt).then(() => 1);
+          }
+          const ta = document.createElement('textarea');
+          ta.value = txt; ta.style.position = 'fixed'; ta.style.opacity = '0';
+          document.body.appendChild(ta); ta.select();
+          let ok = false;
+          try { ok = document.execCommand('copy'); } catch (e) {}
+          document.body.removeChild(ta);
+          return Promise.resolve(ok ? 1 : 0);
+        };
+        doCopy().then(ok => {
+          const el = document.createElement('div');
+          el.textContent = ok ? (tip || '✓ 已复制') : '复制失败';
+          el.style.cssText = 'position:fixed;left:50%;bottom:120px;transform:translateX(-50%);background:#26221c;color:#f5f1e6;padding:7px 16px;border-radius:999px;font-size:12px;z-index:2147483001;opacity:0;transition:opacity .25s';
+          document.body.appendChild(el);
+          requestAnimationFrame(() => { el.style.opacity = '1'; });
+          setTimeout(() => { el.style.opacity = '0'; setTimeout(() => el.remove(), 300); }, 1400);
+        });
+      },
+
+      modules: {
+        // ========== 通用分类管理器 ==========
+        categoryManager: {
+          currentType: 'noteCategories',
+
+          openModal(type, title) {
+            this.currentType = type;
+            document.getElementById('catManagerModalTitle').innerText = title;
+            document.getElementById('newCategoryNameInput').value = '';
+            document.getElementById('categoryManagerModal').classList.remove('hidden');
+            this.renderList();
+          },
+
+          closeModal() {
+            document.getElementById('categoryManagerModal').classList.add('hidden');
+            XiangKuApp.renderAll();
+          },
+
+          renderList() {
+            const container = document.getElementById('categoriesListContainer');
+            container.innerHTML = '';
+            const list = XiangKuApp.db[this.currentType] || [];
+
+            list.forEach((cat, index) => {
+              const row = document.createElement('div');
+              row.className = 'flex items-center justify-between p-1.5 bg-zinc-50 dark:bg-zinc-800 rounded text-xs gap-2';
+              const isSystem = cat.isSystem || (this.currentType === 'profileCategories' && cat.id === 'profile');
+
+              row.innerHTML = `
+                <input 
+                  type="text" 
+                  value="${XiangKuApp.escapeHtml(cat.name)}" 
+                  onchange="XiangKuApp.modules.categoryManager.renameCategory(${index}, this.value)"
+                  class="flex-1 bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-700 px-2 py-1 rounded text-xs focus:outline-none text-zinc-800 dark:text-zinc-100"
+                />
+                ${this.currentType === 'knowledgeCategories' ? `
+                  <button onclick="XiangKuApp.modules.categoryManager.toggleHidden(${index})" title="${cat.hidden ? '已在首页/全部视图中隐藏，点此恢复展示' : '在首页/全部视图中隐藏此分区内容（点分区标签仍可主动查看）'}" class="h-6 px-1.5 text-[10px] rounded whitespace-nowrap ${cat.hidden ? 'bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-900' : 'text-zinc-400 hover:text-amber-600 border border-transparent hover:border-amber-200 dark:hover:border-amber-900'}">
+                    ${cat.hidden ? '👁 已隐藏' : '👁 隐藏'}
+                  </button>
+                ` : ''}
+                ${isSystem ? '<span class="text-[10px] text-zinc-400 px-1">核心</span>' : `
+                  <button onclick="XiangKuApp.modules.categoryManager.deleteCategory(${index})" class="w-6 h-6 flex items-center justify-center text-zinc-400 hover:text-red-500 text-xs">✕</button>
+                `}
+              `;
+              container.appendChild(row);
+            });
+          },
+
+          addCategory() {
+            const input = document.getElementById('newCategoryNameInput');
+            const name = input.value.trim();
+            if (!name) return;
+
+            const newId = 'cat_' + Date.now();
+            XiangKuApp.db[this.currentType].push({ id: newId, name });
+            input.value = '';
+            XiangKuApp.saveStorage();
+            this.renderList();
+          },
+
+          renameCategory(index, newName) {
+            const trimmed = newName.trim();
+            if (!trimmed) return;
+            XiangKuApp.db[this.currentType][index].name = trimmed;
+            XiangKuApp.saveStorage();
+          },
+
+          deleteCategory(index) {
+            const cat = XiangKuApp.db[this.currentType][index];
+            if (!cat) return;
+
+            if (this.currentType === 'noteCategories') {
+              const count = XiangKuApp.db.notes.filter(n => n.type === cat.id).length;
+              if (count > 0 && !confirm(`该分区下已有 ${count} 条工作流记录，删除后它们将被归入未分类。确认删除？`)) return;
+            } else if (this.currentType === 'knowledgeCategories') {
+              const count = XiangKuApp.db.knowledge.filter(k => k.category === cat.id).length;
+              if (count > 0 && !confirm(`该分区下已有 ${count} 篇知识条目，删除后它们将被归入未分类。确认删除？`)) return;
+            }
+
+            XiangKuApp.db[this.currentType].splice(index, 1);
+            XiangKuApp.saveStorage();
+            this.renderList();
+          },
+
+          toggleHidden(index) {
+            const cat = XiangKuApp.db[this.currentType][index];
+            if (!cat) return;
+            cat.hidden = !cat.hidden;
+            XiangKuApp.saveStorage();
+            this.renderList();
+          },
+
+          resetCategories() {
+            if (confirm('确认恢复默认分类设置？')) {
+              if (this.currentType === 'noteCategories') {
+                XiangKuApp.db.noteCategories = [...XiangKuApp.DEFAULT_NOTE_CATEGORIES];
+              } else if (this.currentType === 'knowledgeCategories') {
+                XiangKuApp.db.knowledgeCategories = [...XiangKuApp.DEFAULT_KNOWLEDGE_CATEGORIES];
+              } else {
+                XiangKuApp.db.profileCategories = [...XiangKuApp.DEFAULT_PROFILE_CATEGORIES];
+              }
+              XiangKuApp.saveStorage();
+              this.renderList();
+            }
+          }
+        },
+
+        // ========== 设置模块 ==========
+        settings: {
+          openModal() {
+            const s = XiangKuApp.db.settings;
+            document.getElementById('settingAppName').value = s.appName || '';
+            document.getElementById('settingBgTheme').value = s.bgTheme || 'bg-theme-plain';
+            document.getElementById('settingFeishuWebhook').value = s.feishuWebhook || '';
+
+            const ai = s.aiConfig || {};
+            document.getElementById('settingAiProvider').value = ai.provider || 'custom';
+            document.getElementById('settingAiModel').value = ai.model || '';
+            document.getElementById('settingAiBaseUrl').value = ai.baseUrl || '';
+            document.getElementById('settingAiApiKey').value = ai.apiKey || '';
+
+            document.getElementById('settingsModal').classList.remove('hidden');
+          },
+
+          closeModal() {
+            document.getElementById('settingsModal').classList.add('hidden');
+          },
+
+          handleProviderChange() {
+            const provider = document.getElementById('settingAiProvider').value;
+            const urlInput = document.getElementById('settingAiBaseUrl');
+            const modelInput = document.getElementById('settingAiModel');
+
+            const presets = {
+              openai: { url: 'https://api.openai.com/v1', model: 'gpt-4o-mini' },
+              deepseek: { url: 'https://api.deepseek.com/v1', model: 'deepseek-chat' },
+              qwen: { url: 'https://dashscope.aliyuncs.com/compatible-mode/v1', model: 'qwen-turbo' },
+              custom: { url: '', model: '' }
+            };
+
+            if (presets[provider] && provider !== 'custom') {
+              urlInput.value = presets[provider].url;
+              modelInput.value = presets[provider].model;
+            }
+          },
+
+          saveFromUI() {
+            XiangKuApp.db.settings.appName = document.getElementById('settingAppName').value.trim() || '象库 · 轻工作台';
+            XiangKuApp.db.settings.bgTheme = document.getElementById('settingBgTheme').value;
+            XiangKuApp.db.settings.feishuWebhook = document.getElementById('settingFeishuWebhook').value.trim();
+
+            XiangKuApp.db.settings.aiConfig = {
+              provider: document.getElementById('settingAiProvider').value,
+              model: document.getElementById('settingAiModel').value.trim(),
+              baseUrl: document.getElementById('settingAiBaseUrl').value.trim(),
+              apiKey: document.getElementById('settingAiApiKey').value.trim(),
+              temperature: 0.7
+            };
+
+            XiangKuApp.saveStorage();
+            XiangKuApp.applyThemeAndBg();
+            XiangKuApp.applySettingsUI();
+            this.closeModal();
+          },
+
+          resetToDefault() {
+            if (confirm('确定清空并重置所有数据？')) {
+              localStorage.removeItem(XiangKuApp.STORAGE_KEY);
+              location.reload();
+            }
+          }
+        },
+
+        // ========== 飞书同步 ==========
+        feishu: {
+          async syncToFeishu() {
+            const webhookUrl = XiangKuApp.db.settings.feishuWebhook;
+            if (!webhookUrl) {
+              alert('请先在设置中心填入飞书 Webhook 或自建接口地址');
+              XiangKuApp.modules.settings.openModal();
+              return;
+            }
+
+            const notes = XiangKuApp.db.notes.filter(n => !n.archived);
+            const p = XiangKuApp.db.profile;
+            const noteContentText = notes.slice(0, 8).map((n, i) => `${i+1}. [${n.date || ''} ${n.time || ''}] ${n.content}`).join('\n');
+            const summaryText = `【${XiangKuApp.db.settings.appName} · 工作流推送】\n` +
+              `👤 用户: ${p.name || '工作者'} (${p.role || '无特定角色'})\n` +
+              `📅 推送日期: ${new Date().toLocaleDateString()}\n\n` +
+              `📝 今日活跃记录 (${notes.length}条):\n` + (noteContentText || '暂无活跃记录');
+
+            try {
+              const res = await fetch(webhookUrl, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ msg_type: "text", content: { text: summaryText } })
+              });
+              if (res.ok) alert('✅ 已成功推送至飞书！');
+              else alert('推送失败，请检查 Webhook 状态');
+            } catch (err) {
+              alert(`推送失败: ${err.message}`);
+            }
+          }
+        },
+
+        // ========== 工作空间 ==========
+        workspace: {
+          render() {
+            const container = document.getElementById('workspaceList');
+            container.innerHTML = '';
+
+            const allBtn = document.createElement('button');
+            const isAllActive = XiangKuApp.currentWorkspaceId === 'all';
+            allBtn.className = `w-full flex items-center justify-between p-2 rounded text-xs transition-colors ${
+              isAllActive ? 'bg-zinc-200/70 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/60'
+            }`;
+            allBtn.onclick = () => {
+              this.select('all');
+              if (window.innerWidth < 768) XiangKuApp.switchMobileTab('notes');
+            };
+            allBtn.innerHTML = `
+              <div class="flex items-center gap-2 truncate">
+                <i data-lucide="layers" class="w-3.5 h-3.5 text-zinc-400"></i>
+                <span>全部工作域</span>
+              </div>
+              <span class="text-[10px] font-mono text-zinc-400">${XiangKuApp.db.notes.filter(n => !n.archived).length}</span>
+            `;
+            container.appendChild(allBtn);
+
+            if (XiangKuApp.db.workspace.length === 0) {
+              const emptyTip = document.createElement('div');
+              emptyTip.className = 'p-3 text-[11px] text-zinc-400 text-center leading-relaxed';
+              emptyTip.innerHTML = '暂无工作空间<br><button onclick="XiangKuApp.modules.workspace.openCreateModal()" class="text-zinc-700 dark:text-zinc-300 underline mt-1">+ 创建新空间</button>';
+              container.appendChild(emptyTip);
+            } else {
+              XiangKuApp.db.workspace.forEach(ws => {
+                const isActive = XiangKuApp.currentWorkspaceId === ws.id;
+                const count = XiangKuApp.db.notes.filter(n => n.workspaceId === ws.id && !n.archived).length;
+                const item = document.createElement('div');
+                item.className = `group flex items-center justify-between p-2 rounded text-xs transition-colors cursor-pointer ${
+                  isActive ? 'bg-zinc-200/70 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 font-semibold' : 'text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800/60'
+                }`;
+                item.onclick = () => {
+                  this.select(ws.id);
+                  if (window.innerWidth < 768) XiangKuApp.switchMobileTab('notes');
+                };
+                item.innerHTML = `
+                  <div class="flex items-center gap-2 truncate flex-1">
+                    <i data-lucide="folder" class="w-3.5 h-3.5 text-zinc-400 shrink-0"></i>
+                    <span class="truncate">${XiangKuApp.escapeHtml(ws.name)}</span>
+                  </div>
+                  <div class="flex items-center gap-0.5">
+                    <span class="text-[10px] font-mono text-zinc-400">${count}</span>
+                    <button onclick="event.stopPropagation(); XiangKuApp.modules.workspace.rename('${ws.id}')" class="text-zinc-400 hover:text-blue-500 text-xs px-1" title="重命名">✎</button>
+                    <button onclick="event.stopPropagation(); XiangKuApp.modules.workspace.delete('${ws.id}')" class="text-zinc-400 hover:text-red-500 text-xs px-1" title="删除">✕</button>
+                  </div>
+                `;
+                container.appendChild(item);
+              });
+            }
+
+            const kSelect = document.getElementById('knowledgeFormWorkspace');
+            if (kSelect) {
+              kSelect.innerHTML = '<option value="general">通用空间</option>';
+              XiangKuApp.db.workspace.forEach(ws => {
+                const opt = document.createElement('option');
+                opt.value = ws.id;
+                opt.innerText = ws.name;
+                kSelect.appendChild(opt);
+              });
+            }
+          },
+
+          select(id) {
+            XiangKuApp.currentWorkspaceId = id;
+            let label = '全部工作域';
+            if (id !== 'all') {
+              const found = XiangKuApp.db.workspace.find(w => w.id === id);
+              if (found) label = found.name;
+            }
+            document.getElementById('currentWorkspaceBadge').innerText = label;
+            XiangKuApp.renderAll();
+          },
+
+          rename(id) {
+            const ws = XiangKuApp.db.workspace.find(w => w.id === id);
+            if (!ws) return;
+            const newName = prompt(`重命名工作空间「${ws.name}」:`, ws.name);
+            if (newName && newName.trim() && newName.trim() !== ws.name) {
+              ws.name = newName.trim();
+              XiangKuApp.saveStorage();
+              this.select(id);
+            }
+          },
+
+          openCreateModal() {
+            const name = prompt('请输入新工作空间 / 项目名称:');
+            if (!name || !name.trim()) return;
+            const newWs = { id: 'ws_' + Date.now(), name: name.trim(), description: '' };
+            XiangKuApp.db.workspace.push(newWs);
+            XiangKuApp.saveStorage();
+            this.select(newWs.id);
+          },
+
+          delete(id) {
+            if (confirm('确认删除该空间？')) {
+              XiangKuApp.db.workspace = XiangKuApp.db.workspace.filter(w => w.id !== id);
+              if (XiangKuApp.currentWorkspaceId === id) XiangKuApp.currentWorkspaceId = 'all';
+              XiangKuApp.saveStorage();
+              XiangKuApp.renderAll();
+            }
+          }
+        },
+
+        // ========== 工作流 工作台 ==========
+        notes: {
+          renderTabs() {
+            const container = document.getElementById('notesTabsContainer');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const allBtn = document.createElement('button');
+            const isAll = XiangKuApp.currentNoteCategory === 'all';
+            allBtn.className = `note-tab h-6 px-2.5 rounded ${isAll ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400'} shrink-0 flex items-center`;
+            allBtn.innerText = '全部';
+            allBtn.onclick = () => this.filter('all');
+            container.appendChild(allBtn);
+
+            (XiangKuApp.db.noteCategories || []).forEach(cat => {
+              const btn = document.createElement('button');
+              const isActive = XiangKuApp.currentNoteCategory === cat.id;
+              btn.className = `note-tab h-6 px-2.5 rounded ${isActive ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400'} shrink-0 flex items-center`;
+              btn.innerText = cat.name;
+              btn.onclick = () => this.filter(cat.id);
+              container.appendChild(btn);
+            });
+
+            const selectEl = document.getElementById('quickTypeSelect');
+            if (selectEl) {
+              selectEl.innerHTML = '';
+              (XiangKuApp.db.noteCategories || []).forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat.id;
+                opt.innerText = cat.name;
+                selectEl.appendChild(opt);
+              });
+            }
+          },
+
+          filter(catId) {
+            XiangKuApp.currentNoteCategory = catId;
+            this.renderTabs();
+            this.render();
+          },
+
+          toggleArchiveView() {
+            XiangKuApp.isNotesArchiveView = !XiangKuApp.isNotesArchiveView;
+            const btn = document.getElementById('notesArchiveToggleBtn');
+            const txt = document.getElementById('archiveToggleText');
+            const header = document.getElementById('notesStreamHeaderTitle');
+
+            if (XiangKuApp.isNotesArchiveView) {
+              btn.className = 'h-6 px-2 rounded bg-amber-500 text-white flex items-center gap-1 font-medium';
+              txt.innerText = '返回今日';
+              header.innerText = '已归档工作流历史 (ARCHIVED STREAM)';
+            } else {
+              btn.className = 'h-6 px-2 rounded border border-zinc-200 dark:border-zinc-700 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800 flex items-center gap-1';
+              txt.innerText = '归档库';
+              header.innerText = '今日工作流 (DAILY STREAM)';
+            }
+            this.render();
+          },
+
+          render(filterKw = '') {
+            const container = document.getElementById('dailyLogStream');
+            container.innerHTML = '';
+
+            const today = new Date().toISOString().slice(0, 10);
+
+            let list = XiangKuApp.db.notes.filter(n => {
+              const matchWs = (XiangKuApp.currentWorkspaceId === 'all' || n.workspaceId === XiangKuApp.currentWorkspaceId);
+              const matchCat = (XiangKuApp.currentNoteCategory === 'all' || n.type === XiangKuApp.currentNoteCategory);
+              const matchKw = !filterKw || n.content.toLowerCase().includes(filterKw.toLowerCase());
+              
+              if (XiangKuApp.isNotesArchiveView) {
+                // 归档库永久保留，不按日期过滤
+                return matchWs && matchCat && matchKw && !!n.archived;
+              } else {
+                const noteDate = n.date || today;
+                const isDue = noteDate <= today;
+                return matchWs && matchCat && matchKw && !n.archived && isDue;
+              }
+            });
+
+            if (list.length === 0) {
+              container.innerHTML = `
+                <div class="h-48 flex flex-col items-center justify-center text-zinc-400 text-xs gap-1">
+                  <i data-lucide="${XiangKuApp.isNotesArchiveView ? 'archive' : 'edit-3'}" class="w-5 h-5 text-zinc-300 dark:text-zinc-700 stroke-1"></i>
+                  <span>${XiangKuApp.isNotesArchiveView ? '暂无归档记录' : '今日暂无待办或流水记录'}</span>
+                </div>
+              `;
+              lucide.createIcons();
+              return;
+            }
+
+            const catList = XiangKuApp.db.noteCategories || [];
+
+            list.forEach(note => {
+              const catObj = catList.find(c => c.id === note.type);
+              const catName = catObj ? catObj.name : '流水';
+
+              const item = document.createElement('div');
+              item.className = 'relative pl-4 border-l-2 border-zinc-200 dark:border-zinc-800 group transition-all';
+
+              item.innerHTML = `
+                <div class="absolute -left-[5px] top-1 w-2 h-2 rounded-full ${note.archived ? 'bg-amber-400' : 'bg-zinc-300 dark:bg-zinc-700'} group-hover:bg-zinc-900 dark:group-hover:bg-zinc-100"></div>
+                <div class="flex items-center justify-between text-[11px] mb-1">
+                  <div class="flex items-center gap-1.5">
+                    <span class="font-mono text-zinc-400 dark:text-zinc-500">${note.date !== today ? note.date + ' ' : ''}${note.time || '--:--'}</span>
+                    <span class="text-[10px] px-1.5 py-0.2 rounded border bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border-zinc-200 dark:border-zinc-700">${catName}</span>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <button onclick="XiangKuApp.modules.notes.openEdit('${note.id}')" class="text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 text-xs px-1" title="编辑本条内容/分区/日期">编辑</button>
+                    <button onclick="XiangKuApp.modules.notes.copyNote('${note.id}')" class="text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 text-xs px-1" title="复制本条内容到剪贴板">复制</button>
+                    <button onclick="XiangKuApp.modules.notes.toggleArchive('${note.id}')" class="text-zinc-400 hover:text-amber-600 text-xs px-1" title="${note.archived ? '恢复到今日工作流' : '办完并归档'}">
+                      ${note.archived ? '恢复' : '归档'}
+                    </button>
+                    <button onclick="XiangKuApp.modules.notes.delete('${note.id}')" class="text-zinc-300 hover:text-red-500 text-xs px-1">删除</button>
+                  </div>
+                </div>
+                <p class="text-xs text-zinc-800 dark:text-zinc-200 leading-relaxed whitespace-pre-wrap">${XiangKuApp.escapeHtml(note.content)}</p>
+              `;
+              container.appendChild(item);
+            });
+            lucide.createIcons();
+          },
+
+          handleSubmit(e) {
+            e.preventDefault();
+            const contentEl = document.getElementById('quickInputContent');
+            const tagsEl = document.getElementById('quickInputTags');
+            const typeEl = document.getElementById('quickTypeSelect');
+            const dateEl = document.getElementById('quickInputDate');
+
+            const content = contentEl.value.trim();
+            if (!content) return;
+
+            const now = new Date();
+            const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+            const tags = tagsEl.value.trim();
+            const selectedDate = dateEl.value || now.toISOString().slice(0, 10);
+
+            XiangKuApp.db.notes.unshift({
+              id: 'n_' + Date.now(),
+              title: content.slice(0, 16),
+              content: tags ? `${content}\n${tags}` : content,
+              date: selectedDate,
+              time: timeStr,
+              type: typeEl.value,
+              archived: false,
+              workspaceId: XiangKuApp.currentWorkspaceId === 'all' ? 'general' : XiangKuApp.currentWorkspaceId
+            });
+
+            contentEl.value = '';
+            tagsEl.value = '';
+            XiangKuApp.saveStorage();
+            XiangKuApp.renderAll();
+          },
+
+          toggleArchive(id) {
+            const note = XiangKuApp.db.notes.find(n => n.id === id);
+            if (note) {
+              note.archived = !note.archived;
+              XiangKuApp.saveStorage();
+              XiangKuApp.renderAll();
+            }
+          },
+
+          delete(id) {
+            if (confirm('确认删除记录？')) {
+              XiangKuApp.db.notes = XiangKuApp.db.notes.filter(n => n.id !== id);
+              XiangKuApp.saveStorage();
+              XiangKuApp.renderAll();
+            }
+          },
+
+          copyNote(id) {
+            const note = XiangKuApp.db.notes.find(n => n.id === id);
+            if (!note) return;
+            XiangKuApp.copyText(note.content || '', '✓ 条目内容已复制');
+          },
+
+          openEdit(id) {
+            const note = XiangKuApp.db.notes.find(n => n.id === id);
+            if (!note) return;
+            const typeSelect = document.getElementById('notesEditFormType');
+            typeSelect.innerHTML = '';
+            (XiangKuApp.db.noteCategories || []).forEach(cat => {
+              const opt = document.createElement('option');
+              opt.value = cat.id;
+              opt.innerText = cat.name;
+              if (cat.id === note.type) opt.selected = true;
+              typeSelect.appendChild(opt);
+            });
+            document.getElementById('notesEditFormId').value = note.id;
+            document.getElementById('notesEditFormContent').value = note.content || '';
+            document.getElementById('notesEditFormDate').value = note.date || '';
+            document.getElementById('notesEditModal').classList.remove('hidden');
+          },
+
+          closeEdit() {
+            document.getElementById('notesEditModal').classList.add('hidden');
+          },
+
+          saveEdit(e) {
+            e.preventDefault();
+            const id = document.getElementById('notesEditFormId').value;
+            const note = XiangKuApp.db.notes.find(n => n.id === id);
+            if (!note) return;
+            note.content = document.getElementById('notesEditFormContent').value.trim();
+            note.type = document.getElementById('notesEditFormType').value;
+            const nd = document.getElementById('notesEditFormDate').value;
+            if (nd) note.date = nd;
+            XiangKuApp.saveStorage();
+            this.closeEdit();
+            XiangKuApp.renderAll();
+          }
+        },
+
+        // ========== 知识库 ==========
+        knowledge: {
+          /* 单条隐藏视图 */
+          showHidden: false,
+
+          renderTabs() {
+            const container = document.getElementById('knowledgeTabsContainer');
+            if (!container) return;
+            container.innerHTML = '';
+
+            const allBtn = document.createElement('button');
+            const isAll = XiangKuApp.currentKnowledgeCategory === 'all';
+            allBtn.className = `knowledge-tab h-6 px-2.5 rounded ${isAll ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400'} shrink-0 flex items-center`;
+            allBtn.innerText = '全部';
+            allBtn.onclick = () => this.filter('all');
+            container.appendChild(allBtn);
+
+            (XiangKuApp.db.knowledgeCategories || []).forEach(cat => {
+              const btn = document.createElement('button');
+              const isActive = XiangKuApp.currentKnowledgeCategory === cat.id;
+              btn.className = `knowledge-tab h-6 px-2.5 rounded ${isActive ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium' : cat.hidden ? 'text-zinc-300 dark:text-zinc-600 hover:text-zinc-500 dark:hover:text-zinc-400 opacity-80' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400'} shrink-0 flex items-center gap-1`;
+              if (cat.hidden) btn.title = '已设为「首页隐藏」，全部视图中不展示；点此仍可查看该分区';
+              btn.innerHTML = cat.hidden ? `<span class="text-[9px]">👁</span>${cat.name}` : cat.name;
+              btn.onclick = () => this.filter(cat.id);
+              container.appendChild(btn);
+            });
+
+            const selectEl = document.getElementById('knowledgeFormCategory');
+            if (selectEl) {
+              selectEl.innerHTML = '';
+              (XiangKuApp.db.knowledgeCategories || []).forEach(cat => {
+                const opt = document.createElement('option');
+                opt.value = cat.id;
+                opt.innerText = cat.name;
+                selectEl.appendChild(opt);
+              });
+            }
+          },
+
+          render(filterKw = '') {
+            const container = document.getElementById('knowledgeCardList');
+            container.innerHTML = '';
+
+            const catHidden = {};
+            (XiangKuApp.db.knowledgeCategories || []).forEach(c => { catHidden[c.id] = !!c.hidden; });
+            const isAllView = XiangKuApp.currentKnowledgeCategory === 'all';
+            if (this.showHidden && !(XiangKuApp.db.knowledge || []).some(k => !!k.hidden)) this.showHidden = false;
+            const showH = !!this.showHidden;
+
+            let list = XiangKuApp.db.knowledge.filter(k => {
+              const matchWs = (XiangKuApp.currentWorkspaceId === 'all' || k.workspaceId === XiangKuApp.currentWorkspaceId);
+              const matchKw = !filterKw || k.title.toLowerCase().includes(filterKw.toLowerCase()) || k.content.toLowerCase().includes(filterKw.toLowerCase());
+              if (showH) return matchWs && !!k.hidden && matchKw;
+              if (k.hidden) return false;
+              const matchCat = isAllView
+                ? !catHidden[k.category]
+                : (k.category === XiangKuApp.currentKnowledgeCategory);
+              return matchWs && matchCat && matchKw;
+            });
+
+            if (list.length === 0) {
+              const hidCount = (XiangKuApp.db.knowledge || []).filter(k => !!k.hidden).length;
+              const hasCatHidden = (XiangKuApp.db.knowledge || []).some(k => catHidden[k.category]);
+              let tip = '暂无该分类知识条目';
+              if (showH) {
+                tip = '没有已隐藏的条目';
+              } else if (isAllView && (hidCount > 0 || hasCatHidden)) {
+                const parts = [];
+                if (hidCount > 0) parts.push('单条已隐藏 ' + hidCount + ' 条');
+                if (hasCatHidden) parts.push('隐藏分区');
+                tip = '首页未展示：' + parts.join('、') + ' · 点右上「眼睛」或分区标签可查看';
+              }
+              container.innerHTML = `
+                <div class="h-48 flex flex-col items-center justify-center text-zinc-400 text-xs gap-1">
+                  <i data-lucide="layers" class="w-5 h-5 text-zinc-300 dark:text-zinc-700 stroke-1"></i>
+                  <span>${tip}</span>
+                </div>
+              `;
+              lucide.createIcons();
+              this.updateHiddenToggle();
+              return;
+            }
+
+            const catList = XiangKuApp.db.knowledgeCategories || [];
+
+            list.forEach(item => {
+              const catObj = catList.find(c => c.id === item.category);
+              const catName = catObj ? catObj.name : '知识';
+
+              const card = document.createElement('div');
+              card.className = 'p-2.5 sm:p-3 bg-white dark:bg-[#181818] border border-zinc-200/80 dark:border-zinc-800 rounded flex flex-col gap-1.5 shadow-sm';
+              card.innerHTML = `
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-1.5 min-w-0">
+                    <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 shrink-0">${catName}</span>
+                    <h3 class="text-xs font-semibold text-zinc-900 dark:text-zinc-100 truncate">${XiangKuApp.escapeHtml(item.title)}</h3>
+                  </div>
+                  <div class="flex items-center gap-1">
+                    <button onclick="XiangKuApp.modules.knowledge.openDoc('${item.id}')" class="text-zinc-400 hover:text-sky-600 text-xs p-1" title="文档模式编辑">📄</button>
+                    <button onclick="XiangKuApp.modules.knowledge.openModal('${item.id}')" class="text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 text-xs p-1">✎</button>
+                    <button onclick="XiangKuApp.modules.knowledge.delete('${item.id}')" class="text-zinc-400 hover:text-red-500 text-xs p-1">✕</button>
+                  </div>
+                </div>
+                <pre class="text-[11px] text-zinc-600 dark:text-zinc-300 bg-[#FAFAFA] dark:bg-[#121212] p-2 rounded border border-zinc-100 dark:border-zinc-800 font-mono whitespace-pre-wrap leading-relaxed max-h-24 overflow-y-auto">${XiangKuApp.escapeHtml(item.content)}</pre>
+                <div class="flex items-center justify-between text-[10px] pt-0.5">
+                  <button onclick="XiangKuApp.modules.knowledge.toggleHide('${item.id}')" class="text-zinc-400 dark:text-zinc-500 hover:text-amber-600 flex items-center gap-1" title="${item.hidden ? '恢复：放回首页展示' : '隐藏：此条不再出现在首页/列表'}">
+                    <i data-lucide="${item.hidden ? 'eye' : 'eye-off'}" class="w-3 h-3"></i>${item.hidden ? '恢复显示' : '隐藏'}
+                  </button>
+                  <button onclick="XiangKuApp.modules.knowledge.copy('${item.id}')" class="text-zinc-500 dark:text-zinc-400 hover:underline">复制内容</button>
+                </div>
+              `;
+              container.appendChild(card);
+            });
+            lucide.createIcons();
+            this.updateHiddenToggle();
+          },
+
+          filter(catId) {
+            XiangKuApp.currentKnowledgeCategory = catId;
+            this.renderTabs();
+            this.render();
+          },
+
+          openModal(editId = null) {
+            this.renderTabs();
+            const modal = document.getElementById('knowledgeModal');
+            modal.classList.remove('hidden');
+
+            if (editId) {
+              const item = XiangKuApp.db.knowledge.find(k => k.id === editId);
+              if (!item) return;
+              document.getElementById('knowledgeModalTitle').innerText = '编辑知识条目';
+              document.getElementById('knowledgeFormId').value = item.id;
+              document.getElementById('knowledgeFormTitle').value = item.title;
+              document.getElementById('knowledgeFormCategory').value = item.category;
+              document.getElementById('knowledgeFormWorkspace').value = item.workspaceId || 'general';
+              document.getElementById('knowledgeFormContent').value = item.content;
+            } else {
+              document.getElementById('knowledgeModalTitle').innerText = '新建/上传知识条目';
+              document.getElementById('knowledgeFormId').value = '';
+              document.getElementById('knowledgeFormTitle').value = '';
+              document.getElementById('knowledgeFormContent').value = '';
+            }
+          },
+
+          closeModal() {
+            document.getElementById('knowledgeModal').classList.add('hidden');
+          },
+
+          handleSubmit(e) {
+            e.preventDefault();
+            const id = document.getElementById('knowledgeFormId').value;
+            const title = document.getElementById('knowledgeFormTitle').value.trim();
+            const category = document.getElementById('knowledgeFormCategory').value;
+            const workspaceId = document.getElementById('knowledgeFormWorkspace').value;
+            const content = document.getElementById('knowledgeFormContent').value.trim();
+
+            if (!title || !content) return;
+
+            if (id) {
+              const target = XiangKuApp.db.knowledge.find(k => k.id === id);
+              if (target) {
+                target.title = title;
+                target.category = category;
+                target.workspaceId = workspaceId;
+                target.content = content;
+              }
+            } else {
+              XiangKuApp.db.knowledge.unshift({ id: 'k_' + Date.now(), title, content, category, workspaceId });
+            }
+
+            XiangKuApp.saveStorage();
+            this.closeModal();
+            XiangKuApp.renderAll();
+          },
+
+          delete(id) {
+            if (confirm('确认删除该知识条目？')) {
+              XiangKuApp.db.knowledge = XiangKuApp.db.knowledge.filter(k => k.id !== id);
+              XiangKuApp.saveStorage();
+              XiangKuApp.renderAll();
+            }
+          },
+
+          copy(id) {
+            const item = XiangKuApp.db.knowledge.find(k => k.id === id);
+            if (!item) return;
+            navigator.clipboard.writeText(item.content).then(() => alert('知识条目已复制'));
+          },
+
+          toggleHide(id) {
+            const item = XiangKuApp.db.knowledge.find(k => k.id === id);
+            if (!item) return;
+            item.hidden = !item.hidden;
+            XiangKuApp.saveStorage();
+            this.render();
+          },
+
+          toggleHiddenView() {
+            this.showHidden = !this.showHidden;
+            this.render();
+          },
+
+          updateHiddenToggle() {
+            const btn = document.getElementById('kbHiddenToggleBtn');
+            if (!btn) return;
+            const n = (XiangKuApp.db.knowledge || []).filter(k => !!k.hidden).length;
+            btn.title = this.showHidden
+              ? '返回正常视图（已隐藏 ' + n + ' 条）'
+              : (n > 0 ? '已隐藏 ' + n + ' 条 · 点击查看/恢复' : '隐藏单条知识（不在首页展示）');
+            if (this.showHidden) {
+              btn.style.background = '#fde68a';
+              btn.style.color = '#92400e';
+            } else {
+              btn.style.background = '';
+              btn.style.color = '';
+            }
+          },
+
+          // ===== 文档模式 =====
+          _docId: null,
+          _docDirty: false,
+
+          openDoc(id) {
+            const item = XiangKuApp.db.knowledge.find(k => k.id === id);
+            if (!item) return;
+            this._docId = id;
+            this._docDirty = false;
+            document.getElementById('kbDocTitle').value = item.title || '';
+            document.getElementById('kbDocEditor').value = item.content || '';
+            document.getElementById('kbDocPreview').classList.add('hidden');
+            document.getElementById('kbDocEditor').classList.remove('hidden');
+            document.getElementById('kbDocPreviewBtn').innerText = '预览';
+            document.getElementById('kbDocSavedTip').classList.add('hidden');
+            this.updateDocStats();
+            const modal = document.getElementById('knowledgeDocModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            lucide.createIcons();
+          },
+
+          closeDoc() {
+            if (this._docDirty && !confirm('文档有未保存的修改，确认关闭？')) return;
+            this._docId = null;
+            const modal = document.getElementById('knowledgeDocModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+          },
+
+          saveDoc() {
+            const id = this._docId;
+            if (!id) return;
+            const item = XiangKuApp.db.knowledge.find(k => k.id === id);
+            if (!item) return;
+            item.title = document.getElementById('kbDocTitle').value.trim() || '未命名文档';
+            item.content = document.getElementById('kbDocEditor').value;
+            XiangKuApp.saveStorage();
+            this._docDirty = false;
+            const tip = document.getElementById('kbDocSavedTip');
+            tip.classList.remove('hidden');
+            setTimeout(() => tip.classList.add('hidden'), 1500);
+            XiangKuApp.renderAll();
+          },
+
+          toggleDocPreview() {
+            const editor = document.getElementById('kbDocEditor');
+            const preview = document.getElementById('kbDocPreview');
+            const btn = document.getElementById('kbDocPreviewBtn');
+            if (preview.classList.contains('hidden')) {
+              preview.innerHTML = this.renderMarkdown(editor.value);
+              preview.classList.remove('hidden');
+              editor.classList.add('hidden');
+              btn.innerText = '编辑';
+            } else {
+              preview.classList.add('hidden');
+              editor.classList.remove('hidden');
+              btn.innerText = '预览';
+            }
+          },
+
+          updateDocStats() {
+            const v = document.getElementById('kbDocEditor').value || '';
+            document.getElementById('kbDocStats').innerText = v.length + ' 字 · ' + (v.split('\n').length) + ' 行';
+          },
+
+          renderMarkdown(md) {
+            const esc = s => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            let html = esc(md);
+            // 代码块
+            html = html.replace(/```([\s\S]*?)```/g, (m, c) => '<pre><code>' + c + '</code></pre>');
+            // 表格
+            html = html.replace(/((?:^\|.*\|\s*$\n?)+)/gm, (block) => {
+              const lines = block.trim().split('\n').filter(l => l.trim());
+              if (lines.length < 2) return block;
+              const cells = l => l.split('|').slice(1, -1).map(s => s.trim());
+              const head = cells(lines[0]);
+              const body = lines.slice(2).map(cells);
+              return '<table><thead><tr>' +
+                head.map(h => '<th>' + h + '</th>').join('') +
+                '</tr></thead><tbody>' +
+                body.map(r => '<tr>' + r.map(c => '<td>' + c + '</td>').join('') + '</tr>').join('') +
+                '</tbody></table>';
+            });
+            // 标题
+            html = html.replace(/^###### (.*)$/gm, '<h6>$1</h6>')
+                       .replace(/^##### (.*)$/gm, '<h5>$1</h5>')
+                       .replace(/^#### (.*)$/gm, '<h4>$1</h4>')
+                       .replace(/^### (.*)$/gm, '<h3>$1</h3>')
+                       .replace(/^## (.*)$/gm, '<h2>$1</h2>')
+                       .replace(/^# (.*)$/gm, '<h1>$1</h1>');
+            // 列表
+            html = html.replace(/^\s*[-*] (.*)$/gm, '<li>$1</li>').replace(/(<li>.*<\/li>\n?)+/g, m => '<ul>' + m + '</ul>');
+            // 加粗/斜体/行内代码
+            html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+                       .replace(/\*(.+?)\*/g, '<em>$1</em>')
+                       .replace(/`([^`]+)`/g, '<code>$1</code>');
+            // 段落
+            html = html.split(/\n{2,}/).map(p => /^<(h|u|o|t|p|d)/.test(p.trim()) ? p : '<p>' + p.replace(/\n/g, '<br>') + '</p>').join('');
+            return html;
+          }
+        },
+
+        // ========== 个人资料库 ==========
+        profileVault: {
+          toggleDrawer() {
+            document.getElementById('profileVaultDrawer').classList.toggle('translate-x-full');
+          },
+
+          renderTabs() {
+            const container = document.getElementById('profileTabsContainer');
+            if (!container) return;
+            container.innerHTML = '';
+
+            (XiangKuApp.db.profileCategories || []).forEach(cat => {
+              const btn = document.createElement('button');
+              const isActive = XiangKuApp.currentProfileSection === cat.id;
+              btn.className = `pv-tab h-6 px-2.5 rounded ${isActive ? 'bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium' : 'hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400'} shrink-0 flex items-center`;
+              btn.innerText = cat.name;
+              btn.onclick = () => this.switchSection(cat.id);
+              container.appendChild(btn);
+            });
+          },
+
+          switchSection(sec) {
+            XiangKuApp.currentProfileSection = sec;
+            this.renderTabs();
+            this.render();
+          },
+
+          render(filterKw = '') {
+            const container = document.getElementById('profileVaultContainer');
+            if (!container) return;
+            container.innerHTML = '';
+            const sec = XiangKuApp.currentProfileSection;
+
+            // 「记录」按钮：在"个人档案"页隐藏（档案是内联编辑的）
+            const recBtn = document.getElementById('pvRecordBtn');
+            if (recBtn) recBtn.style.display = (sec === 'profile') ? 'none' : 'flex';
+
+            if (sec === 'profile') {
+              const p = XiangKuApp.db.profile;
+              container.innerHTML = `
+                <div class="bg-white dark:bg-[#181818] p-3.5 rounded-lg border border-zinc-200/80 dark:border-zinc-800 space-y-3 text-xs shadow-sm">
+                  <div class="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-800 pb-1.5">
+                    <span class="font-semibold text-zinc-800 dark:text-zinc-200">个人核心档案 (AI 上下文底座)</span>
+                    <span class="text-[10px] text-zinc-400">实时自动写入</span>
+                  </div>
+                  <div class="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <label class="block text-[10px] text-zinc-400 mb-0.5">姓名 / 昵称</label>
+                      <input type="text" oninput="XiangKuApp.modules.profileVault.updateProfileField('name', this.value)" value="${XiangKuApp.escapeHtml(p.name || '')}" placeholder="例如：乌鸦" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800/80 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
+                    </div>
+                    <div>
+                      <label class="block text-[10px] text-zinc-400 mb-0.5">职业身份</label>
+                      <input type="text" oninput="XiangKuApp.modules.profileVault.updateProfileField('role', this.value)" value="${XiangKuApp.escapeHtml(p.role || '')}" placeholder="例如：独立开发者 / 运维" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
+                    </div>
+                  </div>
+                  <div class="grid grid-cols-2 gap-2.5">
+                    <div>
+                      <label class="block text-[10px] text-zinc-400 mb-0.5">主要工作领域</label>
+                      <input type="text" oninput="XiangKuApp.modules.profileVault.updateProfileField('field', this.value)" value="${XiangKuApp.escapeHtml(p.field || '')}" placeholder="例如：系统维护、长文创作" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
+                    </div>
+                    <div>
+                      <label class="block text-[10px] text-zinc-400 mb-0.5">擅长方向</label>
+                      <input type="text" oninput="XiangKuApp.modules.profileVault.updateProfileField('strengths', this.value)" value="${XiangKuApp.escapeHtml(p.strengths || '')}" placeholder="例如：故障应急排查、架构精简" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
+                    </div>
+                  </div>
+                  <div>
+                    <label class="block text-[10px] text-zinc-400 mb-0.5">当前阶段目标</label>
+                    <input type="text" oninput="XiangKuApp.modules.profileVault.updateProfileField('goals', this.value)" value="${XiangKuApp.escapeHtml(p.goals || '')}" placeholder="例如：搭建全套象库工具链闭环" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
+                  </div>
+                  <div>
+                    <label class="block text-[10px] text-zinc-400 mb-0.5">个人简介 / 理念总结</label>
+                    <textarea rows="3" oninput="XiangKuApp.modules.profileVault.updateProfileField('bio', this.value)" placeholder="详细阐述个人的工作理念、风格与背景..." class="w-full p-2 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none resize-none leading-relaxed">${XiangKuApp.escapeHtml(p.bio || '')}</textarea>
+                  </div>
+                </div>
+              `;
+              return;
+            }
+
+            if (sec === 'skills') {
+              this.renderCardList(XiangKuApp.db.skills, filterKw, (item) => `
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700">${XiangKuApp.escapeHtml(item.category || '能力')}</span>
+                    <h3 class="text-xs font-semibold text-zinc-900 dark:text-zinc-100">${XiangKuApp.escapeHtml(item.name)}</h3>
+                  </div>
+                  <span class="text-[10px] text-amber-600 dark:text-amber-400 font-medium">${XiangKuApp.escapeHtml(item.level || '熟练')}</span>
+                </div>
+                <p class="text-[11px] text-zinc-600 dark:text-zinc-300 leading-relaxed">${XiangKuApp.escapeHtml(item.desc || '')}</p>
+                ${item.learning ? `<div class="text-[10px] text-zinc-400 bg-zinc-50 dark:bg-zinc-900 p-1.5 rounded">学习记录: ${XiangKuApp.escapeHtml(item.learning)}</div>` : ''}
+              `);
+            } else if (sec === 'experiences') {
+              this.renderCardList(XiangKuApp.db.experiences, filterKw, (item) => `
+                <div class="flex items-center justify-between">
+                  <h3 class="text-xs font-semibold text-zinc-900 dark:text-zinc-100">${XiangKuApp.escapeHtml(item.title)}</h3>
+                  ${item.keywords ? `<span class="text-[9px] text-zinc-400 font-mono">${XiangKuApp.escapeHtml(item.keywords)}</span>` : ''}
+                </div>
+                <div class="space-y-1 text-[11px] text-zinc-600 dark:text-zinc-300 bg-zinc-50 dark:bg-zinc-900 p-2 rounded">
+                  <div><strong class="text-zinc-700 dark:text-zinc-200">场景/问题:</strong> ${XiangKuApp.escapeHtml(item.scene || item.problem || '常规工作')}</div>
+                  <div><strong class="text-zinc-700 dark:text-zinc-200">解决方法:</strong> ${XiangKuApp.escapeHtml(item.solution || '')}</div>
+                  <div><strong class="text-zinc-700 dark:text-zinc-200">经验总结:</strong> ${XiangKuApp.escapeHtml(item.summary || '')}</div>
+                </div>
+              `);
+            } else if (sec === 'templates') {
+              this.renderCardList(XiangKuApp.db.templates, filterKw, (item) => `
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-1.5">
+                    <span class="text-[9px] font-mono px-1.5 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700">${XiangKuApp.escapeHtml(item.type || '模板')}</span>
+                    <h3 class="text-xs font-semibold text-zinc-900 dark:text-zinc-100">${XiangKuApp.escapeHtml(item.title)}</h3>
+                  </div>
+                  <button onclick="XiangKuApp.modules.profileVault.copyContent('${item.id}', 'templates')" class="text-[10px] text-zinc-500 hover:underline">复制模板</button>
+                </div>
+                <pre class="text-[11px] text-zinc-600 dark:text-zinc-300 bg-zinc-50 dark:bg-zinc-900 p-2 rounded font-mono whitespace-pre-wrap leading-relaxed max-h-28 overflow-y-auto">${XiangKuApp.escapeHtml(item.content)}</pre>
+              `);
+            } else if (sec === 'contacts') {
+              this.renderCardList(XiangKuApp.db.contacts, filterKw, (item) => `
+                <div class="flex items-center justify-between">
+                  <div class="flex items-center gap-1.5">
+                    <h3 class="text-xs font-semibold text-zinc-900 dark:text-zinc-100">${XiangKuApp.escapeHtml(item.name)}</h3>
+                    <span class="text-[10px] text-zinc-400">(${XiangKuApp.escapeHtml(item.role || '外部协作')})</span>
+                  </div>
+                  <span class="text-[10px] font-mono text-zinc-500">${XiangKuApp.escapeHtml(item.contact || '')}</span>
+                </div>
+                <div class="text-[11px] text-zinc-600 dark:text-zinc-300 space-y-0.5">
+                  <div><strong>负责领域:</strong> ${XiangKuApp.escapeHtml(item.field || '通用')}</div>
+                  ${item.history ? `<div><strong>合作记录:</strong> ${XiangKuApp.escapeHtml(item.history)}</div>` : ''}
+                  ${item.notes ? `<div class="text-[10px] text-zinc-400">备注: ${XiangKuApp.escapeHtml(item.notes)}</div>` : ''}
+                </div>
+              `);
+            } else if (sec === 'methods') {
+              this.renderCardList(XiangKuApp.db.methods, filterKw, (item) => `
+                <div class="flex items-center justify-between">
+                  <h3 class="text-xs font-semibold text-zinc-900 dark:text-zinc-100">${XiangKuApp.escapeHtml(item.title)}</h3>
+                  <span class="text-[9px] text-zinc-400 font-mono">${XiangKuApp.escapeHtml(item.category || '方法论')}</span>
+                </div>
+                <pre class="text-[11px] text-zinc-600 dark:text-zinc-300 bg-zinc-50 dark:bg-zinc-900 p-2 rounded font-mono whitespace-pre-wrap leading-relaxed">${XiangKuApp.escapeHtml(item.content)}</pre>
+              `);
+            } else if (sec === 'growth') {
+              this.renderCardList(XiangKuApp.db.growth, filterKw, (item) => `
+                <div class="flex items-center justify-between">
+                  <span class="font-mono text-[10px] text-zinc-400">${XiangKuApp.escapeHtml(item.date || '--')}</span>
+                  <h3 class="text-xs font-semibold text-zinc-900 dark:text-zinc-100 flex-1 ml-2 truncate">${XiangKuApp.escapeHtml(item.event)}</h3>
+                </div>
+                <div class="space-y-1 text-[11px] text-zinc-600 dark:text-zinc-300 bg-zinc-50 dark:bg-zinc-900 p-2 rounded">
+                  <div><strong class="text-zinc-700 dark:text-zinc-200">获得经验:</strong> ${XiangKuApp.escapeHtml(item.experience || '')}</div>
+                  <div><strong class="text-zinc-700 dark:text-zinc-200">新的认知:</strong> ${XiangKuApp.escapeHtml(item.insight || '')}</div>
+                  ${item.plan ? `<div><strong class="text-zinc-700 dark:text-zinc-200">未来计划:</strong> ${XiangKuApp.escapeHtml(item.plan)}</div>` : ''}
+                </div>
+              `);
+            } else {
+              const list = XiangKuApp.db[sec] || [];
+              this.renderCardList(list, filterKw, (item) => `
+                <div class="flex items-center justify-between">
+                  <h3 class="text-xs font-semibold text-zinc-900 dark:text-zinc-100">${XiangKuApp.escapeHtml(item.title || item.name)}</h3>
+                </div>
+                <pre class="text-[11px] text-zinc-600 dark:text-zinc-300 bg-zinc-50 dark:bg-zinc-900 p-2 rounded font-mono whitespace-pre-wrap leading-relaxed">${XiangKuApp.escapeHtml(item.content || item.desc || '')}</pre>
+              `);
+            }
+          },
+
+          renderCardList(list, filterKw, cardContentBuilder) {
+            const container = document.getElementById('profileVaultContainer');
+            const sec = XiangKuApp.currentProfileSection;
+
+            let filtered = (list || []).filter(item => {
+              if (!filterKw) return true;
+              const text = JSON.stringify(item).toLowerCase();
+              return text.includes(filterKw.toLowerCase());
+            });
+
+            if (filtered.length === 0) {
+              container.innerHTML = `
+                <div class="h-44 flex flex-col items-center justify-center text-zinc-400 text-xs gap-1">
+                  <i data-lucide="inbox" class="w-5 h-5 text-zinc-300 dark:text-zinc-700 stroke-1"></i>
+                  <span>暂无记录，点击右上角「记录」沉淀</span>
+                </div>
+              `;
+              lucide.createIcons();
+              return;
+            }
+
+            filtered.forEach(item => {
+              const card = document.createElement('div');
+              card.className = 'p-3 bg-white dark:bg-[#181818] border border-zinc-200/80 dark:border-zinc-800 rounded-lg flex flex-col gap-1.5 shadow-sm relative group';
+              card.innerHTML = `
+                <div class="absolute top-2.5 right-2.5 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button onclick="XiangKuApp.modules.profileVault.openItemModal('${item.id}')" class="w-5 h-5 flex items-center justify-center text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200 text-xs">✎</button>
+                  <button onclick="XiangKuApp.modules.profileVault.deleteItem('${item.id}', '${sec}')" class="w-5 h-5 flex items-center justify-center text-zinc-400 hover:text-red-500 text-xs">✕</button>
+                </div>
+                ${cardContentBuilder(item)}
+              `;
+              container.appendChild(card);
+            });
+            lucide.createIcons();
+          },
+
+          updateProfileField(field, val) {
+            XiangKuApp.db.profile[field] = val;
+            XiangKuApp.saveStorage();
+          },
+
+          openItemModal(editId = null) {
+            const sec = XiangKuApp.currentProfileSection === 'profile' ? 'skills' : XiangKuApp.currentProfileSection;
+            const modal = document.getElementById('profileItemModal');
+            document.getElementById('pvFormSection').value = sec;
+            document.getElementById('pvFormId').value = editId || '';
+            const fieldsBox = document.getElementById('pvDynamicFields');
+            const titleEl = document.getElementById('profileItemModalTitle');
+
+            let item = null;
+            if (editId) {
+              item = (XiangKuApp.db[sec] || []).find(x => x.id === editId);
+            }
+
+            if (sec === 'skills') {
+              titleEl.innerText = editId ? '编辑能力' : '记录个人能力';
+              fieldsBox.innerHTML = `
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="block text-[10px] text-zinc-400 mb-0.5">能力名称</label>
+                    <input type="text" id="pv_skill_name" value="${XiangKuApp.escapeHtml(item?.name || '')}" placeholder="例如：Vue.js / 故障排查" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" required />
+                  </div>
+                  <div>
+                    <label class="block text-[10px] text-zinc-400 mb-0.5">能力分类</label>
+                    <select id="pv_skill_cat" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none">
+                      <option value="专业技能" ${item?.category==='专业技能'?'selected':''}>专业技能</option>
+                      <option value="工具技能" ${item?.category==='工具技能'?'selected':''}>工具技能</option>
+                      <option value="管理能力" ${item?.category==='管理能力'?'selected':''}>管理能力</option>
+                      <option value="沟通能力" ${item?.category==='沟通能力'?'selected':''}>沟通能力</option>
+                      <option value="正在学习" ${item?.category==='正在学习'?'selected':''}>正在学习</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-[10px] text-zinc-400 mb-0.5">熟练程度</label>
+                  <input type="text" id="pv_skill_level" value="${XiangKuApp.escapeHtml(item?.level || '')}" placeholder="例如：精通、熟练、实践进阶中" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
+                </div>
+                <div>
+                  <label class="block text-[10px] text-zinc-400 mb-0.5">说明与实战应用</label>
+                  <textarea id="pv_skill_desc" rows="2" placeholder="简述应用场景或代表项目..." class="w-full p-2 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none resize-none">${XiangKuApp.escapeHtml(item?.desc || '')}</textarea>
+                </div>
+                <div>
+                  <label class="block text-[10px] text-zinc-400 mb-0.5">学习记录 / 相关参考资料</label>
+                  <input type="text" id="pv_skill_learning" value="${XiangKuApp.escapeHtml(item?.learning || '')}" placeholder="书籍、实践心得或参考链接..." class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
+                </div>
+              `;
+            } else if (sec === 'experiences') {
+              titleEl.innerText = editId ? '编辑经验' : '记录个人经验总结';
+              fieldsBox.innerHTML = `
+                <div>
+                  <label class="block text-[10px] text-zinc-400 mb-0.5">经验标题</label>
+                  <input type="text" id="pv_exp_title" value="${XiangKuApp.escapeHtml(item?.title || '')}" placeholder="例如：突发断电情况下设备的快速恢复流程" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" required />
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="block text-[10px] text-zinc-400 mb-0.5">面临问题 / 场景</label>
+                    <input type="text" id="pv_exp_scene" value="${XiangKuApp.escapeHtml(item?.scene || '')}" placeholder="例如：夏季暴雨导致管道压力失衡" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
+                  </div>
+                  <div>
+                    <label class="block text-[10px] text-zinc-400 mb-0.5">关键词 (空格分隔)</label>
+                    <input type="text" id="pv_exp_keywords" value="${XiangKuApp.escapeHtml(item?.keywords || '')}" placeholder="例如：#排错 #硬件 #避坑" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-[10px] text-zinc-400 mb-0.5">具体解决方法</label>
+                  <textarea id="pv_exp_solution" rows="2" placeholder="当时是如何一步步解决的..." class="w-full p-2 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none resize-none">${XiangKuApp.escapeHtml(item?.solution || '')}</textarea>
+                </div>
+                <div>
+                  <label class="block text-[10px] text-zinc-400 mb-0.5">经验总结与复盘认知</label>
+                  <textarea id="pv_exp_summary" rows="2" placeholder="提炼通用逻辑，下次如何更快更稳处理..." class="w-full p-2 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none resize-none">${XiangKuApp.escapeHtml(item?.summary || '')}</textarea>
+                </div>
+              `;
+            } else if (sec === 'templates') {
+              titleEl.innerText = editId ? '编辑模板' : '保存个人工作模板';
+              fieldsBox.innerHTML = `
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="block text-[10px] text-zinc-400 mb-0.5">模板标题</label>
+                    <input type="text" id="pv_tpl_title" value="${XiangKuApp.escapeHtml(item?.title || '')}" placeholder="例如：每日交接班检查清单" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" required />
+                  </div>
+                  <div>
+                    <label class="block text-[10px] text-zinc-400 mb-0.5">模板类型</label>
+                    <select id="pv_tpl_type" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none">
+                      <option value="工作总结模板" ${item?.type==='工作总结模板'?'selected':''}>工作总结模板</option>
+                      <option value="汇报模板" ${item?.type==='汇报模板'?'selected':''}>汇报模板</option>
+                      <option value="检查清单" ${item?.type==='检查清单'?'selected':''}>检查清单</option>
+                      <option value="常用文字模板" ${item?.type==='常用文字模板'?'selected':''}>常用文字模板</option>
+                      <option value="工作流程模板" ${item?.type==='工作流程模板'?'selected':''}>工作流程模板</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-[10px] text-zinc-400 mb-0.5">模板正文内容</label>
+                  <textarea id="pv_tpl_content" rows="6" placeholder="输入模板文本格式..." class="w-full p-2 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none resize-none font-mono leading-relaxed" required>${XiangKuApp.escapeHtml(item?.content || '')}</textarea>
+                </div>
+              `;
+            } else if (sec === 'contacts') {
+              titleEl.innerText = editId ? '编辑联系人' : '沉淀重要工作关系';
+              fieldsBox.innerHTML = `
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="block text-[10px] text-zinc-400 mb-0.5">姓名 / 称呼</label>
+                    <input type="text" id="pv_cnt_name" value="${XiangKuApp.escapeHtml(item?.name || '')}" placeholder="例如：李工" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" required />
+                  </div>
+                  <div>
+                    <label class="block text-[10px] text-zinc-400 mb-0.5">角色 / 岗位</label>
+                    <input type="text" id="pv_cnt_role" value="${XiangKuApp.escapeHtml(item?.role || '')}" placeholder="例如：高压电网维保负责人" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
+                  </div>
+                </div>
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="block text-[10px] text-zinc-400 mb-0.5">负责领域</label>
+                    <input type="text" id="pv_cnt_field" value="${XiangKuApp.escapeHtml(item?.field || '')}" placeholder="例如：电力供应与抢修" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
+                  </div>
+                  <div>
+                    <label class="block text-[10px] text-zinc-400 mb-0.5">联系方式</label>
+                    <input type="text" id="pv_cnt_contact" value="${XiangKuApp.escapeHtml(item?.contact || '')}" placeholder="电话 / 微信 / 邮箱" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-[10px] text-zinc-400 mb-0.5">合作记录与事实</label>
+                  <textarea id="pv_cnt_history" rows="2" placeholder="记录协同历史与合作节点..." class="w-full p-2 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none resize-none">${XiangKuApp.escapeHtml(item?.history || '')}</textarea>
+                </div>
+                <div>
+                  <label class="block text-[10px] text-zinc-400 mb-0.5">沟通特点与备注</label>
+                  <input type="text" id="pv_cnt_notes" value="${XiangKuApp.escapeHtml(item?.notes || '')}" placeholder="例如：喜欢直接电话沟通" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
+                </div>
+              `;
+            } else if (sec === 'methods') {
+              titleEl.innerText = editId ? '编辑方法论' : '沉淀个人工作方法论';
+              fieldsBox.innerHTML = `
+                <div class="grid grid-cols-2 gap-2">
+                  <div>
+                    <label class="block text-[10px] text-zinc-400 mb-0.5">方法论标题</label>
+                    <input type="text" id="pv_mth_title" value="${XiangKuApp.escapeHtml(item?.title || '')}" placeholder="例如：我的设备巡检三步法" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" required />
+                  </div>
+                  <div>
+                    <label class="block text-[10px] text-zinc-400 mb-0.5">分类</label>
+                    <select id="pv_mth_cat" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none">
+                      <option value="时间管理" ${item?.category==='时间管理'?'selected':''}>时间管理</option>
+                      <option value="整理方法" ${item?.category==='整理方法'?'selected':''}>整理方法</option>
+                      <option value="项目推进" ${item?.category==='项目推进'?'selected':''}>项目推进</option>
+                      <option value="学习方法" ${item?.category==='学习方法'?'selected':''}>学习方法</option>
+                      <option value="通用思考" ${item?.category==='通用思考'?'selected':''}>通用思考</option>
+                    </select>
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-[10px] text-zinc-400 mb-0.5">核心原则与步骤</label>
+                  <textarea id="pv_mth_content" rows="6" placeholder="详细陈述你长期验证有效的思维框架与执行步骤..." class="w-full p-2 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none resize-none font-mono leading-relaxed" required>${XiangKuApp.escapeHtml(item?.content || '')}</textarea>
+                </div>
+              `;
+            } else if (sec === 'growth') {
+              titleEl.innerText = editId ? '编辑成长记录' : '记录个人成长轨迹';
+              fieldsBox.innerHTML = `
+                <div class="grid grid-cols-3 gap-2">
+                  <div>
+                    <label class="block text-[10px] text-zinc-400 mb-0.5">时间</label>
+                    <input type="date" id="pv_gro_date" value="${item?.date || new Date().toISOString().slice(0,10)}" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" required />
+                  </div>
+                  <div class="col-span-2">
+                    <label class="block text-[10px] text-zinc-400 mb-0.5">核心事件</label>
+                    <input type="text" id="pv_gro_event" value="${XiangKuApp.escapeHtml(item?.event || '')}" placeholder="例如：主导完成年度系统架构升级" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" required />
+                  </div>
+                </div>
+                <div>
+                  <label class="block text-[10px] text-zinc-400 mb-0.5">获得经验</label>
+                  <textarea id="pv_gro_exp" rows="2" placeholder="在事件中积累了哪些具体经验..." class="w-full p-2 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none resize-none">${XiangKuApp.escapeHtml(item?.experience || '')}</textarea>
+                </div>
+                <div>
+                  <label class="block text-[10px] text-zinc-400 mb-0.5">新认知与思维迭代</label>
+                  <textarea id="pv_gro_insight" rows="2" placeholder="形成了什么新认知..." class="w-full p-2 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none resize-none">${XiangKuApp.escapeHtml(item?.insight || '')}</textarea>
+                </div>
+                <div>
+                  <label class="block text-[10px] text-zinc-400 mb-0.5">未来计划与改进</label>
+                  <input type="text" id="pv_gro_plan" value="${XiangKuApp.escapeHtml(item?.plan || '')}" placeholder="下一步规划..." class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" />
+                </div>
+              `;
+            } else {
+              titleEl.innerText = editId ? '编辑资料' : '记录个人资料';
+              fieldsBox.innerHTML = `
+                <div>
+                  <label class="block text-[10px] text-zinc-400 mb-0.5">标题</label>
+                  <input type="text" id="pv_custom_title" value="${XiangKuApp.escapeHtml(item?.title || item?.name || '')}" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border
