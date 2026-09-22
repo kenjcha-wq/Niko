@@ -5,8 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
   <title id="htmlTitle">象库 · 轻工作台</title>
   <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com">
-
+  <script src="https://cdn.tailwindcss.com"></script>
   <script>
     tailwind.config = {
       darkMode: 'class',
@@ -24,190 +23,7 @@
     if (window.pdfjsLib) {
       window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     }
-  
-
-// ── 象元轻OS 能力桥注册 ──
-if (window.xianglan && typeof window.xianglan.register === 'function') {
-  window.xianglan.register({
-    description: '工作台（Niko）：个人工作流/知识库/经验方法能力库/子弹笔记 BuJo 的记录与检索。模型通过本桥存取工作台数据，写操作都走应用自己的表单与保存通道。',
-    settings: [
-      { key:'aiBase', label:'接口地址', type:'text', def:'https://api.deepseek.com/v1', hint:'留空则用系统统一配置' },
-      { key:'aiKey', label:'接口 Key', type:'secret', hint:'留空则用系统统一配置（只存宿主，不给 AI 看）' },
-      { key:'aiModel', label:'模型', type:'text', def:'deepseek-chat' }
-    ],
-    actions: {
-      // ── 查询工作流记录 ──
-      query_notes: {
-        description: '查询工作流记录（只读）。可按分类、关键词、日期范围筛选。返回记录列表。',
-        params: {
-          category: { type: 'string', description: '分类过滤，取值：log/progress/issue/insight；不传=全部', required: false },
-          keyword: { type: 'string', description: '关键词，匹配标题或内容，可选', required: false },
-          dateFrom: { type: 'string', description: '起始日期 YYYY-MM-DD，可选', required: false },
-          dateTo: { type: 'string', description: '结束日期 YYYY-MM-DD，可选', required: false },
-          limit: { type: 'number', description: '返回条数，默认 20，上限 50，可选', required: false }
-        },
-        run: async function (args) {
-          var a = args || {};
-          var limit = Math.min(50, Math.max(1, parseInt(a.limit) || 20));
-          
-          // 获取工作流记录
-          var notes = XiangKuApp.db.notes || [];
-          
-          // 过滤
-          var filtered = notes.filter(function(note) {
-            // 分类过滤
-            if (a.category && note.category !== a.category) return false;
-            
-            // 关键词过滤
-            if (a.keyword) {
-              var kw = a.keyword.toLowerCase();
-              var title = (note.title || '').toLowerCase();
-              var content = (note.content || '').toLowerCase();
-              if (title.indexOf(kw) === -1 && content.indexOf(kw) === -1) return false;
-            }
-            
-            // 日期范围过滤
-            if (a.dateFrom || a.dateTo) {
-              var noteDate = note.date || '';
-              if (a.dateFrom && noteDate < a.dateFrom) return false;
-              if (a.dateTo && noteDate > a.dateTo) return false;
-            }
-            
-            return true;
-          });
-          
-          // 排序（最新的在前）
-          filtered.sort(function(a, b) { return (b.id || 0) - (a.id || 0); });
-          
-          // 限制条数
-          var result = filtered.slice(0, limit);
-          
-          return {
-            total: filtered.length,
-            returned: result.length,
-            notes: result.map(function(note) {
-              return {
-                id: note.id,
-                title: note.title || '',
-                content: (note.content || '').substring(0, 200),
-                category: note.category || 'log',
-                date: note.date || '',
-                createdAt: note.createdAt || ''
-              };
-            })
-          };
-        }
-      },
-
-      // ── 编辑工作流记录 ──
-      edit_note: {
-        description: '编辑已有工作流记录的标题、内容和/或分类（写）。noteId 必填，来自 query_notes。title、content、category 至少传一个；不传的字段不改。',
-        params: {
-          noteId: { type: 'string', description: '目标记录 id，必填，来自 query_notes 返回', required: true },
-          title: { type: 'string', description: '新的记录标题，可选；不传则不改标题', required: false },
-          content: { type: 'string', description: '新的记录内容，可选，上限 4000 字；不传则不改内容', required: false },
-          category: { type: 'string', description: '新的记录分类，可选，取值：log/progress/issue/insight', required: false }
-        },
-        run: async function (args) {
-          var a = args || {};
-          if (!a.noteId) throw new Error('edit_note 缺少必填参数 noteId');
-          if (a.title === undefined && a.content === undefined && a.category === undefined) 
-            throw new Error('edit_note 至少需要 title、content 或 category 之一');
-          
-          // 查找记录
-          var notes = XiangKuApp.db.notes || [];
-          var note = null;
-          for (var i = 0; i < notes.length; i++) {
-            if (String(notes[i].id) === String(a.noteId)) {
-              note = notes[i];
-              break;
-            }
-          }
-          
-          if (!note) throw new Error('未找到 id=' + a.noteId + ' 的记录');
-          
-          // 修改字段
-          if (a.title !== undefined && a.title !== null) {
-            note.title = String(a.title).trim();
-          }
-          if (a.content !== undefined && a.content !== null) {
-            var newContent = String(a.content).trim();
-            if (newContent.length > 4000) throw new Error('content 超长（' + newContent.length + ' 字，上限 4000）');
-            note.content = newContent;
-          }
-          if (a.category !== undefined && a.category !== null) {
-            var validCategories = ['log', 'progress', 'issue', 'insight'];
-            if (validCategories.indexOf(a.category) === -1) throw new Error('category 必须是：' + validCategories.join('/'));
-            note.category = a.category;
-          }
-          
-          note.updatedAt = Date.now();
-          XiangKuApp.saveStorage();
-          
-          return {
-            id: note.id,
-            title: note.title || '',
-            content: (note.content || '').substring(0, 200),
-            category: note.category || 'log',
-            date: note.date || '',
-            verified: true
-          };
-        }
-      },
-
-      // ── 删除工作流记录 ──
-      delete_note: {
-        description: '删除一条工作流记录（写）。noteId 必填，来自 query_notes。默认软删除（标记 deleted）；传 permanent:true 则永久删除（不可恢复）。',
-        params: {
-          noteId: { type: 'string', description: '目标记录 id，必填，来自 query_notes 返回', required: true },
-          permanent: { type: 'boolean', description: '是否永久删除，默认 false（软删除）；true=永久删除不可恢复，可选', required: false }
-        },
-        run: async function (args) {
-          var a = args || {};
-          if (!a.noteId) throw new Error('delete_note 缺少必填参数 noteId');
-          
-          // 查找记录
-          var notes = XiangKuApp.db.notes || [];
-          var noteIndex = -1;
-          for (var i = 0; i < notes.length; i++) {
-            if (String(notes[i].id) === String(a.noteId)) {
-              noteIndex = i;
-              break;
-            }
-          }
-          
-          if (noteIndex === -1) throw new Error('未找到 id=' + a.noteId + ' 的记录');
-          
-          var note = notes[noteIndex];
-          
-          if (a.permanent) {
-            // 永久删除：从数组中移除
-            notes.splice(noteIndex, 1);
-            XiangKuApp.saveStorage();
-            return {
-              id: a.noteId,
-              permanent: true,
-              verified: true,
-              note: '记录已永久删除，不可恢复'
-            };
-          } else {
-            // 软删除：标记 deleted
-            note.deleted = true;
-            note.deletedAt = Date.now();
-            XiangKuApp.saveStorage();
-            return {
-              id: a.noteId,
-              permanent: false,
-              verified: true,
-              note: '记录已标记为删除（软删除）'
-            };
-          }
-        }
-      }
-    }
-  });
-}
-</script>
+  </script>
   <style>
     body {
       font-feature-settings: "cv02", "cv03", "cv04", "cv11";
@@ -1645,6 +1461,22 @@ ${context}
           this.db.knowledgeCategories = this.DEFAULT_KNOWLEDGE_CATEGORIES;
           this.db.profileCategories = this.DEFAULT_PROFILE_CATEGORIES;
         }
+        // ── 象元Go 系统统一配置：宿主注入时优先使用 ──
+        try {
+          var _xl = null;
+          if (window.XLCloud) _xl = JSON.parse(window.XLCloud);
+          if (!_xl && window.__elemCloudBase) _xl = { base: window.__elemCloudBase, key: window.__elemCloudKey, model: window.__elemCloudModel };
+          if (_xl) {
+            if (_xl.base) this.db.settings.aiConfig.baseUrl = _xl.base;
+            if (_xl.key) this.db.settings.aiConfig.apiKey = _xl.key;
+            if (_xl.model) this.db.settings.aiConfig.model = _xl.model;
+          }
+          if (window.XLSet) { var _xs = JSON.parse(window.XLSet);
+            if (_xs.apiBase) this.db.settings.aiConfig.baseUrl = _xs.apiBase;
+            if (_xs.apiKey) this.db.settings.aiConfig.apiKey = _xs.apiKey;
+            if (_xs.apiModel) this.db.settings.aiConfig.model = _xs.apiModel;
+          }
+        } catch(e){}
 
         this.seedBuiltinAgents();
       },
@@ -3284,4 +3116,1488 @@ ${context}
               fieldsBox.innerHTML = `
                 <div>
                   <label class="block text-[10px] text-zinc-400 mb-0.5">标题</label>
-                  <input type="text" id="pv_custom_title" value="${XiangKuApp.escapeHtml(item?.title || item?.name || '')}" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border
+                  <input type="text" id="pv_custom_title" value="${XiangKuApp.escapeHtml(item?.title || item?.name || '')}" class="w-full h-8 text-xs px-2 bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none" required />
+                </div>
+                <div>
+                  <label class="block text-[10px] text-zinc-400 mb-0.5">内容</label>
+                  <textarea id="pv_custom_content" rows="6" class="w-full p-2 text-xs bg-zinc-50 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded focus:outline-none resize-none font-mono leading-relaxed" required>${XiangKuApp.escapeHtml(item?.content || item?.desc || '')}</textarea>
+                </div>
+              `;
+            }
+
+            modal.classList.remove('hidden');
+          },
+
+          closeItemModal() {
+            document.getElementById('profileItemModal').classList.add('hidden');
+          },
+
+          handleItemSubmit(e) {
+            e.preventDefault();
+            const sec = document.getElementById('pvFormSection').value;
+            const id = document.getElementById('pvFormId').value;
+            let newItem = { id: id || 'pv_' + Date.now() };
+
+            if (!XiangKuApp.db[sec]) {
+              XiangKuApp.db[sec] = [];
+            }
+
+            if (sec === 'skills') {
+              newItem.name = document.getElementById('pv_skill_name').value.trim();
+              newItem.category = document.getElementById('pv_skill_cat').value;
+              newItem.level = document.getElementById('pv_skill_level').value.trim();
+              newItem.desc = document.getElementById('pv_skill_desc').value.trim();
+              newItem.learning = document.getElementById('pv_skill_learning').value.trim();
+            } else if (sec === 'experiences') {
+              newItem.title = document.getElementById('pv_exp_title').value.trim();
+              newItem.scene = document.getElementById('pv_exp_scene').value.trim();
+              newItem.keywords = document.getElementById('pv_exp_keywords').value.trim();
+              newItem.solution = document.getElementById('pv_exp_solution').value.trim();
+              newItem.summary = document.getElementById('pv_exp_summary').value.trim();
+            } else if (sec === 'templates') {
+              newItem.title = document.getElementById('pv_tpl_title').value.trim();
+              newItem.type = document.getElementById('pv_tpl_type').value;
+              newItem.content = document.getElementById('pv_tpl_content').value.trim();
+            } else if (sec === 'contacts') {
+              newItem.name = document.getElementById('pv_cnt_name').value.trim();
+              newItem.role = document.getElementById('pv_cnt_role').value.trim();
+              newItem.field = document.getElementById('pv_cnt_field').value.trim();
+              newItem.contact = document.getElementById('pv_cnt_contact').value.trim();
+              newItem.history = document.getElementById('pv_cnt_history').value.trim();
+              newItem.notes = document.getElementById('pv_cnt_notes').value.trim();
+            } else if (sec === 'methods') {
+              newItem.title = document.getElementById('pv_mth_title').value.trim();
+              newItem.category = document.getElementById('pv_mth_cat').value;
+              newItem.content = document.getElementById('pv_mth_content').value.trim();
+            } else if (sec === 'growth') {
+              newItem.date = document.getElementById('pv_gro_date').value;
+              newItem.event = document.getElementById('pv_gro_event').value.trim();
+              newItem.experience = document.getElementById('pv_gro_exp').value.trim();
+              newItem.insight = document.getElementById('pv_gro_insight').value.trim();
+              newItem.plan = document.getElementById('pv_gro_plan').value.trim();
+            } else {
+              newItem.title = document.getElementById('pv_custom_title').value.trim();
+              newItem.content = document.getElementById('pv_custom_content').value.trim();
+            }
+
+            if (id) {
+              const idx = (XiangKuApp.db[sec] || []).findIndex(x => x.id === id);
+              if (idx !== -1) XiangKuApp.db[sec][idx] = newItem;
+            } else {
+              XiangKuApp.db[sec].unshift(newItem);
+            }
+
+            XiangKuApp.saveStorage();
+            this.closeItemModal();
+            this.render();
+          },
+
+          deleteItem(id, sec) {
+            if (confirm('确认删除该记录？')) {
+              XiangKuApp.db[sec] = (XiangKuApp.db[sec] || []).filter(x => x.id !== id);
+              XiangKuApp.saveStorage();
+              this.render();
+            }
+          },
+
+          copyContent(id, sec) {
+            const item = (XiangKuApp.db[sec] || []).find(x => x.id === id);
+            if (item && item.content) {
+              navigator.clipboard.writeText(item.content).then(() => alert('模板内容已复制到剪贴板'));
+            }
+          },
+
+          async generateAiPortrait() {
+            XiangKuApp.modules.agent.toggleDrawer();
+            XiangKuApp.modules.agent.switchSubTab('history');
+            
+            const p = XiangKuApp.db.profile;
+            const fullProfileContext = `
+【个人核心档案】:
+- 姓名: ${p.name || '未填写'} | 职业身份: ${p.role || '未填写'} | 工作领域: ${p.field || '未填写'}
+- 擅长方向: ${p.strengths || '未填写'} | 当前目标: ${p.goals || '未填写'}
+- 个人简介: ${p.bio || '未填写'}
+
+【能力库 (${XiangKuApp.db.skills.length}项)】:
+${XiangKuApp.db.skills.map(s => `- [${s.category}] ${s.name} (${s.level}): ${s.desc || ''}`).join('\n')}
+
+【经验库 (${XiangKuApp.db.experiences.length}项)】:
+${XiangKuApp.db.experiences.map(e => `- 【${e.title}】场景:${e.scene} | 解法:${e.solution} | 总结:${e.summary}`).join('\n')}
+
+【方法论库 (${XiangKuApp.db.methods.length}项)】:
+${XiangKuApp.db.methods.map(m => `- [${m.category}] ${m.title}:\n${m.content}`).join('\n')}
+
+【成长轨迹 (${XiangKuApp.db.growth.length}条)】:
+${XiangKuApp.db.growth.map(g => `- [${g.date}] ${g.event} -> 认知: ${g.insight}`).join('\n')}
+`;
+
+            const prompt = `请基于上述用户的真实个人资料库内容（严禁虚构未提及的事实），生成一份结构化的《AI 个人工作画像与能力评估报告》，包含：
+1. 核心能力画像与定位
+2. 显著工作特点与风格
+3. 关键优势与实战武器
+4. 潜在短板与盲区
+5. 进阶与成长建议`;
+
+            try {
+              const res = await XiangKuApp.requestAI(prompt, `你是一个深度的个人职业导师与认知分析专家。请严格基于用户填写的真实个人资料库进行结构化画像输出：\n${fullProfileContext}`);
+              XiangKuApp.modules.agent.saveOutput('AI 个人工作画像与能力评估报告', '画像导师', res);
+            } catch (err) {
+              alert(`画像生成失败: ${err.message}`);
+            }
+          }
+        },
+
+        // ========== 智能体中枢 ==========
+        agent: {
+          currentSubTab: 'agents',
+
+          toggleDrawer() {
+            document.getElementById('agentDrawer').classList.toggle('translate-x-full');
+          },
+
+          switchSubTab(tab) {
+            this.currentSubTab = tab;
+            ['agents', 'history'].forEach(t => {
+              const btn = document.getElementById('agentSubTab' + t.charAt(0).toUpperCase() + t.slice(1));
+              if (btn) {
+                if (t === tab) {
+                  btn.className = 'h-6 px-2.5 rounded bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-medium';
+                } else {
+                  btn.className = 'h-6 px-2.5 rounded hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-500 dark:text-zinc-400';
+                }
+              }
+            });
+            this.render();
+          },
+
+          render() {
+            const container = document.getElementById('agentMainViewContainer');
+            if (!container) return;
+            container.innerHTML = '';
+
+            if (this.currentSubTab === 'agents') {
+              const agents = XiangKuApp.db.agents;
+              if (agents.length === 0) {
+                container.innerHTML = `
+                  <div class="p-8 text-center text-zinc-400 text-xs">
+                    暂无自建智能体。点击右上角「新建智能体」快速配置。
+                  </div>
+                `;
+                return;
+              }
+              const grid = document.createElement('div');
+              grid.className = 'grid grid-cols-1 sm:grid-cols-2 gap-2.5';
+              agents.forEach(agent => {
+                const card = document.createElement('div');
+                card.className = 'p-3 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg flex flex-col justify-between hover:border-purple-400 transition-all group relative shadow-sm';
+                card.innerHTML = `
+                  <div>
+                    <div class="flex items-start justify-between mb-1">
+                      <div class="flex items-center gap-1.5 min-w-0">
+                        <i data-lucide="${agent.icon || 'bot'}" class="w-4 h-4 text-purple-600 shrink-0"></i>
+                        <span class="font-semibold text-xs text-zinc-800 dark:text-zinc-100 truncate">${XiangKuApp.escapeHtml(agent.name)}</span>
+                      </div>
+                      <div class="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button onclick="XiangKuApp.modules.agent.openCreateModal('${agent.id}')" class="text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 text-xs p-0.5">✎</button>
+                        <button onclick="XiangKuApp.modules.agent.deleteAgent('${agent.id}')" class="text-zinc-400 hover:text-red-500 text-xs p-0.5">✕</button>
+                      </div>
+                    </div>
+                    <p class="text-[10px] text-zinc-400 line-clamp-2 leading-relaxed mb-3">${XiangKuApp.escapeHtml(agent.desc || agent.prompt.slice(0, 45) + '...')}</p>
+                  </div>
+                  <button onclick="XiangKuApp.modules.agent.runAgent('${agent.id}')" class="w-full py-1.5 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 rounded text-xs font-medium hover:bg-purple-100 dark:hover:bg-purple-900/50 transition-all flex items-center justify-center gap-1">
+                    <i data-lucide="play" class="w-3 h-3"></i>
+                    <span>运行</span>
+                  </button>
+                `;
+                grid.appendChild(card);
+              });
+              container.appendChild(grid);
+            } else if (this.currentSubTab === 'history') {
+              const historyList = XiangKuApp.db.agentOutputs || [];
+              if (historyList.length === 0) {
+                container.innerHTML = `
+                  <div class="p-8 text-center text-zinc-400 text-xs">
+                    暂无智能体产出记录。运行任意智能体后，生成的内容将永久沉淀在此。
+                  </div>
+                `;
+                return;
+              }
+
+              const box = document.createElement('div');
+              box.className = 'space-y-3';
+              historyList.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'p-3 bg-white dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 rounded-lg flex flex-col gap-2 shadow-sm relative group';
+                card.innerHTML = `
+                  <div class="flex items-center justify-between border-b border-zinc-100 dark:border-zinc-700/60 pb-1.5">
+                    <div class="flex items-center gap-1.5 min-w-0">
+                      <span class="text-[9px] font-mono px-1.5 py-0.2 rounded bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800">${XiangKuApp.escapeHtml(item.agentName || '智能体')}</span>
+                      <h4 class="font-semibold text-xs text-zinc-900 dark:text-zinc-100 truncate">${XiangKuApp.escapeHtml(item.title)}</h4>
+                    </div>
+                    <div class="flex items-center gap-1">
+                      <span class="text-[10px] font-mono text-zinc-400">${item.timestamp}</span>
+                      <button onclick="XiangKuApp.modules.agent.deleteOutput('${item.id}')" class="text-zinc-400 hover:text-red-500 text-xs px-1">✕</button>
+                    </div>
+                  </div>
+                  <pre class="text-xs text-zinc-700 dark:text-zinc-200 bg-zinc-50 dark:bg-zinc-900/60 p-2.5 rounded font-mono whitespace-pre-wrap leading-relaxed max-h-60 overflow-y-auto">${XiangKuApp.escapeHtml(item.content)}</pre>
+                  <div class="flex items-center justify-end text-[11px] gap-2 pt-0.5">
+                    <button onclick="XiangKuApp.modules.agent.copyOutput('${item.id}')" class="text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100 underline">复制</button>
+                  </div>
+                `;
+                box.appendChild(card);
+              });
+              container.appendChild(box);
+            }
+
+            lucide.createIcons();
+          },
+
+          openCreateModal(editId = null) {
+            const modal = document.getElementById('customAgentModal');
+            document.getElementById('customAgentFormId').value = editId || '';
+            const titleEl = document.getElementById('customAgentModalTitle');
+
+            if (editId) {
+              const agent = XiangKuApp.db.agents.find(a => a.id === editId);
+              if (agent) {
+                titleEl.innerText = '编辑智能体';
+                document.getElementById('customAgentName').value = agent.name;
+                document.getElementById('customAgentIcon').value = agent.icon || 'bot';
+                document.getElementById('customAgentDesc').value = agent.desc || '';
+                document.getElementById('customAgentPrompt').value = agent.prompt || '';
+                document.getElementById('agentAuthNotes').checked = agent.authNotes !== false;
+                document.getElementById('agentAuthKnowledge').checked = agent.authKnowledge !== false;
+                document.getElementById('agentAuthProfile').checked = agent.authProfile !== false;
+              }
+            } else {
+              titleEl.innerText = '新建智能体';
+              document.getElementById('customAgentName').value = '';
+              document.getElementById('customAgentIcon').value = 'bot';
+              document.getElementById('customAgentDesc').value = '';
+              document.getElementById('customAgentPrompt').value = '';
+              document.getElementById('agentAuthNotes').checked = true;
+              document.getElementById('agentAuthKnowledge').checked = true;
+              document.getElementById('agentAuthProfile').checked = true;
+            }
+            modal.classList.remove('hidden');
+          },
+
+          closeCreateModal() {
+            document.getElementById('customAgentModal').classList.add('hidden');
+          },
+
+          handleSaveAgent(e) {
+            e.preventDefault();
+            const id = document.getElementById('customAgentFormId').value;
+            const name = document.getElementById('customAgentName').value.trim();
+            const icon = document.getElementById('customAgentIcon').value.trim() || 'bot';
+            const desc = document.getElementById('customAgentDesc').value.trim();
+            const prompt = document.getElementById('customAgentPrompt').value.trim();
+            const authNotes = document.getElementById('agentAuthNotes').checked;
+            const authKnowledge = document.getElementById('agentAuthKnowledge').checked;
+            const authProfile = document.getElementById('agentAuthProfile').checked;
+
+            if (!name || !prompt) return;
+
+            if (id) {
+              const target = XiangKuApp.db.agents.find(a => a.id === id);
+              if (target) {
+                target.name = name;
+                target.icon = icon;
+                target.desc = desc;
+                target.prompt = prompt;
+                target.authNotes = authNotes;
+                target.authKnowledge = authKnowledge;
+                target.authProfile = authProfile;
+              }
+            } else {
+              XiangKuApp.db.agents.unshift({
+                id: 'ag_' + Date.now(),
+                name, icon, desc, prompt,
+                authNotes, authKnowledge, authProfile
+              });
+            }
+
+            XiangKuApp.saveStorage();
+            this.closeCreateModal();
+            this.render();
+            XiangKuApp.updateStats();
+          },
+
+          deleteAgent(id) {
+            if (confirm('确认删除该项智能体？')) {
+              XiangKuApp.db.agents = XiangKuApp.db.agents.filter(a => a.id !== id);
+              XiangKuApp.saveStorage();
+              this.render();
+              XiangKuApp.updateStats();
+            }
+          },
+
+          saveOutput(title, agentName, content) {
+            const now = new Date();
+            const timestamp = `${now.getMonth()+1}.${now.getDate()} ${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+            XiangKuApp.db.agentOutputs.unshift({
+              id: 'out_' + Date.now(),
+              title: title || '分析报告',
+              agentName: agentName || '智能体',
+              content: content,
+              timestamp: timestamp
+            });
+            XiangKuApp.saveStorage();
+            this.switchSubTab('history');
+          },
+
+          deleteOutput(id) {
+            if (confirm('确认删除该产出记录？')) {
+              XiangKuApp.db.agentOutputs = XiangKuApp.db.agentOutputs.filter(o => o.id !== id);
+              XiangKuApp.saveStorage();
+              this.render();
+            }
+          },
+
+          copyOutput(id) {
+            const item = XiangKuApp.db.agentOutputs.find(o => o.id === id);
+            if (item) {
+              navigator.clipboard.writeText(item.content).then(() => alert('内容已复制到剪贴板'));
+            }
+          },
+
+          async runAgent(id) {
+            const agent = XiangKuApp.db.agents.find(a => a.id === id);
+            if (!agent) return;
+
+            this.switchSubTab('history');
+            const activeNotes = XiangKuApp.db.notes.filter(n => !n.archived);
+
+            let customContext = `【智能体指令】: ${agent.prompt}\n\n`;
+
+            if (agent.authNotes !== false) {
+              customContext += `【工作流记录 (${activeNotes.length}条)】:\n` + 
+                activeNotes.map(n => `[${n.date || ''} ${n.time}][${n.type}] ${n.content}`).join('\n') + '\n\n';
+            }
+
+            if (agent.authKnowledge !== false) {
+              customContext += `【知识库 (${XiangKuApp.db.knowledge.length}篇)】:\n` + 
+                XiangKuApp.db.knowledge.map(k => `【${k.title}】(${k.category}): ${k.content}`).join('\n') + '\n\n';
+            }
+
+            if (agent.authProfile !== false) {
+              const p = XiangKuApp.db.profile;
+              customContext += `【个人资料】:\n- 姓名:${p.name || ''} | 角色:${p.role || ''} | 领域:${p.field || ''}\n- 能力${XiangKuApp.db.skills.length}项，经验${XiangKuApp.db.experiences.length}条\n`;
+            }
+
+            if (agent.authAll) {
+              const ws = XiangKuApp.db.workspace;
+              customContext += `【工作空间/项目 (${ws.length}项)】:\n` + ws.map(w => `· ${w.name}: ${(w.description || '')}`).join('\n') + '\n\n';
+              const exp = XiangKuApp.db.experiences;
+              customContext += `【个人经验库 (${exp.length}条)】:\n` + exp.map(e => `· ${e.title}: ${(e.summary || e.content || '').slice(0, 160)}`).join('\n') + '\n\n';
+              const sk = XiangKuApp.db.skills;
+              customContext += `【技能库 (${sk.length}项)】:\n` + sk.map(s => `· ${s.name}: ${(s.desc || s.content || '').slice(0, 120)}`).join('\n') + '\n\n';
+              const tpl = XiangKuApp.db.templates;
+              customContext += `【模板库 (${tpl.length}项)】:\n` + tpl.map(t => `· ${t.title || t.name}: ${(t.content || '').slice(0, 120)}`).join('\n') + '\n\n';
+              const mth = XiangKuApp.db.methods;
+              customContext += `【方法库 (${mth.length}项)】:\n` + mth.map(m => `· ${m.title || m.name}: ${(m.content || '').slice(0, 120)}`).join('\n') + '\n\n';
+              const ctt = XiangKuApp.db.contacts;
+              customContext += `【联系人 (${ctt.length}项)】:\n` + ctt.map(c => `· ${c.name || c.title}: ${(c.content || c.desc || '').slice(0, 120)}`).join('\n') + '\n\n';
+              const grw = XiangKuApp.db.growth;
+              customContext += `【成长记录 (${grw.length}项)】:\n` + grw.map(g => `· ${g.title || g.name}: ${(g.content || g.desc || '').slice(0, 120)}`).join('\n') + '\n\n';
+            }
+
+            try {
+              const res = await XiangKuApp.requestAI("请执行你的分析任务并输出结论：", customContext);
+              this.saveOutput(agent.name + ' 分析成果', agent.name, res);
+            } catch (err) {
+              alert(`运行失败: ${err.message}`);
+            }
+          }
+        },
+
+        // ========== NIK 全域智能体 ==========
+        nik: {
+          renderMessages() {
+            const container = document.getElementById('nikChatMessages');
+            if (!XiangKuApp.db.nikMessages || XiangKuApp.db.nikMessages.length === 0) {
+              container.innerHTML = `
+                <div class="flex gap-2">
+                  <div class="w-5 h-5 rounded bg-zinc-900 dark:bg-zinc-800 border border-zinc-700 text-zinc-300 font-mono text-[10px] flex items-center justify-center shrink-0 mt-0.5">
+                    <i data-lucide="bot" class="w-3.5 h-3.5 text-zinc-300"></i>
+                  </div>
+                  <div class="bg-zinc-100 dark:bg-zinc-800/80 text-zinc-800 dark:text-zinc-200 p-2.5 rounded-lg rounded-tl-none leading-relaxed max-w-[85%] whitespace-pre-wrap">
+你好！我是 NIK。我现在具备结构化分析与系统调度能力。你可以直接吩咐我："把XX异常整理存入经验库"、"归纳成SOP存入知识库"或"记录今日流水"。
+                  </div>
+                </div>
+              `;
+              lucide.createIcons();
+              return;
+            }
+
+            container.innerHTML = '';
+            XiangKuApp.db.nikMessages.forEach(msg => {
+              const isUser = msg.role === 'user';
+              const div = document.createElement('div');
+              div.className = `flex gap-2 ${isUser ? 'justify-end' : 'justify-start'}`;
+
+              if (isUser) {
+                div.innerHTML = `<div class="bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-950 p-2 rounded-lg rounded-tr-none leading-relaxed max-w-[85%] whitespace-pre-wrap font-sans">${XiangKuApp.escapeHtml(msg.content)}</div>`;
+              } else {
+                div.innerHTML = `
+                  <div class="w-5 h-5 rounded bg-zinc-900 dark:bg-zinc-800 border border-zinc-700 text-zinc-300 flex items-center justify-center shrink-0 mt-0.5">
+                    <i data-lucide="bot" class="w-3.5 h-3.5 text-zinc-300"></i>
+                  </div>
+                  <div class="flex flex-col items-start max-w-[85%]">
+                    <div class="bg-zinc-100 dark:bg-zinc-800/80 text-zinc-800 dark:text-zinc-200 p-2.5 rounded-lg rounded-tl-none leading-relaxed whitespace-pre-wrap w-fit">${XiangKuApp.escapeHtml(msg.content)}</div>
+                    <button class="nik-copy-btn mt-0.5 text-[10px] text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-200 px-1.5 py-0.5 rounded hover:bg-zinc-200/50 dark:hover:bg-zinc-800 transition-colors" title="复制这段回答">⧉ 复制</button>
+                  </div>
+                `;
+                const cpyBtn = div.querySelector('.nik-copy-btn');
+                if (cpyBtn) cpyBtn.addEventListener('click', function () { XiangKuApp.copyText(msg.content, '✓ 回答已复制'); });
+              }
+              container.appendChild(div);
+            });
+            lucide.createIcons();
+            this.scrollToBottom();
+          },
+
+          async sendMessage(e) {
+            e.preventDefault();
+            const input = document.getElementById('nikChatInput');
+            const q = input.value.trim();
+            if (!q) return;
+
+            XiangKuApp.db.nikMessages.push({ role: 'user', content: q });
+            input.value = '';
+            this.renderMessages();
+
+            const thinkingMsg = { role: 'assistant', content: '🤔 正在思考中...' };
+            XiangKuApp.db.nikMessages.push(thinkingMsg);
+            this.renderMessages();
+
+            try {
+              const lower = q.toLowerCase();
+              let finalReply = '';
+
+              // ---- 1. 归档搜索 ----
+              if (lower.includes('归档') && (lower.includes('找') || lower.includes('查') || lower.includes('搜索'))) {
+                const today = new Date().toISOString().slice(0, 10);
+                let archivedNotes = XiangKuApp.db.notes.filter(n => n.archived === true);
+                let timeLabel = '全部归档';
+                
+                if (lower.includes('今日') || lower.includes('今天')) {
+                  archivedNotes = archivedNotes.filter(n => n.date === today);
+                  timeLabel = '今日归档';
+                } else if (lower.includes('本周')) {
+                  const dayOfWeek = new Date().getDay();
+                  const diff = new Date().getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1);
+                  const monday = new Date(); monday.setDate(diff);
+                  const sunday = new Date(monday); sunday.setDate(monday.getDate() + 6);
+                  const start = monday.toISOString().slice(0,10);
+                  const end = sunday.toISOString().slice(0,10);
+                  archivedNotes = archivedNotes.filter(n => n.date >= start && n.date <= end);
+                  timeLabel = '本周归档';
+                } else if (lower.includes('本月')) {
+                  const now = new Date();
+                  const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+                  const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+                  const start = firstDay.toISOString().slice(0,10);
+                  const end = lastDay.toISOString().slice(0,10);
+                  archivedNotes = archivedNotes.filter(n => n.date >= start && n.date <= end);
+                  timeLabel = '本月归档';
+                }
+                
+                let searchKw = q.replace(/在归档库找|查找|搜索|归档|里|的|中|今天|昨日|昨天|本周|上周|本月|上个月/g, '').trim();
+                if (searchKw && searchKw.length > 0) {
+                  archivedNotes = archivedNotes.filter(n => 
+                    n.content.toLowerCase().includes(searchKw.toLowerCase()) ||
+                    n.title.toLowerCase().includes(searchKw.toLowerCase())
+                  );
+                }
+                
+                if (archivedNotes.length === 0) {
+                  finalReply = `📭 ${timeLabel}中没有找到匹配的记录。\n\n💡 提示：归档记录需要点击「归档」按钮移入，归档后仍可按日期查找。`;
+                } else {
+                  const list = archivedNotes.map(n => 
+                    `• [${n.date}] ${n.content}`
+                  ).join('\n');
+                  finalReply = `📦 在${timeLabel}中找到 ${archivedNotes.length} 条记录：\n\n${list}`;
+                }
+                
+                XiangKuApp.db.nikMessages.pop();
+                XiangKuApp.db.nikMessages.push({ role: 'assistant', content: finalReply });
+                XiangKuApp.saveStorage();
+                this.renderMessages();
+                return;
+              }
+
+              // ---- 2. 普通意图解析 ----
+              const _catOpts = (XiangKuApp.db.noteCategories || []).map(c => c.id + '=' + c.name).join('、') || 'log=流水';
+              const parsePrompt = `用户指令: "${q}"
+判断用户是否【明确要求系统执行写入/记录/创建】。请只返回纯 JSON：
+{
+  "action": "none" | "add_note" | "add_experience" | "add_knowledge" | "add_workspace" | "add_skill" | "sync_feishu",
+  "extractedData": {
+    "title": "精简标题",
+    "content": "用户想让系统保存的完整原文内容（去掉'请记录/帮我写入'等命令词，保留全部实质内容，禁止改写、禁止只摘其中一句）",
+    "scene": "场景/背景",
+    "solution": "解决方法",
+    "summary": "经验认知",
+    "category": "add_note 时填工作流分区 id，可选：${_catOpts}；无法判断填 log",
+    "type": "log|progress|issue|insight"
+  }
+}
+判定规则：
+- 用户说「记录/保存/写入/新建/添加/归档/记一下」并给了要存的内容 → 选对应 add_*；
+- 用户说「总结/分析/回顾/看看/找找/汇报/今天做了什么」或普通提问 → action 必须是 "none"，交由总结阶段处理，【绝不能】add_note 把用户整句话当成记录存下来。
+只输出纯 JSON，不要 markdown。`;
+
+              let actionPlan = { action: 'none' };
+              try {
+                const planJson = await XiangKuApp.requestAI(parsePrompt, '你是一个精密的系统意图解析路由器。');
+                const cleanJson = planJson.replace(/```json/g, '').replace(/```/g, '').trim();
+                actionPlan = JSON.parse(cleanJson);
+              } catch (e) {}
+
+              let executionFeedback = "";
+
+              if (actionPlan.action === 'add_experience') {
+                const d = actionPlan.extractedData || {};
+                XiangKuApp.db.experiences.unshift({
+                  id: 'pv_' + Date.now(),
+                  title: d.title || q.slice(0, 15),
+                  scene: d.scene || '日常工作',
+                  solution: d.solution || d.content || q,
+                  summary: d.summary || d.content || q,
+                  keywords: '#NIK提炼'
+                });
+                XiangKuApp.saveStorage();
+                XiangKuApp.renderAll();
+                executionFeedback = `[系统操作] 已成功提炼并存入【个人经验库】: 《${d.title || '经验条目'}》\n`;
+              } else if (actionPlan.action === 'add_knowledge') {
+                const d = actionPlan.extractedData || {};
+                XiangKuApp.db.knowledge.unshift({
+                  id: 'k_' + Date.now(),
+                  title: d.title || q.slice(0, 15),
+                  category: 'sop',
+                  workspaceId: 'general',
+                  content: d.content || q
+                });
+                XiangKuApp.saveStorage();
+                XiangKuApp.renderAll();
+                executionFeedback = `[系统操作] 已成功结构化归档至【知识库】: 《${d.title || '知识条目'}》\n`;
+              } else if (actionPlan.action === 'add_note') {
+                const d = actionPlan.extractedData || {};
+                const now = new Date();
+                const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
+                const _cats = (XiangKuApp.db.noteCategories || []).map(c => c.id);
+                const wantCat = d.category || XiangKuApp.currentNoteCategory;
+                const _cat = (_cats.indexOf(wantCat) >= 0) ? wantCat : (_cats.indexOf(XiangKuApp.currentNoteCategory) >= 0 ? XiangKuApp.currentNoteCategory : 'log');
+                const wantWs = XiangKuApp.currentWorkspaceId === 'all' ? 'general' : XiangKuApp.currentWorkspaceId;
+                const _wsIds = (XiangKuApp.db.workspace || []).map(w => w.id);
+                const _ws = _wsIds.indexOf(wantWs) >= 0 ? wantWs : 'general';
+                const _text = String(d.content || q).replace(/^(请|帮我|麻烦你)?(记录|记一下|保存|写入|新建|添加|归档)[:：]?\s*/i, '').trim();
+                XiangKuApp.db.notes.unshift({
+                  id: 'n_' + Date.now(),
+                  title: (d.title || _text).slice(0, 16),
+                  content: _text || q,
+                  date: now.toISOString().slice(0, 10),
+                  time: timeStr,
+                  type: _cat,
+                  archived: false,
+                  workspaceId: _ws
+                });
+                XiangKuApp.saveStorage();
+                XiangKuApp.renderAll();
+                executionFeedback = `[系统操作] 已记录至【今日工作流】·${XiangKuApp.catName(_cat)}分区·${XiangKuApp.wsName(_ws)}：${_text.slice(0, 30)}\n`;
+              } else if (actionPlan.action === 'add_workspace') {
+                const d = actionPlan.extractedData || {};
+                XiangKuApp.db.workspace.push({
+                  id: 'ws_' + Date.now(),
+                  name: d.name || q.slice(0, 15),
+                  description: d.description || d.content || ''
+                });
+                XiangKuApp.saveStorage();
+                XiangKuApp.renderAll();
+                executionFeedback = `[系统操作] 已在工作空间新增项目:《${d.name || '未命名项目'}》\n`;
+              }
+
+              const historyPayload = XiangKuApp.db.nikMessages.slice(-6);
+              const ctxScope = XiangKuApp.scopeOf(q);
+              const ctxBody = XiangKuApp.buildNikContext(ctxScope, q);
+              const ctxSummary = `【数据概览】工作流${XiangKuApp.db.notes.filter(n=>!n.archived).length}条 / 已归档${XiangKuApp.db.notes.filter(n=>n.archived).length}条 / 工作空间${XiangKuApp.db.workspace.length}项 / 知识${XiangKuApp.db.knowledge.length}篇 / 经验${XiangKuApp.db.experiences.length}条 / 技能${XiangKuApp.db.skills.length}项`;
+              const systemPrompt = `你是 NIK，象库轻工作台的核心通用智能体。以下【真实数据】已注入给你（当前聚焦：${ctxScope === 'archive' ? '归档工作流' : ctxScope === 'knowledge' ? '知识库' : ctxScope === 'experience' ? '经验库' : ctxScope === 'profile' ? '个人资料库' : '全域'}）。${ctxSummary}。当前系统执行状态：${executionFeedback || '无自动入库动作'}。请恪守：
+1. 回答/总结必须基于【真实数据】中的具体条目，禁止编造；数据里没有的，明说"这里没有记录"。
+2. 用户要工作总结/日报/回顾时：把真实工作流条目逐条核对后浓缩成文，按时间或主题组织，结论先行，可用 Markdown 排版（方便一键复制）。
+3. 用户指定范围（如"只看归档库/看知识库"）时只基于该范围回答。
+4. 语气博学、直接、中肯。
+
+【真实数据】
+${ctxBody}`;
+
+              const reply = await XiangKuApp.requestAI(historyPayload, systemPrompt);
+
+              finalReply = (executionFeedback ? `${executionFeedback}\n` : '') + reply;
+
+              XiangKuApp.db.nikMessages.pop();
+              XiangKuApp.db.nikMessages.push({ role: 'assistant', content: finalReply });
+              XiangKuApp.saveStorage();
+              this.renderMessages();
+              XiangKuApp.renderAll();
+
+            } catch (err) {
+              XiangKuApp.db.nikMessages.pop();
+              const errMsg = err.message === 'MISSING_CONFIG' ? "提示：尚未配置大模型 API Key，请在设置中填写。" : `调用失败: ${err.message}`;
+              XiangKuApp.db.nikMessages.push({ role: 'assistant', content: errMsg });
+              XiangKuApp.saveStorage();
+              this.renderMessages();
+            }
+          },
+
+          clearChat() {
+            if (confirm('清空 NIK 对话？')) {
+              XiangKuApp.db.nikMessages = [];
+              XiangKuApp.saveStorage();
+              this.renderMessages();
+            }
+          },
+
+          scrollToBottom() {
+            const container = document.getElementById('nikChatMessages');
+            if (container) container.scrollTop = container.scrollHeight;
+          }
+        },
+
+        // ========== 子弹笔记 Bullet Journal ==========
+        bujo: {
+          BUL: {
+            task: { ch: '•', done: '✕', cls: 'text-zinc-700 dark:text-zinc-300', label: '任务' },
+            event: { ch: '○', done: '○', cls: 'text-sky-600 dark:text-sky-400', label: '事件' },
+            note: { ch: '–', done: '–', cls: 'text-zinc-400 dark:text-zinc-500', label: '笔记' },
+            priority: { ch: '*', done: '✕', cls: 'text-amber-500 dark:text-amber-400', label: '重要' },
+            inspiration: { ch: '!', done: '!', cls: 'text-violet-500 dark:text-violet-400', label: '灵感' }
+          },
+          view: '', bDate: '', bMonth: '', bBucket: '__later__', bullet: 'task',
+
+          todayStr() { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); },
+          shiftDay(s, delta) { const p = s.split('-'); const d = new Date(+p[0], +p[1] - 1, +p[2] + delta); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0'); },
+          curMonth() { return this.todayStr().slice(0, 7); },
+          shiftMonth(m, delta) { const p = m.split('-'); const d = new Date(+p[0], +p[1] - 1 + delta, 1); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); },
+          esc(s) { return String(s == null ? '' : s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;'); },
+          newId() { return 'bj_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); },
+          ensureDb() { const b = XiangKuApp.db.bujo || (XiangKuApp.db.bujo = { future: [], logs: {} }); if (!b.logs) b.logs = {}; if (!Array.isArray(b.future)) b.future = []; return b; },
+          logsFor(date) { const b = this.ensureDb(); if (!b.logs[date]) b.logs[date] = []; return b.logs[date]; },
+          futureArr() { return this.ensureDb().future; },
+          parsePrefix(t) {
+            const m = { '•': 'task', '●': 'task', '○': 'event', '–': 'note', '-': 'note', '*': 'priority', '!': 'inspiration' };
+            const c = t.charAt(0);
+            if (m[c]) return { bullet: m[c], rest: t.slice(1).replace(/^\s+/, '') };
+            return { bullet: '', rest: t };
+          },
+
+          enter() {
+            if (!this.view) { this.view = 'daily'; this.bDate = this.todayStr(); this.bMonth = this.curMonth(); }
+            this.setView(this.view);
+          },
+          openDesktop() {
+            ['tabSectionWorkspace', 'tabSectionNotes', 'tabSectionKnowledge'].forEach(id => { const el = document.getElementById(id); if (el) { el.classList.add('hidden'); el.classList.remove('md:flex'); } });
+            const nik = document.getElementById('tabSectionNik');
+            if (nik) nik.classList.add('hidden');
+            const sec = document.getElementById('tabSectionBuJo');
+            sec.classList.remove('hidden'); sec.classList.add('flex');
+            this.enter();
+          },
+          closeDesktop() {
+            const sec = document.getElementById('tabSectionBuJo');
+            sec.classList.add('hidden'); sec.classList.remove('flex');
+            if (window.innerWidth >= 768) {
+              ['tabSectionWorkspace', 'tabSectionNotes', 'tabSectionKnowledge'].forEach(id => { const el = document.getElementById(id); if (el) { el.classList.remove('hidden'); el.classList.add('md:flex'); } });
+            } else {
+              XiangKuApp.switchMobileTab('notes');
+            }
+          },
+
+          setView(v) {
+            this.view = v;
+            const map = { daily: 'bujoDailyView', monthly: 'bujoMonthlyView', future: 'bujoFutureView' };
+            Object.keys(map).forEach(k => { const el = document.getElementById(map[k]); if (el) el.classList.toggle('hidden', k !== v); });
+            const act = 'h-6 px-2.5 rounded text-[11px] font-medium bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900';
+            const nor = 'h-6 px-2.5 rounded text-[11px] text-zinc-500 dark:text-zinc-400 hover:bg-zinc-200/60 dark:hover:bg-zinc-800';
+            Object.keys(map).forEach(k => { const b = document.getElementById('bujoSub' + k.charAt(0).toUpperCase() + k.slice(1)); if (b) b.className = k === v ? act : nor; });
+            this.pickBullet(this.bullet);
+            this.render();
+          },
+          render() {
+            const sec = document.getElementById('tabSectionBuJo');
+            if (!sec || sec.classList.contains('hidden')) return;
+            if (this.view === 'monthly') this.renderMonthly();
+            else if (this.view === 'future') this.renderFuture();
+            else { this.view = 'daily'; this.renderDaily(); }
+          },
+
+          goDay(delta) { this.bDate = this.shiftDay(this.bDate, delta); this.render(); },
+          goToday() { this.bDate = this.todayStr(); this.render(); },
+          setDay(v) { if (v) { this.bDate = v; this.render(); } },
+          goMonth(delta) { this.bMonth = this.shiftMonth(this.bMonth, delta); this.render(); },
+          goCurMonth() { this.bMonth = this.curMonth(); this.render(); },
+          setMonth(v) { if (v) { this.bMonth = v; this.render(); } },
+          setBucket(v) { this.bBucket = v; this.render(); },
+          toggleLegend() { const el = document.getElementById('bujoLegend'); if (el) el.classList.toggle('hidden'); },
+
+          pickBullet(b) {
+            this.bullet = b;
+            const picker = document.getElementById('bujoBulletPicker');
+            if (!picker) return;
+            const active = 'w-6 h-6 rounded text-xs border border-amber-500 text-zinc-900 dark:text-zinc-100 shadow-sm flex items-center justify-center';
+            const idle = 'w-6 h-6 rounded text-xs border border-transparent text-zinc-400 flex items-center justify-center';
+            picker.querySelectorAll('button').forEach(btn => { btn.className = btn.getAttribute('data-b') === b ? active : idle; });
+          },
+
+          renderDaily() {
+            const dayPick = document.getElementById('bujoDayPick');
+            if (dayPick) dayPick.value = this.bDate;
+            const hint = document.getElementById('bujoInputHint');
+            if (hint) hint.innerText = '记入 ' + this.bDate.replace(/-/g, '.') + '：';
+            const label = document.getElementById('bujoDayLabel');
+            const list = document.getElementById('bujoDailyList');
+            const arr = this.logsFor(this.bDate);
+            const isToday = this.bDate === this.todayStr();
+            const openCnt = arr.filter(x => x.status !== 'done').length;
+            if (label) label.innerText = this.bDate.replace(/-/g, '.') + (isToday ? ' · 今天' : '') + (openCnt ? ' · ' + openCnt + ' 项未了' : '');
+            if (!arr.length) { list.innerHTML = '<div class="h-40 flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-500 text-xs gap-1"><i data-lucide="book-open" class="w-5 h-5 text-amber-300 dark:text-amber-700"></i><span>这一天还没有记录 · 用下方符号快速记一条</span></div>'; lucide.createIcons(); return; }
+            list.innerHTML = arr.slice().reverse().map(it => this.rowHtml(this.bDate, it)).join('');
+          },
+
+          rowHtml(date, it) {
+            const meta = this.BUL[it.bullet] || this.BUL.task;
+            const canDo = it.bullet === 'task' || it.bullet === 'priority';
+            const done = it.status === 'done';
+            const ch = done ? meta.done : meta.ch;
+            const chPart = canDo
+              ? '<button onclick="XiangKuApp.modules.bujo.toggle(\'' + date + '\',\'' + it.id + '\')" class="w-4 shrink-0 text-center text-sm leading-none ' + (done ? 'text-emerald-400 dark:text-emerald-500' : meta.cls + ' hover:opacity-60') + '" title="' + (done ? '标记为未完成' : '标记完成') + '">' + ch + '</button>'
+              : '<span class="w-4 shrink-0 text-center text-sm leading-none ' + meta.cls + '" title="' + meta.label + '">' + ch + '</span>';
+            const tPart = '<p class="flex-1 text-xs leading-relaxed whitespace-pre-wrap ' + (done ? 'line-through text-zinc-300 dark:text-zinc-600' : 'text-zinc-700 dark:text-zinc-200') + '">' + this.esc(it.content) + '</p>';
+            const actPart = '<div class="flex items-center shrink-0">'
+              + '<button onclick="XiangKuApp.modules.bujo.migrateDay(\'' + date + '\',\'' + it.id + '\')" class="text-[10px] text-zinc-400 hover:text-sky-600 dark:hover:text-sky-400 px-1" title="迁移到明天">&gt;明</button>'
+              + '<button onclick="XiangKuApp.modules.bujo.migrateMonth(\'' + date + '\',\'' + it.id + '\')" class="text-[10px] text-zinc-400 hover:text-amber-600 dark:hover:text-amber-400 px-1" title="迁移到未来某月 / 待定">&gt;未来</button>'
+              + '<button onclick="XiangKuApp.modules.bujo.del(\'' + date + '\',\'' + it.id + '\')" class="text-[10px] text-zinc-300 hover:text-red-500 px-1" title="删除">删</button></div>';
+            return '<div class="flex items-start gap-2 py-1 border-b border-zinc-100 dark:border-zinc-800/60">' + chPart + tPart + actPart + '</div>';
+          },
+
+          toggle(date, id) {
+            const arr = this.logsFor(date);
+            const it = arr.find(x => x.id === id);
+            if (it) { it.status = it.status === 'done' ? 'open' : 'done'; XiangKuApp.saveStorage(); this.render(); }
+          },
+          migrateDay(date, id) {
+            const arr = this.logsFor(date);
+            const i = arr.findIndex(x => x.id === id);
+            if (i < 0) return;
+            const it = arr.splice(i, 1)[0];
+            it.status = 'open';
+            this.logsFor(this.shiftDay(date, 1)).push(it);
+            XiangKuApp.saveStorage(); this.render();
+          },
+          migrateMonth(date, id) {
+            const arr = this.logsFor(date);
+            const i = arr.findIndex(x => x.id === id);
+            if (i < 0) return;
+            const v = window.prompt('迁移到未来哪个月份？格式 YYYY-MM（留空 = 待定 / 以后）', '');
+            const it = arr.splice(i, 1)[0];
+            it.month = v && /^\d{4}-\d{2}$/.test(v) ? v : null;
+            it.status = 'open'; it.done = false;
+            this.futureArr().push(it);
+            XiangKuApp.saveStorage(); this.render();
+          },
+          del(date, id) {
+            if (!confirm('删除这条子弹记录？')) return;
+            const arr = this.logsFor(date);
+            const i = arr.findIndex(x => x.id === id);
+            if (i >= 0) { arr.splice(i, 1); XiangKuApp.saveStorage(); this.render(); }
+          },
+
+          renderMonthly() {
+            const mp = document.getElementById('bujoMonthPick');
+            if (mp) mp.value = this.bMonth;
+            const hint = document.getElementById('bujoInputHint');
+            if (hint) hint.innerText = '记入 ' + this.bMonth.replace('-', '.') + ' 月度计划（未来记录）：';
+            const b = this.ensureDb();
+            const keys = Object.keys(b.logs).filter(k => k.slice(0, 7) === this.bMonth).sort();
+            const rows = [];
+            let openT = 0, doneT = 0, oth = 0;
+            keys.forEach(k => {
+              (b.logs[k] || []).forEach(it => {
+                const isT = it.bullet === 'task' || it.bullet === 'priority';
+                if (isT) { if (it.status === 'done') doneT++; else openT++; } else oth++;
+                rows.push({ date: k, it: it });
+              });
+            });
+            const fut = this.futureArr().filter(f => (f.month || '') === this.bMonth);
+            const st = document.getElementById('bujoMonthStats');
+            if (st) st.innerText = '任务 ' + (openT + doneT) + ' · 未完 ' + openT + ' / 完成 ' + doneT + (oth ? ' · 其他 ' + oth : '') + (fut.length ? ' · 当月计划 ' + fut.length : '');
+            const list = document.getElementById('bujoMonthlyList');
+            if (!rows.length && !fut.length) { list.innerHTML = '<div class="h-40 flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-500 text-xs gap-1"><span>这个月还没有子弹记录 · 每日里记的会自动汇总到这里</span></div>'; return; }
+            let html = '';
+            let last = '';
+            rows.sort((a, b2) => a.date.localeCompare(b2.date)).forEach(r => {
+              if (r.date !== last) { html += '<div class="mt-2 mb-0.5 text-[10px] font-mono text-zinc-400 dark:text-zinc-500 px-1">' + r.date.replace(/-/g, '.') + '</div>'; last = r.date; }
+              html += this.rowHtml(r.date, r.it);
+            });
+            if (fut.length) {
+              html += '<div class="mt-2 mb-0.5 text-[10px] font-mono text-amber-600 dark:text-amber-400 px-1">当月计划（记在未来记录）</div>';
+              fut.forEach(f => { html += this.futureRow(f); });
+            }
+            list.innerHTML = html;
+          },
+
+          renderFuture() {
+            const fut = this.futureArr();
+            const months = Array.from(new Set(fut.map(f => f.month || '__later__').filter(Boolean)));
+            if (!months.includes('__later__')) months.push('__later__');
+            if (!months.includes(this.shiftMonth(this.curMonth(), 1))) months.push(this.shiftMonth(this.curMonth(), 1));
+            months.sort();
+            if (months.indexOf(this.bBucket) < 0) this.bBucket = months[0];
+            const sel = document.getElementById('bujoBucket');
+            if (sel) {
+              const cur = this.bBucket;
+              sel.innerHTML = months.map(m => '<option value="' + m + '">' + (m === '__later__' ? '待定 · 以后' : m.replace('-', '.') + ' 月') + '</option>').join('');
+              sel.value = cur;
+            }
+            const hint = document.getElementById('bujoInputHint');
+            if (hint) hint.innerText = '记入「' + (this.bBucket === '__later__' ? '待定 · 以后' : this.bBucket.replace('-', '.') + ' 月') + '」：';
+            const st = document.getElementById('bujoFutureStats');
+            const pend = fut.filter(f => !f.done).length;
+            if (st) st.innerText = '未完成 ' + pend + ' 项 · 共 ' + fut.length + ' 项';
+            const list = document.getElementById('bujoFutureList');
+            const arr = fut.filter(f => (f.month || '__later__') === this.bBucket);
+            if (!arr.length) {
+              list.innerHTML = '<div class="h-40 flex flex-col items-center justify-center text-zinc-400 dark:text-zinc-500 text-xs gap-1"><span>' + (this.bBucket === '__later__' ? '待定区空的 · 长期计划、灵感、以后再说的事丢这里' : '这个月还没有未来计划') + '</span></div>';
+              return;
+            }
+            list.innerHTML = arr.map(f => this.futureRow(f)).join('');
+          },
+
+          futureRow(f) {
+            const meta = this.BUL[f.bullet] || this.BUL.task;
+            const canDo = f.bullet === 'task' || f.bullet === 'priority';
+            const done = !!f.done;
+            const ch = done ? (meta.done || meta.ch) : meta.ch;
+            const chPart = canDo
+              ? '<button onclick="XiangKuApp.modules.bujo.toggleFuture(\'' + f.id + '\')" class="w-4 shrink-0 text-center text-sm leading-none ' + (done ? 'text-emerald-400 dark:text-emerald-500' : meta.cls + ' hover:opacity-60') + '" title="' + (done ? '标记未完成' : '标记完成') + '">' + ch + '</button>'
+              : '<span class="w-4 shrink-0 text-center text-sm leading-none ' + meta.cls + '" title="' + meta.label + '">' + ch + '</span>';
+            const tPart = '<p class="flex-1 text-xs leading-relaxed whitespace-pre-wrap ' + (done ? 'line-through text-zinc-300 dark:text-zinc-600' : 'text-zinc-700 dark:text-zinc-200') + '">' + this.esc(f.content) + '</p>';
+            const actPart = '<div class="flex items-center shrink-0">'
+              + '<button onclick="XiangKuApp.modules.bujo.schedule(\'' + f.id + '\')" class="text-[10px] text-zinc-400 hover:text-sky-600 dark:hover:text-sky-400 px-1" title="排期到某一天">&gt;排期</button>'
+              + '<button onclick="XiangKuApp.modules.bujo.delFuture(\'' + f.id + '\')" class="text-[10px] text-zinc-300 hover:text-red-500 px-1" title="删除">删</button></div>';
+            return '<div class="flex items-start gap-2 py-1 border-b border-zinc-100 dark:border-zinc-800/60">' + chPart + tPart + actPart + '</div>';
+          },
+
+          toggleFuture(id) {
+            const f = this.futureArr().find(x => x.id === id);
+            if (f) { f.done = !f.done; XiangKuApp.saveStorage(); this.render(); }
+          },
+          schedule(id) {
+            const fut = this.futureArr();
+            const i = fut.findIndex(x => x.id === id);
+            if (i < 0) return;
+            const v = window.prompt('安排到哪一天？格式 YYYY-MM-DD（留空 = 明天）', '');
+            const date = v && /^\d{4}-\d{2}-\d{2}$/.test(v) ? v : this.shiftDay(this.todayStr(), 1);
+            const it = fut.splice(i, 1)[0];
+            it.done = false; it.status = 'open'; delete it.month;
+            this.logsFor(date).push(it);
+            XiangKuApp.saveStorage(); this.render();
+          },
+          delFuture(id) {
+            if (!confirm('删除这条未来记录？')) return;
+            const fut = this.futureArr();
+            const i = fut.findIndex(x => x.id === id);
+            if (i >= 0) { fut.splice(i, 1); XiangKuApp.saveStorage(); this.render(); }
+          },
+
+          handleSubmit(e) {
+            e.preventDefault();
+            const input = document.getElementById('bujoInput');
+            if (!input) return;
+            const raw = input.value.trim();
+            if (!raw) return;
+            const pd = this.parsePrefix(raw);
+            const bullet = pd.bullet || this.bullet;
+            const content = pd.bullet ? pd.rest : raw;
+            const item = { id: this.newId(), bullet: bullet, status: 'open', done: false, content: content, t: Date.now() };
+            if (this.view === 'monthly') {
+              item.month = this.bMonth;
+              this.futureArr().push(item);
+            } else if (this.view === 'future') {
+              item.month = this.bBucket === '__later__' ? null : this.bBucket;
+              this.futureArr().push(item);
+            } else {
+              this.logsFor(this.bDate || this.todayStr()).push(item);
+            }
+            input.value = '';
+            XiangKuApp.saveStorage();
+            this.render();
+            input.focus();
+          }
+        }
+      }
+    };
+
+    window.addEventListener('DOMContentLoaded', () => {
+      XiangKuApp.init();
+    });
+  </script>
+<script src="sync.js"></script>
+<script>
+function saveLS(k, v) { localStorage.setItem(k, v); if (window.NikSync) NikSync.schedulePush(); }
+try {
+  var _sc = NikSync.cfg();
+  NikSync.init({ app: 'niko', owner: _sc.owner || '', repo: _sc.repo || '', token: _sc.token || '', branch: _sc.branch || 'master', device: _sc.device || '', file: 'data/niko.json', keys: ['xiangku_workstation_db_v5'] });
+  NikSync.autoPull().then(function (changed) { if (changed) location.reload(); });
+  NikSync.ensureFAB();
+} catch (e) {}
+</script>
+<script>
+/* ============ 象览能力桥（工作台/Niko） ============
+ * 宿主在 document-start 注入 window.xianglan 后，本段注册 5 个动作。
+ * 单独打开页面时整段跳过，不产生任何全局或被篡改的行为。
+ * 所有写操作复用应用自己的 DOM 表单入口 + saveStorage()，不造第 4 套写入形状。
+ */
+(function () {
+  if (!(window.xianglan && typeof window.xianglan.register === 'function')) return;
+
+  var sleep = function (ms) { return new Promise(function (r) { setTimeout(r, ms); }); };
+  var ERR_READY = '工作台还没加载完，请稍后再试';
+
+  function readyApp() {
+    return new Promise(function (resolve, reject) {
+      var tries = 0;
+      (function poll() {
+        tries++;
+        var A = window.XiangKuApp;
+        if (A && A.db && typeof A.saveStorage === 'function' && typeof A.renderAll === 'function'
+          && A.modules && A.modules.notes && A.modules.bujo && A.modules.knowledge && A.modules.profileVault
+          && A.modules.nik && A.modules.workspace && A.modules.agent) {
+          // init() 在 DOMContentLoaded 里跑（设置 quickInputDate.value = 今天）
+          try {
+            if (document.getElementById('quickInputDate') && document.getElementById('quickInputDate').value) {
+              resolve(A); return;
+            }
+          } catch (e) { /* 继续等待 */ }
+        }
+        if (tries > 150) { reject(new Error(ERR_READY)); return; }
+        setTimeout(poll, 100);
+      })();
+    });
+  }
+
+  function resolveCat(list, v, label) {
+    if (v === undefined || v === null || v === '') return null;
+    var hit = list.find(function (c) { return c.id === v || c.name === v; });
+    if (!hit) throw new Error(label + ' 不合法，当前可用：' + list.map(function (c) { return c.id + '(' + c.name + ')'; }).join('、'));
+    return hit.id;
+  }
+
+  function resolveWs(A, ws) {
+    if (ws === undefined || ws === null || ws === '') return null;
+    if (ws === 'general') return 'general';
+    var list = A.db.workspace || [];
+    var hit = list.find(function (w) { return w.id === ws || w.name === ws; });
+    if (!hit) throw new Error('workspace 不合法，当前可用：general、' + list.map(function (w) { return w.id + '(' + w.name + ')'; }).join('、'));
+    return hit.id;
+  }
+
+  function catList(A) { return (A.db.noteCategories && A.db.noteCategories.length) ? A.db.noteCategories : A.DEFAULT_NOTE_CATEGORIES; }
+  function kcatList(A) { return (A.db.knowledgeCategories && A.db.knowledgeCategories.length) ? A.db.knowledgeCategories : A.DEFAULT_KNOWLEDGE_CATEGORIES; }
+  function pcatList(A) { return (A.db.profileCategories && A.db.profileCategories.length) ? A.db.profileCategories : A.DEFAULT_PROFILE_CATEGORIES; }
+  function cut(s, n) { s = String(s == null ? '' : s); return s.length > n ? s.slice(0, n) + '…' : s; }
+  function esc(s) { return String(s == null ? '' : s); }
+  function dayUTC() { return new Date().toISOString().slice(0, 10); }
+  function hitByClientId(arr, cid) { if (!cid || !Array.isArray(arr)) return null; for (var i = 0; i < arr.length; i++) { if (arr[i] && arr[i].clientId === cid) return arr[i]; } return null; }
+  function dedupeId(existingIds, item) { if (existingIds && item && existingIds.has(item.id)) { item.id = item.id + '_' + Math.random().toString(36).slice(2, 8); } return item; }
+  function scanTask(A, cid) {
+    if (!cid) return null;
+    var b = A.db.bujo || {};
+    var logs = (b.logs && typeof b.logs === 'object') ? b.logs : {};
+    var fut = Array.isArray(b.future) ? b.future : [];
+    var today = A.modules.bujo.todayStr();
+    var cutoff = A.modules.bujo.shiftDay(today, -90);
+    var got = null;
+    Object.keys(logs).forEach(function (d) {
+      if (got) return;
+      if (d >= cutoff) {
+        var h = hitByClientId(logs[d], cid);
+        if (h) got = { item: h, bucket: 'daily', date: d, month: null };
+      }
+    });
+    if (!got) {
+      for (var i = 0; i < fut.length; i++) {
+        if (fut[i] && fut[i].clientId === cid) { got = { item: fut[i], bucket: 'future', date: null, month: fut[i].month || null }; break; }
+      }
+    }
+    return got;
+  }
+
+  function preview(vals, extra) {
+    var o = {};
+    Object.keys(vals).forEach(function (k) { o[k] = vals[k]; });
+    if (extra) Object.assign(o, extra);
+    return o;
+  }
+
+  // ============ 动作 1/5：query_records（读） ============
+  async function query_records(args) {
+    args = args || {};
+    var A = await readyApp();
+    var db = A.db;
+    var SCOPES = 'note,archive,task,knowledge,experience,method,template,contact,skill,growth,agent_output,workspace,profile,chat';
+    var scope = String(args.scope || '').trim();
+    if (!scope) throw new Error('scope 必填，取值：' + SCOPES);
+    if (SCOPES.split(',').indexOf(scope) === -1) throw new Error('scope 不合法，取值：' + SCOPES);
+    var limit = parseInt(args.limit, 10);
+    if (isNaN(limit) || limit <= 0) limit = 20;
+    if (limit > 50) limit = 50;
+    if (args.withContent && scope === 'chat' && limit > 10) limit = 10;
+    if (args.withContent && scope !== 'chat' && limit > 20) limit = 20;
+    var withContent = !!args.withContent;
+    var kw = String(args.keyword || '').trim().toLowerCase();
+    var m = function () {
+      var fields = Array.prototype.slice.call(arguments).map(function (x) { return String(x == null ? '' : x).toLowerCase(); });
+      return !kw || fields.some(function (f) { return f.indexOf(kw) !== -1; });
+    };
+    var out = [];
+    var total = 0;
+
+    if (scope === 'note' || scope === 'archive') {
+      var list = (db.notes || []).filter(function (n) {
+        if (scope === 'archive') return m(n.title, n.content, n.type, A.catName(n.type)) && !!n.archived;
+        var nd = n.date || dayUTC();
+        return m(n.title, n.content, n.type, A.catName(n.type)) && !n.archived && nd <= dayUTC();
+      });
+      total = list.length;
+      out = list.slice(0, limit).map(function (n) {
+        return preview(
+          { id: n.id, title: n.title || cut(n.content, 16), date: n.date || dayUTC(), time: n.time || '', type: n.type, typeName: A.catName(n.type), workspaceId: n.workspaceId, summary: cut(n.content, 120) },
+          withContent ? { content: cut(n.content, 500) } : null
+        );
+      });
+    } else if (scope === 'task') {
+      var b = db.bujo || {};
+      var logs = (b.logs && typeof b.logs === 'object') ? b.logs : {};
+      var fut = Array.isArray(b.future) ? b.future : [];
+      var today = A.modules.bujo.todayStr();
+      var month = A.modules.bujo.curMonth();
+      var merged = [];
+      Object.keys(logs).forEach(function (d) {
+        (logs[d] || []).forEach(function (it) {
+          var isToday = d === today;
+          var isMonth = d.slice(0, 7) === month;
+          if ((it.status !== 'done') && (isToday || isMonth)) merged.push({ it: it, date: d, month: null, src: 'daily' });
+        });
+      });
+      fut.forEach(function (it) { merged.push({ it: it, date: null, month: it.month || null, src: 'future' }); });
+      total = merged.length;
+      out = merged.slice(0, limit).map(function (x) {
+        var it = x.it;
+        return preview(
+          { id: it.id, bullet: it.bullet || 'task', content: cut(it.content, 120), status: it.status || 'open', date: x.date, month: x.month, bucket: x.src },
+          withContent ? { content: cut(it.content, 500) } : null
+        );
+      });
+    } else if (scope === 'knowledge') {
+      var catHidden = {};
+      (db.knowledgeCategories || []).forEach(function (c) { catHidden[c.id] = !!c.hidden; });
+      var kl = (db.knowledge || []).filter(function (k) {
+        return m(k.title, k.content, k.category, (kcatList(A).find(function (c) { return c.id === k.category; }) || {}).name);
+      });
+      total = kl.length;
+      out = kl.slice(0, limit).map(function (k) {
+        var hidden = !!k.hidden || !!catHidden[k.category];
+        return preview(
+          { id: k.id, title: k.title, category: k.category, categoryName: (kcatList(A).find(function (c) { return c.id === k.category; }) || {}).name || k.category, workspaceId: k.workspaceId, hidden: hidden, summary: cut(k.content, 120) },
+          withContent ? { content: cut(k.content, 500) } : null
+        );
+      });
+    } else if (scope === 'experience') {
+      var el = (db.experiences || []).filter(function (x) { return m(x.title, x.scene, x.keywords, x.summary, x.solution); });
+      total = el.length;
+      out = el.slice(0, limit).map(function (x) {
+        return preview(
+          { id: x.id, title: x.title, scene: cut(x.scene, 60) || '', keywords: cut(x.keywords, 60) || '', summary: cut(x.summary || x.solution, 120) },
+          withContent ? { content: cut(x.solution, 500) } : null
+        );
+      });
+    } else if (scope === 'method') {
+      var ml = (db.methods || []).filter(function (x) { return m(x.title, x.category, x.content); });
+      total = ml.length;
+      out = ml.slice(0, limit).map(function (x) {
+        return preview(
+          { id: x.id, title: x.title, category: x.category || '', summary: cut(x.content, 120) },
+          withContent ? { content: cut(x.content, 500) } : null
+        );
+      });
+    } else if (scope === 'template') {
+      var tl = (db.templates || []).filter(function (x) { return m(x.title, x.type, x.content); });
+      total = tl.length;
+      out = tl.slice(0, limit).map(function (x) {
+        return preview(
+          { id: x.id, title: x.title, type: x.type || '', summary: cut(x.content, 120) },
+          withContent ? { content: cut(x.content, 500) } : null
+        );
+      });
+    } else if (scope === 'contact') {
+      var cl = (db.contacts || []).filter(function (x) { return m(x.name, x.role, x.field, x.contact, x.notes); });
+      total = cl.length;
+      out = cl.slice(0, limit).map(function (x) {
+        return preview(
+          { id: x.id, name: x.name, role: x.role || '', field: x.field || '', contact: x.contact || '', summary: cut(x.notes, 120) },
+          withContent ? { content: cut(x.notes, 500) } : null
+        );
+      });
+    } else if (scope === 'skill') {
+      var sl = (db.skills || []).filter(function (x) { return m(x.name, x.category, x.level, x.desc, x.learning); });
+      total = sl.length;
+      out = sl.slice(0, limit).map(function (x) {
+        return preview(
+          { id: x.id, name: x.name, category: x.category || '', level: x.level || '', summary: cut(x.desc, 120) },
+          withContent ? { content: cut(x.desc || x.learning, 500) } : null
+        );
+      });
+    } else if (scope === 'growth') {
+      var gl = (db.growth || []).filter(function (x) { return m(x.date, x.event, x.experience, x.insight); });
+      total = gl.length;
+      out = gl.slice(0, limit).map(function (x) {
+        return preview(
+          { id: x.id, date: x.date || '', event: x.event || '', summary: cut(x.experience || x.insight, 120) },
+          withContent ? { content: cut((x.experience || '') + '\n' + (x.insight || ''), 500) } : null
+        );
+      });
+    } else if (scope === 'agent_output') {
+      var ao = (db.agentOutputs || []).filter(function (x) { return m(x.title, x.agentName, x.content); });
+      total = ao.length;
+      out = ao.slice(0, limit).map(function (x) {
+        return preview(
+          { id: x.id, title: x.title || '', agentName: x.agentName || '', timestamp: x.timestamp || '', summary: cut(x.content, 120) },
+          withContent ? { content: cut(x.content, 500) } : null
+        );
+      });
+    } else if (scope === 'workspace') {
+      var wl = (db.workspace || []).filter(function (x) { return m(x.name, x.description); }).slice(0, limit);
+      total = (db.workspace || []).length;
+      out = wl.map(function (x) { return { id: x.id, name: x.name, description: cut(x.description, 120) }; });
+    } else if (scope === 'profile') {
+      var p = db.profile || {};
+      out = [{ id: 'profile', name: p.name || '', role: p.role || '', field: p.field || '', strengths: p.strengths || '', goals: p.goals || '', bio: cut(p.bio, 120) }];
+      total = 1;
+    } else if (scope === 'chat') {
+      var msgs = (db.nikMessages || []).slice(-limit);
+      total = (db.nikMessages || []).length;
+      out = msgs.map(function (x, i) {
+        return preview(
+          { id: 'msg-' + i, role: x.role || 'user', summary: cut(x.content, 120) },
+          withContent ? { content: cut(x.content, 500) } : null
+        );
+      });
+    }
+
+    return { scope: scope, count: out.length, total: total, truncated: total > out.length, items: out };
+  }
+
+  // ============ 动作 2/5：get_overview（读） ============
+  async function get_overview() {
+    var A = await readyApp();
+    var db = A.db;
+    var b = db.bujo || {};
+    var logs = (b.logs && typeof b.logs === 'object') ? b.logs : {};
+    var fut = Array.isArray(b.future) ? b.future : [];
+    var today = A.modules.bujo.todayStr();
+    var month = A.modules.bujo.curMonth();
+    var todayOpen = 0, monthOpen = 0;
+    Object.keys(logs).forEach(function (d) {
+      if (d === today) todayOpen = (logs[d] || []).filter(function (x) { return x.status !== 'done'; }).length;
+      if (d.slice(0, 7) === month) monthOpen += (logs[d] || []).filter(function (x) { return x.status !== 'done'; }).length;
+    });
+    var wsList = (db.workspace || []).slice(0, 20).map(function (w) { return { id: w.id, name: w.name, description: cut(w.description, 120) }; });
+    var mk = function (c) { return { id: c.id, name: c.name }; };
+    return {
+      counts: {
+        notes: (db.notes || []).filter(function (n) { return !n.archived; }).length,
+        notesArchived: (db.notes || []).filter(function (n) { return !!n.archived; }).length,
+        knowledge: (db.knowledge || []).length,
+        skills: (db.skills || []).length,
+        experiences: (db.experiences || []).length,
+        templates: (db.templates || []).length,
+        contacts: (db.contacts || []).length,
+        methods: (db.methods || []).length,
+        growth: (db.growth || []).length,
+        agents: (db.agents || []).length,
+        agentOutputs: (db.agentOutputs || []).length,
+        nikMessages: (db.nikMessages || []).length,
+        workspace: (db.workspace || []).length,
+        bujoTodayOpen: todayOpen,
+        bujoMonthOpen: monthOpen,
+        bujoFuture: fut.length
+      },
+      focus: {
+        workspaceId: A.currentWorkspaceId,
+        workspaceName: A.currentWorkspaceId === 'all' || A.currentWorkspaceId === '' ? '全部' : A.wsName(A.currentWorkspaceId),
+        noteCategoryId: A.currentNoteCategory,
+        noteCategoryName: A.currentNoteCategory === 'all' ? '全部' : A.catName(A.currentNoteCategory),
+        knowledgeCategory: A.currentKnowledgeCategory || 'all',
+        profileSection: A.currentProfileSection || 'profile'
+      },
+      workspaces: wsList,
+      workspaceTruncated: (db.workspace || []).length > 20,
+      enums: {
+        noteCategories: catList(A).map(mk),
+        knowledgeCategories: kcatList(A).map(mk),
+        profileCategories: pcatList(A).map(mk),
+        templateTypes: ['工作总结模板', '汇报模板', '检查清单', '常用文字模板', '工作流程模板'],
+        methodCategories: ['时间管理', '整理方法', '项目推进', '学习方法', '通用思考'],
+        skillCategories: ['专业技能', '工具技能', '管理能力', '沟通能力', '正在学习'],
+        bujoBullets: Object.keys(A.modules.bujo.BUL).map(function (k) { return { id: k, label: A.modules.bujo.BUL[k].label, ch: A.modules.bujo.BUL[k].ch }; })
+      }
+    };
+  }
+
+  // ============ 动作 3/5：add_note（写） ============
+  async function add_note(args) {
+    args = args || {};
+    var A = await readyApp();
+    var content = String(args.content || '').trim();
+    if (!content) throw new Error('content 不能为空');
+    if (content.length > 4000) throw new Error('content 不能超过 4000 字');
+    if (args.clientId) {
+      var hit = hitByClientId(A.db.notes, args.clientId);
+      if (hit) return { id: hit.id, type: hit.type, typeName: A.catName(hit.type), workspaceId: hit.workspaceId, date: hit.date, time: hit.time };
+    }
+    var cats = catList(A);
+    var typeId = args.type ? resolveCat(cats, args.type, 'type') : (cats.find(function (c) { return c.id === 'log'; }) || cats[0]).id;
+    var wsId = resolveWs(A, args.workspace); // null = 不改当前工作区
+    var prevWs = A.currentWorkspaceId;
+    var existingIds = new Set((A.db.notes || []).map(function (n) { return n.id; }));
+    try {
+      if (wsId) A.currentWorkspaceId = wsId;
+      document.getElementById('quickInputContent').value = content;
+      document.getElementById('quickInputTags').value = '';
+      document.getElementById('quickTypeSelect').value = typeId;
+      // quickInputDate 保持 init() 写入的今天，不自己算
+      A.modules.notes.handleSubmit({ preventDefault: function () {} });
+    } finally {
+      A.currentWorkspaceId = prevWs;
+    }
+    A.renderAll();
+    var note = (A.db.notes || [])[0];
+    if (!note) throw new Error('写入失败：未取到新记录');
+    dedupeId(existingIds, note);
+    if (args.clientId) { note.clientId = args.clientId; }
+    A.saveStorage();
+    await sleep(80);
+    var back = (A.db.notes || []).find(function (n) { return n.id === note.id; });
+    if (!back) throw new Error('写入校验失败：记录未持久化，请重试');
+    return { id: back.id, type: back.type, typeName: A.catName(back.type), workspaceId: back.workspaceId, date: back.date, time: back.time };
+  }
+
+  // ============ 动作 4/5：save_insight（写） ============
+  async function save_insight(args) {
+    args = args || {};
+    var A = await readyApp();
+    var target = String(args.target || '').trim();
+    if (['knowledge', 'experience', 'method', 'skill'].indexOf(target) === -1) throw new Error('target 不合法，取值：knowledge、experience、method、skill');
+    var title = String(args.title || '').trim();
+    var content = String(args.content || '').trim();
+    if (!title) throw new Error('title 不能为空');
+    if (!content) throw new Error('content 不能为空');
+    if (content.length > 8000) throw new Error('content 不能超过 8000 字');
+
+    if (target === 'knowledge') {
+      if (args.clientId) {
+        var khit = hitByClientId(A.db.knowledge, args.clientId);
+        if (khit) {
+          var kc0 = (kcatList(A).find(function (c) { return c.id === khit.category; }) || {}).name || khit.category;
+          return { id: khit.id, target: 'knowledge', title: khit.title, category: khit.category, categoryName: kc0, workspaceId: khit.workspaceId, titleDuplicate: false };
+        }
+      }
+      var kcats = kcatList(A);
+      var catId = args.category ? resolveCat(kcats, args.category, 'category') : kcats[0].id;
+      var wsId = resolveWs(A, args.workspace !== undefined && args.workspace !== null && args.workspace !== '' ? args.workspace : 'general');
+      var titleDuplicate = (A.db.knowledge || []).some(function (k) { return k.title === title; });
+      var existingIds = new Set((A.db.knowledge || []).map(function (k) { return k.id; }));
+      document.getElementById('knowledgeFormId').value = '';
+      document.getElementById('knowledgeFormTitle').value = title;
+      document.getElementById('knowledgeFormCategory').value = catId;
+      document.getElementById('knowledgeFormWorkspace').value = wsId;
+      document.getElementById('knowledgeFormContent').value = content;
+      A.modules.knowledge.handleSubmit({ preventDefault: function () {} });
+      var k = (A.db.knowledge || [])[0];
+      if (!k) throw new Error('写入失败：未取到新知识条目');
+      dedupeId(existingIds, k);
+      if (args.clientId) k.clientId = args.clientId;
+      A.saveStorage();
+      await sleep(80);
+      var kb = (A.db.knowledge || []).find(function (x) { return x.id === k.id; });
+      if (!kb) throw new Error('写入校验失败：知识条目未持久化，请重试');
+      return { id: kb.id, target: 'knowledge', title: kb.title, category: kb.category, categoryName: (kcatList(A).find(function (c) { return c.id === kb.category; }) || {}).name || kb.category, workspaceId: kb.workspaceId, titleDuplicate: titleDuplicate };
+    }
+
+    var secMap = { experience: 'experiences', method: 'methods', skill: 'skills' };
+    var sec = secMap[target];
+    var existingIds2 = new Set(((A.db[sec] || [])).map(function (x) { return x.id; }));
+    if (args.clientId) {
+      var phit = hitByClientId(A.db[sec], args.clientId);
+      if (phit) return { id: phit.id, target: target, category: phit.category || '', title: phit.title || phit.name || '' };
+    }
+    var cat = '';
+    if (target === 'skill') {
+      cat = args.category || '专业技能';
+      if (['专业技能', '工具技能', '管理能力', '沟通能力', '正在学习'].indexOf(cat) === -1) throw new Error('skill 的 category 不合法，当前可用：专业技能、工具技能、管理能力、沟通能力、正在学习');
+    } else if (target === 'method') {
+      cat = args.category || '时间管理';
+      if (['时间管理', '整理方法', '项目推进', '学习方法', '通用思考'].indexOf(cat) === -1) throw new Error('method 的 category 不合法，当前可用：时间管理、整理方法、项目推进、学习方法、通用思考');
+    }
+    var prevSec = A.currentProfileSection;
+    try {
+      A.currentProfileSection = sec;
+      A.modules.profileVault.openItemModal();
+      if (target === 'skill') {
+        document.getElementById('pv_skill_name').value = title;
+        document.getElementById('pv_skill_cat').value = cat;
+        document.getElementById('pv_skill_level').value = '';
+        document.getElementById('pv_skill_desc').value = content;
+        document.getElementById('pv_skill_learning').value = '';
+      } else if (target === 'method') {
+        document.getElementById('pv_mth_title').value = title;
+        document.getElementById('pv_mth_cat').value = cat;
+        document.getElementById('pv_mth_content').value = content;
+      } else {
+        document.getElementById('pv_exp_title').value = title;
+        document.getElementById('pv_exp_scene').value = String(args.scene || '');
+        document.getElementById('pv_exp_keywords').value = String(args.keywords || '');
+        document.getElementById('pv_exp_solution').value = content;
+        document.getElementById('pv_exp_summary').value = String(args.summary || '');
+      }
+      var modal = document.getElementById('profileItemModal');
+      if (modal) modal.classList.add('hidden');
+      A.modules.profileVault.handleItemSubmit({ preventDefault: function () {} });
+    } finally {
+      A.currentProfileSection = prevSec;
+    }
+    var item = (A.db[sec] || [])[0];
+    if (!item) throw new Error('写入失败：未取到新条目');
+    dedupeId(existingIds2, item);
+    if (args.clientId) item.clientId = args.clientId;
+    A.saveStorage();
+    await sleep(80);
+    var ib = (A.db[sec] || []).find(function (x) { return x.id === item.id; });
+    if (!ib) throw new Error('写入校验失败：条目未持久化，请重试');
+    return { id: ib.id, target: target, category: ib.category || '', title: ib.title || ib.name || '' };
+  }
+
+  // ============ 动作 5/5：add_task（写） ============
+  async function add_task(args) {
+    args = args || {};
+    var A = await readyApp();
+    var content = String(args.content || '').trim();
+    if (!content) throw new Error('content 不能为空');
+    if (content.length > 2000) throw new Error('content 不能超过 2000 字');
+    var bullet = String(args.bullet || 'task').trim();
+    if (['task', 'event', 'note', 'priority', 'inspiration'].indexOf(bullet) === -1) throw new Error('bullet 不合法，取值：task、event、note、priority、inspiration');
+    var scope = String(args.scope || 'daily').trim();
+    if (scope !== 'daily' && scope !== 'future') throw new Error('scope 不合法，取值：daily、future');
+    var hit = scanTask(A, args.clientId);
+    if (hit) {
+      return { id: hit.item.id, bullet: hit.item.bullet || bullet, scope: hit.bucket, date: hit.date, month: hit.month, content: hit.item.content, clientId: args.clientId, note: '幂等命中（扫描范围：最近 90 天日志桶 + future 全量）' };
+    }
+    var B = A.modules.bujo;
+    var prefixMap = { task: '•', event: '○', note: '–', priority: '*', inspiration: '!' };
+    var existingIds = new Set((A.db.bujo ? ((A.db.bujo.logs || {})[B.todayStr()] || []) : []).map(function (x) { return x.id; }));
+    if (scope === 'future') {
+      B.bBucket = '__later__';
+      B.setView('future');
+    } else {
+      B.bDate = B.todayStr();
+      B.setView('daily');
+    }
+    document.getElementById('bujoInput').value = prefixMap[bullet] + ' ' + content;
+    B.handleSubmit({ preventDefault: function () {} });
+    var item = null, date = null, month = null;
+    if (scope === 'future') {
+      var fut = B.futureArr();
+      item = fut[fut.length - 1];
+      month = item ? (item.month || null) : null;
+    } else {
+      var arr = B.logsFor(B.bDate);
+      item = arr[arr.length - 1];
+      date = B.bDate;
+    }
+    if (!item) throw new Error('写入失败：未取到新任务');
+    dedupeId(existingIds, item);
+    if (args.clientId) item.clientId = args.clientId;
+    A.saveStorage();
+    await sleep(80);
+    var targetArr = scope === 'future' ? B.futureArr() : B.logsFor(date);
+    var ib = targetArr.find(function (x) { return x.id === item.id; });
+    if (!ib) throw new Error('写入校验失败：任务未持久化，请重试');
+    return { id: ib.id, bullet: ib.bullet || bullet, scope: scope, date: date, month: month, content: ib.content, clientId: args.clientId };
+  }
+
+  window.xianglan.register({
+    description: '工作台（Niko）：个人工作流/知识库/经验方法能力库/子弹笔记 BuJo 的记录与检索。模型通过本桥存取工作台数据，写操作都走应用自己的表单与保存通道。',
+    settings: [
+      { key:'aiBase', label:'接口地址', type:'text', def:'https://api.deepseek.com/v1', hint:'留空则用系统统一配置' },
+      { key:'aiKey', label:'接口 Key', type:'secret', hint:'留空则用系统统一配置（只存宿主，不给 AI 看）' },
+      { key:'aiModel', label:'模型', type:'text', def:'deepseek-chat' }
+    ],
+    actions: {
+      query_records: {
+        description: '从工作台检索记录。scope 必填，取值：note=未归档工作流(只含日期≤今天)、archive=已归档工作流、task=子弹笔记(今日+本月未完成+未来)、knowledge=知识库、experience=经验库、method=方法库、template=模板库、contact=联系人、skill=能力库、growth=成长轨迹、agent_output=智能体产出、workspace=工作空间、profile=个人档案、chat=NIK对话历史。默认只返回标题+最多120字摘要；要正文显式传 withContent:true（chat 最多 10 条、其他最多 20 条，每条 ≤500 字）。knowledge 隐藏项会带 hidden:true 标记。',
+        params: {
+          scope: { type: 'string', description: '必填。枚举：note、archive、task、knowledge、experience、method、template、contact、skill、growth、agent_output、workspace、profile、chat', required: true },
+          keyword: { type: 'string', description: '可选。模糊过滤，匹配标题/正文/分类名等文本字段', required: false },
+          limit: { type: 'number', description: '可选。默认 20，上限 50；withContent 时 chat 上限 10、其他上限 20', required: false },
+          withContent: { type: 'boolean', description: '可选。false 只返回标题+120 字摘要；true 返回正文（每条 ≤500 字）', required: false }
+        },
+        run: query_records
+      },
+      get_overview: {
+        description: '读总览与当下语境：各模块条数、工作空间清单（≤20 条）、当前聚焦的工作空间/分区、BuJo 今日未完成/本月未完成/未来条数，以及运行时真实可用的枚举清单（noteCategories、knowledgeCategories、profileCategories、templateTypes、methodCategories、skillCategories、bujoBullets）。不含正文。写记录前先调它拿合法分区值。',
+        params: {},
+        run: get_overview
+      },
+      add_note: {
+        description: '向工作台记一条今日工作流/流水。type 取值：log=流水、progress=进展、issue=异常、insight=心得（用户可自建，以 get_overview 的 noteCategories 为准，传 id 或名称均可）。workspace 传 id 或名称，可用：general 或 get_overview 返回的 workspace 列表；不传则记入当前工作区。日期与时间由应用自动生成，你不要也不能提供时间参数；标题由应用自动取正文前 16 字。',
+        params: {
+          content: { type: 'string', description: '必填。正文，上限 4000 字', required: true },
+          type: { type: 'string', description: '可选。默认 log。枚举：log、progress、issue、insight（可自建）', required: false },
+          workspace: { type: 'string', description: '可选。id 或名称（general 或工作空间列表中的值）；不传则记入当前工作区', required: false },
+          clientId: { type: 'string', description: '宿主注入，模型不要填；重复调用同一 clientId 不会重复写入', required: false }
+        },
+        run: add_note
+      },
+      save_insight: {
+        description: '把内容沉淀成知识资产。target 取值：knowledge=知识库、experience=经验库、method=方法库、skill=能力库。category 随 target 变化：knowledge→sop/policy/tech/reading/project_doc/note_archive（可自建，以 get_overview 的 knowledgeCategories 为准）；method→时间管理/整理方法/项目推进/学习方法/通用思考；skill→专业技能/工具技能/管理能力/沟通能力/正在学习；experience 无分类。scene/summary/keywords 仅 experience 使用。knowledge 同标题重复时返回 titleDuplicate:true（不阻断）。',
+        params: {
+          target: { type: 'string', description: '必填。枚举：knowledge、experience、method、skill', required: true },
+          title: { type: 'string', description: '必填。标题', required: true },
+          content: { type: 'string', description: '必填。正文，上限 8000 字（experience 存入解决方法字段）', required: true },
+          category: { type: 'string', description: '随 target 变化：knowledge→sop/policy/tech/reading/project_doc/note_archive；method→时间管理/整理方法/项目推进/学习方法/通用思考；skill→专业技能/工具技能/管理能力/沟通能力/正在学习；experience 无分类', required: false },
+          scene: { type: 'string', description: '仅 experience：面临问题/场景', required: false },
+          keywords: { type: 'string', description: '仅 experience：关键词', required: false },
+          summary: { type: 'string', description: '仅 experience：经验总结', required: false },
+          workspace: { type: 'string', description: '仅 knowledge：工作空间 id 或名称，默认 general', required: false },
+          clientId: { type: 'string', description: '宿主注入，模型不要填；重复调用同一 clientId 不会重复写入', required: false }
+        },
+        run: save_insight
+      },
+      add_task: {
+        description: '往子弹笔记 BuJo 加一条。bullet 取值：task=任务、event=事件、note=笔记、priority=重要事项、inspiration=灵感（默认 task）。scope 取值：daily=记到今天（默认）、future=记入未来记录/待定。日期由应用按本地时间自动生成，你不要也不能提供日期参数。',
+        params: {
+          content: { type: 'string', description: '必填。正文，上限 2000 字', required: true },
+          bullet: { type: 'string', description: '可选。默认 task。枚举：task、event、note、priority、inspiration', required: false },
+          scope: { type: 'string', description: '可选。默认 daily。枚举：daily、future', required: false },
+          clientId: { type: 'string', description: '宿主注入，模型不要填；幂等命中扫描最近 90 天日志桶 + future 全量', required: false }
+        },
+        run: add_task
+      }
+    }
+  });
+})();
+</script>
+</body>
+</html>
