@@ -4537,6 +4537,329 @@ try {
     return { id: ib.id, bullet: ib.bullet || bullet, scope: scope, date: date, month: month, content: ib.content, clientId: args.clientId };
   }
 
+  // ============ 编辑/删除用的辅助函数 ============
+  // 按 id 在 BuJo 的「每日日志桶 + 未来记录」里找一条
+  function scanTaskById(A, id) {
+    var b = A.db.bujo || {};
+    var logs = (b.logs && typeof b.logs === 'object') ? b.logs : {};
+    for (var d in logs) {
+      if (!Object.prototype.hasOwnProperty.call(logs, d)) continue;
+      var arr = logs[d] || [];
+      for (var i = 0; i < arr.length; i++) {
+        if (arr[i] && String(arr[i].id) === String(id)) {
+          return { arr: arr, idx: i, item: arr[i], where: 'daily', date: d };
+        }
+      }
+    }
+    var fut = Array.isArray(b.future) ? b.future : [];
+    for (var j = 0; j < fut.length; j++) {
+      if (fut[j] && String(fut[j].id) === String(id)) {
+        return { arr: fut, idx: j, item: fut[j], where: 'future', date: null };
+      }
+    }
+    return null;
+  }
+
+  // ============ 动作 6：edit_record（编辑工作流记录 · 写） ============
+  async function edit_record(args) {
+    args = args || {};
+    var A = await readyApp();
+    var id = args.recordId;
+    if (id === undefined || id === null || id === '') throw new Error('recordId 不能为空');
+    if (args.content === undefined && args.type === undefined) throw new Error('content 和 type 至少要传一个');
+
+    var notes = A.db.notes || [];
+    var hit = null;
+    for (var i = 0; i < notes.length; i++) {
+      if (String(notes[i].id) === String(id)) { hit = notes[i]; break; }
+    }
+    if (!hit) throw new Error('没找到 id=' + id + ' 的工作流记录，请先 query_records(scope=note/archive) 查一下');
+
+    if (args.content !== undefined && args.content !== null) {
+      var c = String(args.content).trim();
+      if (!c) throw new Error('content 不能为空');
+      if (c.length > 4000) throw new Error('content 不能超过 4000 字');
+      hit.content = c;
+      hit.title = c.slice(0, 16);
+    }
+    if (args.type !== undefined && args.type !== null && String(args.type).trim() !== '') {
+      var cats = catList(A);
+      var tid = resolveCat(cats, args.type, 'type');
+      hit.type = tid;
+    }
+    hit.updatedAt = Date.now();
+    A.saveStorage();
+    A.renderAll();
+    await sleep(80);
+    var back = (A.db.notes || []).find(function (n) { return String(n.id) === String(id); });
+    if (!back) throw new Error('编辑校验失败：记录未持久化，请重试');
+    if (back.content !== hit.content) throw new Error('编辑校验失败：正文没写进去，请重试');
+    return { id: back.id, type: back.type, typeName: A.catName(back.type), workspaceId: back.workspaceId, date: back.date, time: back.time, content: back.content, verified: true };
+  }
+
+  // ============ 动作 7：delete_record（删除工作流记录 · 写） ============
+  async function delete_record(args) {
+    args = args || {};
+    var A = await readyApp();
+    var id = args.recordId;
+    if (id === undefined || id === null || id === '') throw new Error('recordId 不能为空');
+
+    var notes = A.db.notes || [];
+    var idx = -1;
+    for (var i = 0; i < notes.length; i++) {
+      if (String(notes[i].id) === String(id)) { idx = i; break; }
+    }
+    if (idx === -1) {
+      // 也可能已经在回收站里 → 直接永久清掉
+      var t = (A.db._trash || []).find(function (x) { return x.kind === 'note' && String(x.item.id) === String(id); });
+      if (t && args.permanent) {
+        A.db._trash = (A.db._trash || []).filter(function (x) { return x !== t; });
+        A.saveStorage();
+        return { id: id, permanent: true, verified: true, note: '已从回收站永久删除' };
+      }
+      throw new Error('没找到 id=' + id + ' 的工作流记录（回收站里的记录请传 permanent:true 彻底删除）');
+    }
+
+    var item = notes[idx];
+    if (args.permanent) {
+      notes.splice(idx, 1);
+      A.saveStorage(); A.renderAll();
+      return { id: id, permanent: true, verified: true, note: '已永久删除，不可恢复' };
+    }
+
+    var rec = { kind: 'note', deletedAt: Date.now(), item: JSON.parse(JSON.stringify(item)) };
+    A.db._trash = A.db._trash || [];
+    A.db._trash.push(rec);
+    notes.splice(idx, 1);
+    A.saveStorage(); A.renderAll();
+    return { id: id, permanent: false, verified: true, trashId: rec.deletedAt, note: '已移入回收站（可用 restore_record 恢复，或 delete_record permanent:true 彻底删除）' };
+  }
+
+  // ============ 动作 8：edit_insight（编辑知识/经验/方法/能力 · 写） ============
+  async function edit_insight(args) {
+    args = args || {};
+    var A = await readyApp();
+    var target = String(args.target || '').trim();
+    var secMap = { knowledge: 'knowledge', experience: 'experiences', method: 'methods', skill: 'skills' };
+    var sec = secMap[target];
+    if (!sec) throw new Error('target 不合法，取值：knowledge、experience、method、skill');
+    var id = args.itemId;
+    if (id === undefined || id === null || id === '') throw new Error('itemId 不能为空');
+    if (args.title === undefined && args.content === undefined && args.category === undefined) {
+      throw new Error('title、content、category 至少要传一个');
+    }
+
+    var arr = A.db[sec] || [];
+    var hit = null;
+    for (var i = 0; i < arr.length; i++) {
+      if (String(arr[i].id) === String(id)) { hit = arr[i]; break; }
+    }
+    if (!hit) throw new Error('没找到 id=' + id + ' 的「' + target + '」条目，请先 query_records(scope=' + target + ') 查一下');
+
+    if (args.title !== undefined && args.title !== null) {
+      var t = String(args.title).trim();
+      if (!t) throw new Error('title 不能为空');
+      hit.title = t;
+      if (hit.name !== undefined) hit.name = t;
+    }
+    if (args.content !== undefined && args.content !== null) {
+      var c = String(args.content).trim();
+      if (c.length > 8000) throw new Error('content 不能超过 8000 字');
+      if (target === 'experience') hit.solution = c;
+      else if (target === 'method') hit.content = c;
+      else if (target === 'skill') hit.desc = c;
+      else hit.content = c;
+    }
+    if (args.category !== undefined && args.category !== null && String(args.category).trim() !== '') {
+      var cv = String(args.category).trim();
+      if (target === 'skill' && ['专业技能', '工具技能', '管理能力', '沟通能力', '正在学习'].indexOf(cv) === -1) {
+        throw new Error('skill 的 category 不合法，当前可用：专业技能、工具技能、管理能力、沟通能力、正在学习');
+      }
+      if (target === 'method' && ['时间管理', '整理方法', '项目推进', '学习方法', '通用思考'].indexOf(cv) === -1) {
+        throw new Error('method 的 category 不合法，当前可用：时间管理、整理方法、项目推进、学习方法、通用思考');
+      }
+      if (target === 'knowledge') {
+        hit.category = resolveCat(kcatList(A), cv, 'category');
+      } else if (target !== 'experience') {
+        hit.category = cv;
+      }
+    }
+    hit.updatedAt = Date.now();
+    A.saveStorage();
+    A.renderAll();
+    await sleep(80);
+    var back = (A.db[sec] || []).find(function (x) { return String(x.id) === String(id); });
+    if (!back) throw new Error('编辑校验失败：条目未持久化，请重试');
+    return { id: back.id, target: target, title: back.title || back.name || '', category: back.category || '', verified: true };
+  }
+
+  // ============ 动作 9：delete_insight（删除知识资产 · 写） ============
+  async function delete_insight(args) {
+    args = args || {};
+    var A = await readyApp();
+    var target = String(args.target || '').trim();
+    var secMap = { knowledge: 'knowledge', experience: 'experiences', method: 'methods', skill: 'skills' };
+    var sec = secMap[target];
+    if (!sec) throw new Error('target 不合法，取值：knowledge、experience、method、skill');
+    var id = args.itemId;
+    if (id === undefined || id === null || id === '') throw new Error('itemId 不能为空');
+
+    var arr = A.db[sec] || [];
+    var idx = -1;
+    for (var i = 0; i < arr.length; i++) {
+      if (String(arr[i].id) === String(id)) { idx = i; break; }
+    }
+    if (idx === -1) {
+      var t = (A.db._trash || []).find(function (x) { return x.kind === target && String(x.item.id) === String(id); });
+      if (t && args.permanent) {
+        A.db._trash = (A.db._trash || []).filter(function (x) { return x !== t; });
+        A.saveStorage();
+        return { id: id, target: target, permanent: true, verified: true, note: '已从回收站永久删除' };
+      }
+      throw new Error('没找到 id=' + id + ' 的「' + target + '」条目');
+    }
+
+    var item = arr[idx];
+    if (args.permanent) {
+      arr.splice(idx, 1);
+      A.saveStorage(); A.renderAll();
+      return { id: id, target: target, permanent: true, verified: true, note: '已永久删除，不可恢复' };
+    }
+    var rec = { kind: target, deletedAt: Date.now(), item: JSON.parse(JSON.stringify(item)) };
+    A.db._trash = A.db._trash || [];
+    A.db._trash.push(rec);
+    arr.splice(idx, 1);
+    A.saveStorage(); A.renderAll();
+    return { id: id, target: target, permanent: false, verified: true, trashId: rec.deletedAt, note: '已移入回收站' };
+  }
+
+  // ============ 动作 10：edit_task（编辑子弹笔记 · 写） ============
+  async function edit_task(args) {
+    args = args || {};
+    var A = await readyApp();
+    var id = args.taskId;
+    if (id === undefined || id === null || id === '') throw new Error('taskId 不能为空');
+    if (args.content === undefined && args.bullet === undefined && args.done === undefined) {
+      throw new Error('content、bullet、done 至少要传一个');
+    }
+    var found = scanTaskById(A, id);
+    if (!found) throw new Error('没找到 id=' + id + ' 的子弹笔记条目，请先 query_records(scope=task) 查一下');
+    var it = found.item;
+
+    if (args.content !== undefined && args.content !== null) {
+      var c = String(args.content).trim();
+      if (!c) throw new Error('content 不能为空');
+      if (c.length > 2000) throw new Error('content 不能超过 2000 字');
+      it.content = c;
+    }
+    if (args.bullet !== undefined && args.bullet !== null && String(args.bullet).trim() !== '') {
+      var b = String(args.bullet).trim();
+      if (['task', 'event', 'note', 'priority', 'inspiration'].indexOf(b) === -1) {
+        throw new Error('bullet 不合法，取值：task、event、note、priority、inspiration');
+      }
+      it.bullet = b;
+    }
+    if (args.done !== undefined && args.done !== null) it.status = args.done ? 'done' : 'open';
+    it.updatedAt = Date.now();
+    A.saveStorage();
+    A.renderAll();
+    await sleep(80);
+    var back = scanTaskById(A, id);
+    if (!back) throw new Error('编辑校验失败：条目丢了，请重试');
+    return { id: back.item.id, bullet: back.item.bullet || 'task', scope: back.where, date: back.date || null, content: back.item.content, done: back.item.status === 'done', verified: true };
+  }
+
+  // ============ 动作 11：delete_task（删除子弹笔记 · 写） ============
+  async function delete_task(args) {
+    args = args || {};
+    var A = await readyApp();
+    var id = args.taskId;
+    if (id === undefined || id === null || id === '') throw new Error('taskId 不能为空');
+
+    var found = scanTaskById(A, id);
+    if (!found) {
+      var t = (A.db._trash || []).find(function (x) { return x.kind === 'task' && String(x.item.id) === String(id); });
+      if (t && args.permanent) {
+        A.db._trash = (A.db._trash || []).filter(function (x) { return x !== t; });
+        A.saveStorage();
+        return { id: id, permanent: true, verified: true, note: '已从回收站永久删除' };
+      }
+      throw new Error('没找到 id=' + id + ' 的子弹笔记条目');
+    }
+
+    if (args.permanent) {
+      found.arr.splice(found.idx, 1);
+      A.saveStorage(); A.renderAll();
+      return { id: id, permanent: true, verified: true, note: '已永久删除，不可恢复' };
+    }
+    var rec = { kind: 'task', deletedAt: Date.now(), where: found.where, date: found.date || null, item: JSON.parse(JSON.stringify(found.item)) };
+    A.db._trash = A.db._trash || [];
+    A.db._trash.push(rec);
+    found.arr.splice(found.idx, 1);
+    A.saveStorage(); A.renderAll();
+    return { id: id, permanent: false, verified: true, trashId: rec.deletedAt, note: '已移入回收站' };
+  }
+
+  // ============ 动作 12：restore_record（从回收站恢复 · 写） ============
+  async function restore_record(args) {
+    args = args || {};
+    var A = await readyApp();
+    var kind = String(args.kind || '').trim();
+    var id = args.itemId;
+    if (!kind) throw new Error('kind 不能为空（note/knowledge/experience/method/skill/task）');
+    if (id === undefined || id === null || id === '') throw new Error('itemId 不能为空');
+
+    var trash = A.db._trash || [];
+    var idx = -1;
+    for (var i = 0; i < trash.length; i++) {
+      if (trash[i].kind === kind && String(trash[i].item.id) === String(id)) { idx = i; break; }
+    }
+    if (idx === -1) throw new Error('回收站里没有 kind=' + kind + ' id=' + id + ' 的条目');
+
+    var rec = trash[idx];
+    var secMap = { note: 'notes', knowledge: 'knowledge', experience: 'experiences', method: 'methods', skill: 'skills' };
+    if (kind === 'task') {
+      var B = A.modules.bujo;
+      if (rec.where === 'future') {
+        A.db.bujo = A.db.bujo || { future: [], logs: {} };
+        A.db.bujo.future = A.db.bujo.future || [];
+        A.db.bujo.future.push(rec.item);
+      } else {
+        var d = rec.date || B.todayStr();
+        A.db.bujo = A.db.bujo || { future: [], logs: {} };
+        A.db.bujo.logs = A.db.bujo.logs || {};
+        A.db.bujo.logs[d] = A.db.bujo.logs[d] || [];
+        A.db.bujo.logs[d].push(rec.item);
+      }
+    } else {
+      var sec = secMap[kind];
+      if (!sec) throw new Error('kind 不合法');
+      A.db[sec] = A.db[sec] || [];
+      A.db[sec].push(rec.item);
+    }
+    trash.splice(idx, 1);
+    A.saveStorage(); A.renderAll();
+    return { kind: kind, id: rec.item.id, verified: true, note: '已恢复' };
+  }
+
+  // ============ 动作 13：list_trash（回收站 · 只读） ============
+  async function list_trash() {
+    var A = await readyApp();
+    var trash = A.db._trash || [];
+    return {
+      total: trash.length,
+      items: trash.map(function (x) {
+        return {
+          kind: x.kind,
+          id: x.item && x.item.id,
+          title: (x.item && (x.item.title || x.item.name)) || '',
+          content: cut((x.item && (x.item.content || x.item.solution || x.item.desc)) || '', 120),
+          deletedAt: x.deletedAt
+        };
+      })
+    };
+  }
+
   window.xianglan.register({
     description: '工作台（Niko）：个人工作流/知识库/经验方法能力库/子弹笔记 BuJo 的记录与检索。模型通过本桥存取工作台数据，写操作都走应用自己的表单与保存通道。',
     settings: [
@@ -4594,6 +4917,82 @@ try {
           clientId: { type: 'string', description: '宿主注入，模型不要填；幂等命中扫描最近 90 天日志桶 + future 全量', required: false }
         },
         run: add_task
+      },
+      // ── 编辑工作流记录 ──
+      edit_record: {
+        description: '编辑已有工作流记录的正文和/或分类（写）。recordId 必填，来自 query_records(scope=note/archive)。content 和 type 至少传一个；不传的字段不改。',
+        params: {
+          recordId: { type: 'string', description: '必填。目标记录 id，来自 query_records 返回', required: true },
+          content: { type: 'string', description: '可选。新正文，上限 4000 字', required: false },
+          type: { type: 'string', description: '可选。新分类，取值见 get_overview 的 noteCategories（可传 id 或名称）', required: false }
+        },
+        run: edit_record
+      },
+      // ── 删除工作流记录 ──
+      delete_record: {
+        description: '删除一条工作流记录（写）。recordId 必填。默认软删除（移入回收站，可用 restore_record 恢复）；传 permanent:true 则永久删除。',
+        params: {
+          recordId: { type: 'string', description: '必填。目标记录 id', required: true },
+          permanent: { type: 'boolean', description: '可选。true=永久删除不可恢复；默认 false=移入回收站', required: false }
+        },
+        run: delete_record
+      },
+      // ── 编辑知识资产 ──
+      edit_insight: {
+        description: '编辑知识库里的一条资产（写）。target 四选一：knowledge/experience/method/skill。itemId 必填，来自 query_records 对应 scope。title、content、category 至少传一个。',
+        params: {
+          target: { type: 'string', description: '必填。枚举：knowledge、experience、method、skill', required: true },
+          itemId: { type: 'string', description: '必填。目标条目 id', required: true },
+          title: { type: 'string', description: '可选。新标题', required: false },
+          content: { type: 'string', description: '可选。新正文，上限 8000 字', required: false },
+          category: { type: 'string', description: '可选。新分类（取值范围同 save_insight 的 category）', required: false }
+        },
+        run: edit_insight
+      },
+      // ── 删除知识资产 ──
+      delete_insight: {
+        description: '删除知识库里的一条资产（写）。target + itemId 必填。默认软删除（移入回收站）；传 permanent:true 则永久删除。',
+        params: {
+          target: { type: 'string', description: '必填。枚举：knowledge、experience、method、skill', required: true },
+          itemId: { type: 'string', description: '必填。目标条目 id', required: true },
+          permanent: { type: 'boolean', description: '可选。true=永久删除；默认 false=移入回收站', required: false }
+        },
+        run: delete_insight
+      },
+      // ── 编辑子弹笔记 ──
+      edit_task: {
+        description: '编辑子弹笔记 BuJo 里的一条（写）。taskId 必填，来自 query_records(scope=task)。content、bullet、done 至少传一个。',
+        params: {
+          taskId: { type: 'string', description: '必填。目标条目 id', required: true },
+          content: { type: 'string', description: '可选。新正文，上限 2000 字', required: false },
+          bullet: { type: 'string', description: '可选。新符号类型：task/event/note/priority/inspiration', required: false },
+          done: { type: 'boolean', description: '可选。是否已完成', required: false }
+        },
+        run: edit_task
+      },
+      // ── 删除子弹笔记 ──
+      delete_task: {
+        description: '删除子弹笔记 BuJo 里的一条（写）。taskId 必填。默认软删除（移入回收站）；传 permanent:true 则永久删除。',
+        params: {
+          taskId: { type: 'string', description: '必填。目标条目 id', required: true },
+          permanent: { type: 'boolean', description: '可选。true=永久删除；默认 false=移入回收站', required: false }
+        },
+        run: delete_task
+      },
+      // ── 从回收站恢复 ──
+      restore_record: {
+        description: '把回收站里的一条恢复到原处（写）。kind 必填（note/knowledge/experience/method/skill/task），itemId 必填。',
+        params: {
+          kind: { type: 'string', description: '必填。枚举：note、knowledge、experience、method、skill、task', required: true },
+          itemId: { type: 'string', description: '必填。目标条目 id', required: true }
+        },
+        run: restore_record
+      },
+      // ── 查看回收站 ──
+      list_trash: {
+        description: '查看回收站里有哪些被软删除的条目（只读）。返回每条的类型、id、标题、摘要和删除时间。',
+        params: {},
+        run: list_trash
       }
     }
   });
