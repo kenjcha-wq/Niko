@@ -249,6 +249,150 @@
   #toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
   #toast.bad{border-color:rgba(255,107,107,.5); color:var(--bad)}
 </style>
+
+<style id="xx-im-skin">
+/* ══════════════════════════════════════════════════════════════
+   手机 IM 皮肤（追加在最后，靠后覆盖；只改观感，不动任何逻辑）
+   ══════════════════════════════════════════════════════════════ */
+:root{
+  --im-bg:#0d1015; --im-bar:rgba(22,26,33,.92); --im-line:rgba(255,255,255,.075);
+  --im-me:#2f6df6; --im-you:#1d222b; --im-txt:#e9edf4; --im-dim:#8892a4;
+}
+
+/* ① 高度：手机上的命门。
+   100% = 布局视口，地址栏一出现可视区就矮一截 → 底部输入条被顶出屏幕。
+   100dvh 是「动态视口高度」，会跟着地址栏收放，输入条永远在屏幕里。 */
+html,body{
+  height:100%;
+  height:100dvh;
+  overflow:hidden;
+  -webkit-text-size-adjust:100%;
+  background:var(--im-bg);
+}
+body{background:var(--im-bg); color:var(--im-txt); overscroll-behavior:none}
+
+/* ② 顶栏：玻璃质感 */
+header{
+  background:var(--im-bar);
+  border-bottom:1px solid var(--im-line);
+  padding:10px 12px;
+  padding-top:calc(10px + env(safe-area-inset-top));
+  -webkit-backdrop-filter:saturate(1.5) blur(14px);
+  backdrop-filter:saturate(1.5) blur(14px);
+  z-index:10;
+}
+header .logo{font-size:18px; border-radius:11px}
+header .title{font-size:15px; align-items:baseline}
+header .convbtn{font-size:15.5px; font-weight:600; letter-spacing:.2px}
+header .sub{font-size:11px; color:var(--im-dim)}
+header .badge{font-size:11px; min-width:20px; height:20px; border-radius:10px;
+              display:inline-flex; align-items:center; justify-content:center}
+header .txtbtn,header .iconbtn{font-size:12px}
+
+/* ③ 消息区 */
+#list{
+  padding:14px 12px 8px;
+  overscroll-behavior:contain;
+  -webkit-overflow-scrolling:touch;
+  scrollbar-width:none;
+  background:
+    radial-gradient(1200px 400px at 50% -10%, rgba(47,109,246,.10), transparent 70%),
+    var(--im-bg);
+}
+#list::-webkit-scrollbar{display:none}
+
+.row{margin-bottom:12px; gap:7px}
+.avatar{width:30px; height:30px; border-radius:10px; font-size:11.5px; flex:none}
+.col{max-width:min(78%,560px); gap:3px}
+
+.bubble{
+  padding:9px 13px; border-radius:18px; font-size:15px; line-height:1.45;
+  box-shadow:0 1px 2px rgba(0,0,0,.20);
+  word-break:break-word;
+}
+/* 对方：左上直角（气泡尾巴感）；自己：右上直角 + 渐变 */
+.row .bubble{background:var(--im-you); border-top-left-radius:6px}
+.row.me .bubble{
+  background:linear-gradient(135deg,#3d7bfb,#2f63e8);
+  color:#fff; border-top-left-radius:18px; border-top-right-radius:6px;
+}
+.who{font-size:11px; color:var(--im-dim); margin:0 0 2px 2px}
+.meta{font-size:10.5px; color:var(--im-dim); opacity:.85; margin-top:2px}
+.ticks{font-size:11px}
+.ticks.all{color:#5aa2ff}
+
+/* 附件卡片圆一点 */
+.att{border-radius:16px}
+.row.me .att{background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.18)}
+
+/* ④ 底部输入条：胶囊输入框 + 圆角发送键，iPhone 横条留白 */
+footer{
+  background:var(--im-bar);
+  border-top:1px solid var(--im-line);
+  padding:8px 10px;
+  padding-bottom:calc(8px + env(safe-area-inset-bottom));
+  -webkit-backdrop-filter:saturate(1.5) blur(14px);
+  backdrop-filter:saturate(1.5) blur(14px);
+  gap:6px;
+}
+.compose{gap:8px; align-items:flex-end; min-width:0}
+textarea{
+  font-size:16px;              /* ← 小于 16px 时 iOS 会自动把整页放大 */
+  line-height:1.4;
+  /* ⚠️ 关键：flex 子项默认 min-width:auto —— 占位文字太长时它撑着不缩，
+     会把右边的「发送」按钮整个顶出屏幕。手机上表现就是"输入框不对/没有发送键"。
+     实测：390pt 宽的手机上，发送键完全在屏幕外。 */
+  min-width:0;
+  min-height:42px; height:42px; max-height:118px;
+  padding:10px 15px;
+  border-radius:21px;
+  background:#1d222b; border:1px solid var(--im-line); color:var(--im-txt);
+  transition:border-color .15s;
+}
+textarea:focus{border-color:rgba(47,109,246,.55)}
+#send{
+  height:42px; min-width:62px; padding:0 18px;
+  border-radius:21px; font-size:15px; font-weight:600;
+  background:linear-gradient(135deg,#3d7bfb,#2f63e8);
+  box-shadow:0 2px 10px rgba(47,109,246,.35);
+}
+#send:active{transform:scale(.96)}
+#attach{
+  width:42px!important; height:42px!important; border-radius:21px!important;
+  font-size:17px!important; background:#1d222b; border:1px solid var(--im-line);
+}
+.hintline{font-size:10px; color:var(--im-dim); opacity:.65; padding-top:4px;
+          white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.staged{border-radius:12px}
+
+/* ⑤ 小窗（Mac 悬浮球）保持紧凑，别被上面这些撑大 */
+body.mini header{padding:8px 10px}
+body.mini footer{padding:7px 9px 9px}
+body.mini textarea{height:38px; min-height:38px; font-size:15px}
+body.mini #send{height:38px}
+body.mini #attach{width:38px!important; height:38px!important}
+body.mini .bubble{font-size:14px}
+body.mini #list{padding:12px 10px 4px}
+
+/* ⑥ 连接设置表单（替代被手机屏蔽的 window.prompt） */
+.setup{max-width:340px;margin:8vh auto 0;padding:0 18px;text-align:center}
+.setup .big{font-size:52px;line-height:1;margin-bottom:14px}
+.setup .st{font-size:19px;font-weight:600;margin-bottom:8px}
+.setup .sd{font-size:13px;color:var(--im-dim);line-height:1.6;margin-bottom:18px}
+.setup .se{font-size:12px;color:#ff8b8b;background:rgba(255,107,107,.10);
+           border:1px solid rgba(255,107,107,.28);border-radius:10px;
+           padding:8px 10px;margin-bottom:12px;text-align:left;word-break:break-all}
+.setup input{
+  width:100%;box-sizing:border-box;font-size:16px;padding:13px 15px;margin-bottom:10px;
+  background:#1d222b;color:var(--im-txt);border:1px solid var(--im-line);border-radius:14px;outline:none;
+}
+.setup input:focus{border-color:rgba(47,109,246,.6)}
+.setup button{
+  width:100%;height:46px;border:0;border-radius:14px;font-size:16px;font-weight:600;color:#fff;
+  background:linear-gradient(135deg,#3d7bfb,#2f63e8);box-shadow:0 4px 16px rgba(47,109,246,.35);
+}
+.setup button:disabled{opacity:.6}
+</style>
 </head>
 <body>
 
@@ -279,7 +423,7 @@
   </div>
   <div class="compose">
     <button class="iconbtn" id="attach" title="发文件" style="width:44px;height:44px;border-radius:12px;font-size:17px">📎</button>
-    <textarea id="text" placeholder="说点什么…（⏎ 发送，⇧⏎ 换行）"></textarea>
+    <textarea id="text" placeholder="说点什么…"></textarea>
     <button id="send">发送</button>
   </div>
   <div class="hintline" id="hint">正在连接宿主…</div>
@@ -1875,6 +2019,50 @@
     });
   }
 
+  /// 页面内的"连接设置"。不用 window.prompt —— 手机上那个经常被屏蔽。
+  function showConnectSetup(errMsg) {
+    $('hint').textContent = '还没有连接';
+    $('send').disabled = true;
+    $('attach').disabled = true;
+    listEl.innerHTML =
+      '<div class="setup">' +
+        '<div class="big">🐘</div>' +
+        '<div class="st">连接象信</div>' +
+        '<div class="sd">填入连接密钥（<b>xxl_</b> 开头那串）。<br>' +
+        '只保存在这台设备上，不会外传。</div>' +
+        (errMsg ? '<div class="se">' + esc(errMsg) + '</div>' : '') +
+        '<input id="setupKey" type="text" placeholder="xxl_…" autocomplete="off" ' +
+               'autocapitalize="off" autocorrect="off" spellcheck="false">' +
+        '<button id="setupGo">连接</button>' +
+      '</div>';
+    var go = function () {
+      var el = $('setupKey');
+      var v = (el && el.value ? el.value : '').trim();
+      if (!v) { if (el) el.focus(); return; }
+      var cfg = { url: XX_SB_URL, key: XX_SB_KEY, secret: v };
+      try { localStorage.setItem('xx.supabase', JSON.stringify(cfg)); } catch (e0) {}
+      $('setupGo').textContent = '连接中…';
+      $('setupGo').disabled = true;
+      API.initSupabase(cfg.url, cfg.key, cfg.secret)
+        .then(function () { location.reload(); })
+        .catch(function (e) {
+          try { localStorage.removeItem('xx.supabase'); } catch (e0) {}
+          $('setupGo').textContent = '重试';
+          $('setupGo').disabled = false;
+          var box = document.querySelector('.setup');
+          var old = document.querySelector('.setup .se');
+          if (!old && box) { old = document.createElement('div'); old.className = 'se'; box.insertBefore(old, box.querySelector('input')); }
+          if (old) old.textContent = String((e && e.message) || e);
+        });
+    };
+    $('setupGo').onclick = go;
+    var k = $('setupKey');
+    if (k) {
+      k.onkeydown = function (e) { if (e.key === 'Enter') { e.preventDefault(); go(); } };
+      setTimeout(function () { k.focus(); }, 120);
+    }
+  }
+
   /// 起来之后开始轮询。手机走网络，每次刷新都是往返 —— 别 3 秒一次，太费流量。
   function startPolling() {
     var interval = (API.mode === 'core') ? 5000 : 3000;
@@ -1905,24 +2093,17 @@
       try { history.replaceState(null, '', location.pathname); } catch (e0) {}
     }
     if (!sbCfg || !sbCfg.secret) {
-      var entered = window.prompt(
-        '象信 Lite · 连接设置\n\n请填入连接密钥（xxl_ 开头那串）。\n' +
-        '只保存在这台设备的浏览器里，不会外传。', '');
-      if (!entered || !String(entered).trim()) {
-        showDead('需要连接密钥',
-          '这个页面直连云表，需要一次性的连接密钥才能读写消息。',
-          '⚠️ 还没填连接密钥');
-        return;
-      }
-      sbCfg = { url: XX_SB_URL, key: XX_SB_KEY, secret: String(entered).trim() };
-      try { localStorage.setItem('xx.supabase', JSON.stringify(sbCfg)); } catch (e0) {}
+      // ⚠️ 这里原来用 window.prompt() 要密钥 —— 手机浏览器和微信/飞书内置浏览器
+      //    普遍**屏蔽 prompt()**，一被屏蔽就直接掉进"需要连接密钥"的死页，
+      //    用户看到的就是"没有输入框、用不了"。改成页面内表单，哪儿都能用。
+      showConnectSetup();
+      return;
     }
     API.initSupabase(sbCfg.url, sbCfg.key, sbCfg.secret).then(function () {
       startPolling();
     }).catch(function (e) {
-      showDead('连不上云表',
-        String((e && e.message) || e) + '\n（密钥填错的话，清掉本站数据重开就能重填）',
-        '⚠️ 连接失败');
+      try { localStorage.removeItem('xx.supabase'); } catch (e0) {}
+      showConnectSetup(String((e && e.message) || e));
     });
     return;
   }
