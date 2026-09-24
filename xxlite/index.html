@@ -827,11 +827,13 @@ body.mini #list{padding:12px 10px 4px}
       API.usingSupabase = true;  // 给界面判断用（提示文案、诊断信息）
       API.davConfigured = true;
       API._ioImpl = API._ioSupabase();
+      var ow = null;
+      try { ow = localStorage.getItem('xx.owner'); } catch (e) {}
       API.engine = window.XiangxinCore.createEngine(API._ioImpl, {
         deviceID: devID,
         deviceName: nm || '手机',
         platform: 'web',
-        owner: null,
+        owner: ow || null,
         state: state
       });
       return API.engine.ensureTree().then(function () { return API.engine.announceSelf(); });
@@ -1211,7 +1213,12 @@ body.mini #list{padding:12px 10px 4px}
     var nowMs = Date.now();
     for (var i = from; i < all.length; i++) {
       var m = all[i];
-      var me = m.isMe;
+      // ⚠️ 原来只认 m.isMe（= 消息的设备ID == 我这台的设备ID）。
+      //    同一个人的手机和 Mac 设备ID 不同，于是"我在手机上发的"在 Mac 上
+      //    被当成别人发的、落在左边 —— 真实 IM 里这应该是我的消息，在右边。
+      //    修法：身份码（owner）相同 = 同一个人 = 都算我发的。
+      var me = m.isMe ||
+               (state.owner && ((state.owners || {})[m.from] || m.from) === state.owner);
       var ahead = !me && (m.ts - nowMs > 120000);   // 对方的钟快了 2 分钟以上
 
       html += '<div class="row' + (me ? ' me' : '') + '">';
@@ -1336,6 +1343,7 @@ body.mini #list{padding:12px 10px 4px}
       refresh.retried = false;
       state.messages = r.messages || [];
       state.devices = r.devices || {};
+      state.owners = r.owners || {};        // 设备ID → 身份码（core.js 已经算好）
       state.deviceID = r.deviceID || '';
       state.deviceName = r.deviceName || '';
       state.root = r.root || '';
@@ -2130,6 +2138,11 @@ body.mini #list{padding:12px 10px 4px}
     try {
       var mh = /[#&]k=([^&]+)/.exec(location.hash || location.href);
       if (mh) hashKey = decodeURIComponent(mh[1]);
+      // #o=<身份码>：同一个人的多台设备填同一个，这样互发的消息都算"我发的"
+      var mo = /[#&]o=([^&]+)/.exec(location.hash || location.href);
+      if (mo) {
+        try { localStorage.setItem('xx.owner', decodeURIComponent(mo[1])); } catch (e0) {}
+      }
     } catch (e0) {}
     if (hashKey) {
       sbCfg = { url: XX_SB_URL, key: XX_SB_KEY, secret: hashKey };
