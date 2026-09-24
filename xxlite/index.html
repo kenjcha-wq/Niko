@@ -1539,16 +1539,60 @@ body.mini #list{padding:12px 10px 4px}
     API.attachment(id).then(function (r) {
       busyOn(false);
       if (!r || r.error) { toast((r && r.error) || '取不到附件', true); return; }
-      var url = base64ToObjectURL(r.base64, r.mime);
+      var name = r.name || m.file.name || 'file';
+      var mime = r.mime || m.file.mime || 'application/octet-stream';
+      var url = base64ToObjectURL(r.base64, mime);
       if (!url) { toast('附件解码失败', true); return; }
-      var a = document.createElement('a');
-      a.href = url;
-      a.download = r.name || m.file.name;
-      a.rel = 'noopener';
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(function () { document.body.removeChild(a); }, 0);
+      saveAttachment(url, r.base64, name, mime);
     });
+  }
+
+  // 手机上保存 / 打开附件。
+  // ⚠️ 原来只有 `a[download]` —— 那在手机上基本是废的：
+  //    iOS Safari **直接忽略 download 属性**，只会在当前标签打开；
+  //    Android Chrome 对 blob: 也常常没反应。用户看到的就是"点了没法下载"。
+  // 所以按三层退，先挑手机上真正有用的：
+  //    ① Web Share（iOS/Android 都支持）→ 系统面板，能存到「文件」、转发到微信…
+  //    ② window.open(blob) → 交给系统内置查看器（PDF/图片能直接看）
+  //    ③ a[download] → 桌面浏览器
+  function saveAttachment(url, b64, name, mime) {
+    var done = function () { setTimeout(function () { URL.revokeObjectURL(url); }, 120000); };
+
+    var share = null;
+    try {
+      if (navigator.canShare && window.File && window.Blob) {
+        var bytes = base64ToBytes(b64);
+        var f = new File([bytes], name, { type: mime });
+        if (navigator.canShare({ files: [f] })) share = f;
+      }
+    } catch (e) { share = null; }
+
+    if (share) {
+      navigator.share({ files: [share], title: name }).then(done, function (err) {
+        if (err && err.name === 'AbortError') { done(); return; }   // 用户自己取消，别报错
+        openOrDownload(url, name, done);
+      });
+      return;
+    }
+    openOrDownload(url, name, done);
+  }
+
+  function openOrDownload(url, name, done) {
+    var w = null;
+    try { w = window.open(url, '_blank'); } catch (e) { w = null; }
+    if (w) { done(); return; }        // 系统查看器接住了
+    var a = document.createElement('a');
+    a.href = url; a.download = name; a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(function () { document.body.removeChild(a); }, 0);
+    done();
+  }
+
+  function base64ToBytes(b64) {
+    var bin = atob(b64), len = bin.length, bytes = new Uint8Array(len);
+    for (var i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i);
+    return bytes;
   }
 
   function autoGrow() {
