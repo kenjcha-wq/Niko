@@ -1543,6 +1543,16 @@ body.mini #list{padding:12px 10px 4px}
   function openAttachment(id) {
     var m = state.messages.filter(function (x) { return x.id === id; })[0];
     if (!m || !m.file) return;
+    // Mac（宿主模式）：WKWebView 不处理下载，直接让宿主弹保存面板
+    if (API.mode === 'host' && API.caps.indexOf('xx.saveAttachment') >= 0) {
+      busyOn(true);
+      call('xx.saveAttachment', { id: id }).then(function (r) {
+        busyOn(false);
+        if (!r || r.error) { toast((r && r.error) || '保存失败', true); return; }
+        toast('已保存：' + ((r.path || '').split('/').pop()));
+      });
+      return;
+    }
     busyOn(true);
     API.attachment(id).then(function (r) {
       busyOn(false);
@@ -1575,26 +1585,25 @@ body.mini #list{padding:12px 10px 4px}
       }
     } catch (e) { share = null; }
 
-    if (share) {
-      navigator.share({ files: [share], title: name }).then(done, function (err) {
-        if (err && err.name === 'AbortError') { done(); return; }   // 用户自己取消，别报错
-        openOrDownload(url, name, done);
-      });
-      return;
+    // ⚠️ 顺序很重要：一开始把 Web Share 排第一位，手机上就"只有分享面板"、
+    //    反而下不到文件。改成**先让浏览器自己打开/下载**，分享只当兜底。
+    var opened = openOrDownload(url, name, done);
+    if (!opened && share) {
+      navigator.share({ files: [share], title: name }).then(done, function () { done(); });
     }
-    openOrDownload(url, name, done);
   }
 
   function openOrDownload(url, name, done) {
     var w = null;
     try { w = window.open(url, '_blank'); } catch (e) { w = null; }
-    if (w) { done(); return; }        // 系统查看器接住了
+    if (w) { done(); return true; }   // 浏览器接住了（它的查看器里有下载键）
     var a = document.createElement('a');
     a.href = url; a.download = name; a.rel = 'noopener';
     document.body.appendChild(a);
     a.click();
     setTimeout(function () { document.body.removeChild(a); }, 0);
     done();
+    return false;
   }
 
   function base64ToBytes(b64) {
