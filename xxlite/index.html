@@ -1,0 +1,1975 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>象信 Lite</title>
+<style>
+  :root{
+    --bg:#0f1218; --panel:#161b24; --panel2:#1b2130; --line:#252c3a;
+    --fg:#e6e8ee; --dim:#8b95a7; --dim2:#5f6980;
+    --brand:#6E48D6; --brand2:#8b6cf0; --ok:#3ddc84; --warn:#f2c94c; --bad:#ff6b6b;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:var(--bg); color:var(--fg);
+    font:14px/1.55 -apple-system,"PingFang SC","Helvetica Neue",sans-serif;
+    display:flex; flex-direction:column; height:100vh; overflow:hidden;
+  }
+  button{font:inherit; cursor:pointer; border:0; background:none; color:inherit}
+  input,textarea{font:inherit}
+
+  /* ── 顶栏 ── */
+  header{
+    display:flex; align-items:center; gap:10px; padding:10px 14px;
+    background:var(--panel); border-bottom:1px solid var(--line); flex:none;
+  }
+  .logo{
+    width:26px;height:26px;border-radius:8px;flex:none;
+    background:linear-gradient(135deg,#5B8DEF,#6E48D6 55%,#c86dd7);
+    display:flex;align-items:center;justify-content:center;font-size:15px;
+  }
+  .title{font-weight:600;letter-spacing:.3px}
+  .sub{color:var(--dim2);font-size:12px}
+  .spacer{flex:1}
+  .badge{
+    background:var(--brand); color:#fff; border-radius:999px;
+    padding:1px 8px; font-size:12px; min-width:20px; text-align:center;
+  }
+  .badge.zero{background:#2b3240;color:var(--dim2)}
+  .iconbtn{
+    width:30px;height:28px;border-radius:8px;background:var(--panel2);
+    color:var(--dim); display:flex;align-items:center;justify-content:center;
+  }
+  .iconbtn:hover{color:var(--fg)}
+  .txtbtn{
+    padding:5px 10px;border-radius:8px;background:var(--panel2);color:var(--dim);font-size:12px;
+  }
+  .txtbtn:hover{color:var(--fg)}
+
+  /* ── 消息区 ── */
+  #list{flex:1; overflow-y:auto; padding:18px 16px 8px; scroll-behavior:smooth}
+  .empty{
+    height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center;
+    color:var(--dim2); gap:8px; text-align:center; padding:0 30px;
+  }
+  .empty .big{font-size:34px}
+  .row{display:flex; margin-bottom:14px; align-items:flex-end; gap:8px}
+  .row.me{flex-direction:row-reverse}
+  .avatar{
+    width:28px;height:28px;border-radius:9px;flex:none;font-size:13px;
+    display:flex;align-items:center;justify-content:center;
+    background:#232a38;color:var(--dim); margin-bottom:16px;
+  }
+  .row.me .avatar{background:var(--brand);color:#fff}
+  .col{max-width:min(74%,620px); display:flex; flex-direction:column; gap:4px}
+  .row.me .col{align-items:flex-end}
+  .who{font-size:11px;color:var(--dim2);padding:0 4px}
+  .bubble{
+    background:var(--panel); border:1px solid var(--line); border-radius:14px;
+    border-bottom-left-radius:5px; padding:8px 12px; white-space:pre-wrap;
+    word-break:break-word; user-select:text;
+  }
+  .row.me .bubble{
+    background:linear-gradient(135deg,#5f3fc0,#6E48D6); border-color:transparent;
+    border-radius:14px; border-bottom-right-radius:5px; color:#fff;
+  }
+  .meta{display:flex; align-items:center; gap:6px; font-size:11px; color:var(--dim2); padding:0 4px}
+  .row.me .meta{justify-content:flex-end}
+  .ticks{color:var(--dim2)}
+  .ticks.all{color:var(--ok)}
+  /* 单条消息的删除按钮：平时隐形，鼠标划过那一行才浮出来 */
+  .delmsg{border:0;background:transparent;color:var(--dim2);cursor:pointer;font-size:11px;
+          padding:1px 5px;line-height:1;border-radius:5px;opacity:0;transition:.15s;margin-left:6px}
+  .row:hover .delmsg{opacity:.5}
+  .delmsg:hover{opacity:1;color:#f87171;background:rgba(248,113,113,.12)}
+  body.mini .delmsg{display:none}
+  .skew{color:var(--warn)}
+  .unsent{color:var(--bad)}
+
+  /* ── 附件 ── */
+  .att{
+    display:flex; align-items:center; gap:10px; padding:9px 11px;
+    background:var(--panel2); border:1px solid var(--line); border-radius:12px;
+    max-width:100%; text-align:left;
+  }
+  .row.me .att{background:rgba(0,0,0,.18);border-color:rgba(255,255,255,.18)}
+  .att .ico{font-size:19px;flex:none}
+  .att .info{min-width:0}
+  .att .nm{font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .att .sz{font-size:11px;color:var(--dim2)}
+  .row.me .att .sz{color:rgba(255,255,255,.7)}
+  .att.pending{opacity:.62; cursor:default}
+  .att.broken{border-color:var(--bad)}
+  .att img{max-width:220px;max-height:180px;border-radius:8px;display:block}
+  .att .imgwrap{display:none}
+  .att.hasimg .ico,.att.hasimg .info{display:none}
+  .att.hasimg{padding:4px}
+
+  /* ── 输入区 ── */
+  footer{
+    flex:none; padding:10px 14px 14px; border-top:1px solid var(--line); background:var(--panel);
+    display:flex; flex-direction:column; gap:8px;
+  }
+  .compose{display:flex; gap:9px; align-items:flex-end}
+  textarea{
+    flex:1; resize:none; height:44px; max-height:150px; padding:11px 13px;
+    background:var(--panel2); color:var(--fg); border:1px solid var(--line);
+    border-radius:12px; outline:none;
+  }
+  textarea:focus{border-color:var(--brand)}
+  #send{
+    padding:0 18px; height:44px; border-radius:12px; font-weight:600;
+    background:linear-gradient(135deg,#5f3fc0,#6E48D6); color:#fff; flex:none;
+  }
+  #send:disabled{opacity:.45;cursor:default}
+  .staged{
+    display:none; align-items:center; gap:8px; font-size:12px; color:var(--dim);
+    background:var(--panel2); border:1px solid var(--line); border-radius:10px; padding:6px 10px;
+  }
+  .staged.show{display:flex}
+  .hintline{font-size:11px;color:var(--dim2)}
+  kbd{background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:0 4px;font-size:10px}
+
+  /* ── 设置 ── */
+  #settings{
+    position:fixed; inset:0; background:rgba(6,8,12,.72); display:none;
+    align-items:center; justify-content:center; padding:24px; z-index:50;
+  }
+  #settings.show{display:flex}
+  .card{
+    background:var(--panel); border:1px solid var(--line); border-radius:16px;
+    width:min(560px,100%); max-height:86vh; overflow:auto; padding:20px;
+  }
+  .card h3{margin:0 0 4px; font-size:15px}
+  .card .desc{color:var(--dim2); font-size:12px; margin-bottom:16px}
+  .field{margin-bottom:15px}
+  .field label{display:block; font-size:12px; color:var(--dim); margin-bottom:5px}
+  .field input{
+    width:100%; padding:9px 11px; background:var(--panel2); color:var(--fg);
+    border:1px solid var(--line); border-radius:10px; outline:none;
+  }
+  .kv{font-size:12px; color:var(--dim); display:grid; grid-template-columns:88px 1fr; gap:5px 10px}
+  .kv b{color:var(--fg); font-weight:500; word-break:break-all}
+  .mono{font-family:ui-monospace,Menlo,monospace; font-size:11.5px}
+  .card .actions{display:flex; gap:9px; justify-content:flex-end; margin-top:18px}
+  .primary{background:linear-gradient(135deg,#5f3fc0,#6E48D6); color:#fff; padding:8px 16px; border-radius:10px; font-weight:600}
+  .ghost{background:var(--panel2); color:var(--dim); padding:8px 16px; border-radius:10px}
+  .warnbox{
+    background:rgba(242,201,76,.1); border:1px solid rgba(242,201,76,.35);
+    color:var(--warn); border-radius:10px; padding:9px 11px; font-size:12px; margin-bottom:14px;
+  }
+  .errbox{
+    background:rgba(255,107,107,.1); border:1px solid rgba(255,107,107,.35);
+    color:var(--bad); border-radius:10px; padding:9px 11px; font-size:12px; margin-bottom:14px;
+  }
+
+  /* ── 拖文件进来时的提示 ── */
+  body.dragging::after{
+    content:'松手就放进待发送';
+    position:fixed; inset:10px; border:2px dashed var(--brand2); border-radius:16px;
+    display:flex; align-items:center; justify-content:center; font-size:15px;
+    color:#fff; background:rgba(110,72,214,.28); backdrop-filter:blur(2px);
+    z-index:70; pointer-events:none;
+  }
+
+  /* ── 会话列表 ── */
+  .convbtn{
+    background:var(--panel2); border-radius:8px; padding:2px 8px; font-weight:600;
+    color:var(--fg); font-size:14px;
+  }
+  .convbtn:hover{background:#232a38}
+  #convs{
+    position:fixed; inset:0; background:rgba(6,8,12,.72); display:none;
+    align-items:center; justify-content:center; padding:24px; z-index:60;
+  }
+  #convs.show{display:flex}
+  .convrow{display:flex; align-items:center; gap:6px; margin-bottom:6px}
+  .convpick{
+    flex:1; min-width:0; text-align:left; padding:9px 11px; border-radius:10px;
+    background:var(--panel2); border:1px solid var(--line); display:flex;
+    flex-direction:column; gap:2px;
+  }
+  .convrow.on .convpick{border-color:var(--brand); background:#241d3a}
+  .convpick .cn{font-size:13.5px; color:var(--fg)}
+  .convrow.on .convpick .cn{font-weight:600}
+  .convpick .cp{font-size:11px; color:var(--dim2); word-break:break-all}
+
+  /* ── 崩溃横幅 / 诊断 ── */
+  #crashbar{
+    flex:none; padding:8px 14px; font-size:12.5px;
+    background:rgba(255,107,107,.12); border-bottom:1px solid rgba(255,107,107,.35);
+    color:var(--bad);
+  }
+  #crashbar pre{
+    white-space:pre-wrap; word-break:break-all; max-height:240px; overflow:auto;
+    background:var(--panel2); color:var(--fg); padding:9px; border-radius:8px;
+    font-size:11px; margin:8px 0 0;
+  }
+  /* 遮住显示，但不走 type=password（避开系统密码管理器/自动填充） */
+  input.masked{-webkit-text-security:disc;text-security:disc}
+
+  .diag{
+    white-space:pre-wrap; word-break:break-all; background:var(--panel2);
+    border:1px solid var(--line); border-radius:8px; padding:9px;
+    font-size:11px; color:var(--dim); max-height:220px; overflow:auto; margin:0;
+  }
+
+  /* ── 顶部细进度条 ── */
+  #bar{height:2px;background:transparent;flex:none}
+  #bar.on{background:linear-gradient(90deg,transparent,var(--brand2),transparent);animation:sweep 1.1s linear infinite}
+  @keyframes sweep{0%{opacity:.25}50%{opacity:.9}100%{opacity:.25}}
+
+  /* ── 小窗模式（?mini=1）：快速回复用，不打断当前浏览 ── */
+  body.mini header{padding:8px 10px}
+  body.mini .logo{width:22px;height:22px;font-size:13px}
+  body.mini #openSettings,body.mini #readAll,body.mini .hintline,
+  body.mini #mode,body.mini #attach{display:none}
+  body.mini #list{padding:12px 10px 4px}
+  body.mini .col{max-width:86%}
+  body.mini .bubble{padding:7px 10px;font-size:13.5px}
+  body.mini .avatar{width:22px;height:22px;font-size:11px;border-radius:7px;margin-bottom:14px}
+  body.mini .row{margin-bottom:10px}
+  body.mini footer{padding:8px 10px 10px}
+  body.mini textarea{height:38px;padding:9px 11px}
+  body.mini #send{height:38px;padding:0 14px}
+  #miniOnly{display:none; white-space:nowrap}
+  body.mini #miniOnly{display:block}
+  /* 小窗里每条上面都重复一遍发送者名太吵，头像已经表明是谁了 */
+  body.mini .who{display:none}
+  body.mini .title{font-size:13px}
+
+  #toast{
+    position:fixed; left:50%; bottom:88px; transform:translateX(-50%) translateY(10px);
+    background:var(--panel2); border:1px solid var(--line); color:var(--fg);
+    padding:9px 15px; border-radius:11px; font-size:12.5px; opacity:0;
+    transition:.22s; pointer-events:none; z-index:80; max-width:80vw;
+  }
+  #toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+  #toast.bad{border-color:rgba(255,107,107,.5); color:var(--bad)}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">🐘</div>
+  <div>
+    <div class="title">
+      <button class="convbtn" id="convBtn" title="切换 / 新建会话">会话 ▾</button>
+      <span class="sub" id="mode">异步私信</span>
+    </div>
+    <div class="sub" id="whoami">…</div>
+  </div>
+  <div class="spacer"></div>
+  <span class="badge zero" id="unread" title="未读">0</span>
+  <button class="txtbtn" id="readAll" title="把未读全部标记为已读">全部已读</button>
+  <button class="txtbtn" id="miniOnly" title="打开完整的象信页面">完整页面</button>
+  <button class="iconbtn" id="openSettings" title="设置">⚙</button>
+</header>
+<div id="bar"></div>
+
+<div id="list"></div>
+
+<footer>
+  <div class="staged" id="staged">
+    <span id="stagedName"></span>
+    <span class="spacer" style="flex:1"></span>
+    <button class="txtbtn" id="clearStaged">取消</button>
+  </div>
+  <div class="compose">
+    <button class="iconbtn" id="attach" title="发文件" style="width:44px;height:44px;border-radius:12px;font-size:17px">📎</button>
+    <textarea id="text" placeholder="说点什么…（⏎ 发送，⇧⏎ 换行）"></textarea>
+    <button id="send">发送</button>
+  </div>
+  <div class="hintline" id="hint">正在连接宿主…</div>
+</footer>
+
+<div id="settings">
+  <div class="card">
+    <h3>设置</h3>
+    <div class="desc">象信 Lite 把每条消息写成一个独立文件，放进一个同步文件夹；文件传输走同一套机制。</div>
+    <div id="settingsErr"></div>
+    <div class="field">
+      <label>我在对方那里显示的名字</label>
+      <input id="nameInput" placeholder="例如：牛牛的 MacBook">
+    </div>
+    <div class="field">
+      <label>我的身份码</label>
+      <input id="ownerInput" placeholder="留空 = 只有这一台设备">
+      <div class="hintline" style="margin-top:6px">
+        <b>同一个人的多台设备填同一个值</b>（比如你的 Mac 和手机都填 <span class="mono">ME0001</span>）。
+        不填的话，你在手机上读了自己 Mac 发的话，会被误当成"对方已读"。
+      </div>
+    </div>
+    <div class="field" id="folderField">
+      <label>同步文件夹（两台设备必须指向同一个、且已在同步范围内）</label>
+      <input id="rootInput" readonly>
+      <div class="hintline" style="margin-top:6px">换目录会立即生效；换完这个文件夹里会自动建好 消息/ 文件/ 已读/ 设备/</div>
+    </div>
+    <div class="field" id="nutstoreField" style="display:none">
+      <label>坚果云账号（WebDAV 直连）</label>
+      <!-- ⚠️ 刻意不用 autocomplete / type=password：MIUI 的自动填充服务介入 WebView 的密码框时
+           会闪退（真机上就是这么崩的）。改用 type=text + -webkit-text-security 遮住显示，
+           同时原生侧也禁掉了 importantForAutofill。 -->
+      <input id="nsUser" type="text" autocomplete="off" autocorrect="off" spellcheck="false"
+             placeholder="坚果云登录邮箱">
+      <input id="nsPass" type="text" autocomplete="off" autocorrect="off" spellcheck="false"
+             class="masked" placeholder="应用密码（不是登录密码）" style="margin-top:6px">
+      <input id="nsRoot" placeholder="云端目录（可粘完整链接）" style="margin-top:6px">
+      <div class="hintline" style="margin-top:6px">
+        这一格<b>既能填目录名，也能直接粘完整链接</b>：
+        <span class="mono">https://dav.jianguoyun.com/dav/我的坚果云/象信</span><br>
+        粘链接的话我会自动拆成「地址 + 目录」；只填 <span class="mono">我的坚果云/象信</span>
+        这种目录名，就用坚果云官方地址。
+      </div>
+      <div class="hintline" style="margin-top:6px" id="nsState"></div>
+      <div class="hintline" style="margin-top:6px">
+        应用密码去坚果云「账户信息 → 安全选项 → 添加应用」生成。<b>登录密码不行。</b>
+        手机端直连坚果云，所以不需要在手机上装坚果云 App。
+      </div>
+      <button class="ghost" id="nsSave" style="margin-top:8px;width:100%">保存并测试连接</button>
+    </div>
+    <div class="field">
+      <label>诊断（出问题时截图这一段给我）</label>
+      <pre id="diagBox" class="diag"></pre>
+      <button class="ghost" id="diagBtn" style="margin-top:6px;width:100%">刷新诊断信息</button>
+    </div>
+    <div class="kv">
+      <span>我的设备ID</span><b class="mono" id="kvID">—</b>
+      <span>已知道设备</span><b id="kvDevices">—</b>
+      <span>消息总数</span><b id="kvCount">—</b>
+    </div>
+    <div class="actions">
+      <button class="ghost" id="pickFolder">选择同步文件夹…</button>
+      <button class="ghost" id="nsTest" style="display:none">测试连接</button>
+      <button class="primary" id="saveSettings">保存名字</button>
+      <button class="ghost" id="closeSettings">关闭</button>
+    </div>
+  </div>
+</div>
+
+<div id="convs">
+  <div class="card">
+    <h3>会话</h3>
+    <div class="desc">
+      一个会话 = 一个同步文件夹。<b>和谁聊，就单独建一个文件夹、把它共享给谁</b> ——
+      这样各自的聊天互不干扰。移除会话只删本地这条记录，<b>不会动云端文件</b>。
+    </div>
+    <div id="convErr"></div>
+    <div id="convList"></div>
+    <div class="field" id="newConvField" style="display:none">
+      <label>新会话名字</label>
+      <input id="newConvName" placeholder="例如：妈妈">
+      <label style="margin-top:10px">存哪</label>
+      <select id="newConvKind">
+        <option value="webdav">直连坚果云（不装坚果云客户端，只要账号）</option>
+        <option value="local">本地同步文件夹（要装坚果云客户端）</option>
+      </select>
+      <label style="margin-top:10px" id="newConvPathLabel">云端目录</label>
+      <input id="newConvPath" placeholder="例如：我的坚果云/象信-妈妈（也能粘完整链接）">
+      <div class="hintline" style="margin-top:6px" id="newConvHint"></div>
+    </div>
+    <div class="actions">
+      <button class="ghost" id="addConv">新建会话</button>
+      <button class="primary" id="closeConvs">关闭</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="filePick" style="display:none">
+<div id="toast"></div>
+
+<script src="core.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  // ══════════════════════════════════════════════════════════
+  //  与宿主的能力桥握手
+  //  这段代码在没有宿主时（直接打开文件、或在普通浏览器里）必须完全无害
+  // ══════════════════════════════════════════════════════════
+  // ══════════════════════════════════════════════════════════
+  //  与宿主握手。**两种宿主**：
+  //    Mac：WebKit 原生注入 window.webkit.messageHandlers.app
+  //    Android：addJavascriptInterface 注入的 XiangxinHost
+  //  两个都是页面脚本执行前就存在的 —— 所以不需要"往页面注入脚本伪造 window.webkit"
+  //  （那有竞态：注入可能晚于页面脚本执行）。
+  // ══════════════════════════════════════════════════════════
+  var hasWebKit = !!(window.webkit && window.webkit.messageHandlers &&
+                     window.webkit.messageHandlers.app);
+  var hasAndroid = (typeof XiangxinHost !== 'undefined' && XiangxinHost &&
+                    typeof XiangxinHost.post === 'function');
+  var hasHost = hasWebKit || hasAndroid;
+
+  var seq = 0, waiters = {};
+  // ⚠️ 宿主回传的是 **JSON 字符串**，不是对象（Mac/Android 两端约定一致）。
+  // 这里必须 parse 一次 —— 直接把字符串当对象用的话，
+  // r.ok / r.messages 全是 undefined，界面会安静地显示成"没有消息"，
+  // 而且**不会报任何错**（这个坑真的踩过）。
+  window.__xianglanResolve = function (id, v) {
+    var r = waiters[id];
+    if (!r) return;
+    delete waiters[id];
+    if (typeof v === 'string') {
+      try { v = JSON.parse(v); }
+      catch (e) { v = { error: '宿主返回了看不懂的内容：' + String(v).slice(0, 80) }; }
+    }
+    r(v);
+  };
+  function call(action, payload) {
+    return new Promise(function (resolve) {
+      if (!hasHost) { resolve({ error: '没有宿主：象信 Lite 需要跑在象览Air 里' }); return; }
+      var id = ++seq;
+      waiters[id] = resolve;
+      var obj = Object.assign({ id: id, action: action }, payload || {});
+      try {
+        if (hasWebKit) window.webkit.messageHandlers.app.postMessage(obj);
+        else XiangxinHost.post(JSON.stringify(obj));
+      } catch (e) {
+        delete waiters[id];
+        resolve({ error: '桥调用失败：' + e.message });
+      }
+    });
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  统一门面：界面只跟 API 说话，不关心底下是哪种宿主
+  //    host 模式（Mac）：宿主自带协议逻辑 → 用 xx.*
+  //    core 模式（Android）：宿主只给最原始的 fs.* → 协议走 core.js
+  //  两种模式下 API 的返回结构**完全一样**，所以界面代码不用分平台。
+  // ══════════════════════════════════════════════════════════
+  var API = {
+    mode: 'none',
+    engine: null,
+    caps: [],
+    needsSetup: false,       // 手机端还没配坚果云账号
+    davConfigured: false,
+
+    init: function (info) {
+      API.caps = (info && info.capabilities) || [];
+      if (API.caps.indexOf('xx.scan') >= 0) { API.mode = 'host'; return Promise.resolve(); }
+      if (API.caps.indexOf('fs.listDir') >= 0 && window.XiangxinCore) {
+        API.mode = 'core';
+        return API._initCore();
+      }
+      API.mode = 'none';
+      return Promise.resolve();
+    },
+
+    // ── core 模式：把 fs.* 包成 core.js 要的 io 适配器 ──
+    _must: function (r) {
+      if (r && r.error) throw new Error(r.error);
+      return r || {};
+    },
+    _io: function () {
+      var io = {
+        listDir: function (p) {
+          return call('fs.listDir', { path: p }).then(function (r) { return API._must(r).entries || []; });
+        },
+        // 只要文本就别让宿主再编一份 base64（手机端每 5 秒扫一次，白白多占一份内存）
+        readText: function (p) {
+          return call('fs.readFile', { path: p, text: true, base64: false })
+            .then(function (r) { return API._must(r).text || ''; });
+        },
+        readFile: function (p) {
+          return call('fs.readFile', { path: p, text: false, base64: true })
+            .then(function (r) { return API._must(r).base64 || ''; });
+        },
+        readBase64: function (p) {
+          return call('fs.readFile', { path: p, text: false, base64: true })
+            .then(function (r) { return API._must(r).base64 || ''; });
+        },
+        readChunk: function (p, off, len) {
+          return call('fs.readChunk', { path: p, offset: off, length: len })
+            .then(function (r) { return API._must(r).base64 || ''; });
+        },
+        writeText: function (p, t, ow) {
+          return call('fs.writeFile', { path: p, text: t, overwrite: !!ow }).then(function (r) { API._must(r); });
+        },
+        writeBase64: function (p, b64, ow) {
+          return call('fs.writeFile', { path: p, base64: b64, overwrite: !!ow }).then(function (r) { API._must(r); });
+        },
+        appendLine: function (p, line) {
+          return call('fs.appendLine', { path: p, line: line }).then(function (r) { API._must(r); });
+        },
+        stat: function (p) {
+          return call('fs.stat', { path: p }).then(function (r) {
+            r = API._must(r);
+            return r.exists ? { name: p.split('/').pop(), isDir: !!r.isDir, size: r.size || 0, mtime: r.mtime || 0 } : null;
+          });
+        },
+        move: function (f, t) {
+          return call('fs.moveFile', { from: f, to: t }).then(function (r) { API._must(r); });
+        },
+        'delete': function (p) {
+          return call('fs.deleteFile', { path: p }).then(function (r) { API._must(r); });
+        },
+        mkdir: function (p) {
+          return call('fs.mkdir', { path: p }).then(function (r) { API._must(r); });
+        }
+      };
+      return io;
+    },
+
+    // ══════════════════════════════════════════════════════════
+    //  Supabase 底座：没有宿主（手机浏览器）时，io 直接打云表
+    //  形状和 _io() 完全一样，所以 core.js 完全不用改。
+    // ══════════════════════════════════════════════════════════
+    sb: { url: '', key: '', secret: '', table: 'xx_obj' },
+    _ioImpl: null,
+
+    _sbFetch: function (method, path, query, body, prefer) {
+      var q = '';
+      if (query) {
+        var parts = [];
+        for (var k in query) parts.push(encodeURIComponent(k) + '=' + encodeURIComponent(query[k]));
+        if (parts.length) q = '?' + parts.join('&');
+      }
+      var url = API.sb.url.replace(/\/+$/, '') + '/rest/v1/' + path + q;
+      var h = {
+        'apikey': API.sb.key,
+        'Authorization': 'Bearer ' + API.sb.key,
+        'x-xx-key': API.sb.secret,          // ← 真正的门锁，RLS 按它判权限
+        'Content-Type': 'application/json'
+      };
+      if (prefer) h['Prefer'] = prefer;
+      return fetch(url, { method: method, headers: h, body: body ? JSON.stringify(body) : undefined })
+        .then(function (r) {
+          if (!r.ok) {
+            return r.text().then(function (t) {
+              throw new Error('HTTP ' + r.status + ' ' + String(t).slice(0, 140));
+            });
+          }
+          var ct = r.headers.get('content-type') || '';
+          if (ct.indexOf('json') < 0) return null;
+          return r.text().then(function (t) { return t ? JSON.parse(t) : null; });
+        });
+    },
+
+    _sbNorm: function (p) {
+      var s = String(p == null ? '' : p);
+      while (s.charAt(0) === '/') s = s.slice(1);
+      while (s.length && s.charAt(s.length - 1) === '/') s = s.slice(0, -1);
+      return s;
+    },
+
+    _ioSupabase: function () {
+      var T = function () { return API.sb.table; };
+      var now = function () { return Date.now(); };
+      function rows(q) { return API._sbFetch('GET', T(), q); }
+
+      var io = {
+        listDir: function (p) {
+          p = API._sbNorm(p);
+          var q = { select: 'path,is_dir,size,mtime', limit: '5000' };
+          if (p) q.path = 'like.' + p + '/*';
+          return rows(q).then(function (rs) {
+            var pre = p ? p + '/' : '';
+            var out = [];
+            (rs || []).forEach(function (r) {
+              var full = r.path || '';
+              var rest = full.indexOf(pre) === 0 ? full.slice(pre.length) : full;
+              if (!rest || rest.indexOf('/') >= 0) return;   // 只要直接子项
+              out.push({ name: rest, isDir: !!r.is_dir, size: r.size || 0, mtime: r.mtime || 0 });
+            });
+            out.sort(function (a, b) { return a.name < b.name ? -1 : 1; });
+            return out;
+          });
+        },
+        _one: function (p) {
+          return rows({ select: 'content,blob,is_dir,size,mtime', path: 'eq.' + p, limit: '1' })
+            .then(function (rs) { return (rs && rs[0]) || null; });
+        },
+        _put: function (obj) {
+          return API._sbFetch('POST', T(), null, obj,
+            'resolution=merge-duplicates,return=minimal').then(function () {});
+        },
+        readText: function (p) {
+          return io._one(API._sbNorm(p)).then(function (r) {
+            if (!r) throw new Error('读不到：' + p);
+            return r.content || '';
+          });
+        },
+        readFile: function (p) { return io.readBase64(p); },
+        readBase64: function (p) {
+          return io._one(API._sbNorm(p)).then(function (r) {
+            if (!r) throw new Error('读不到：' + p);
+            if (r.blob) return r.blob;
+            // content 是文本 → 转 base64（core.js 的附件路径要 base64）
+            return btoa(unescape(encodeURIComponent(r.content || '')));
+          });
+        },
+        readChunk: function (p, off, len) {
+          return io.readBase64(p).then(function (b64) { return b64.slice(off, off + len); });
+        },
+        writeText: function (p, t, ow) {
+          p = API._sbNorm(p);
+          var go = function () {
+            return io._put({ path: p, is_dir: false, content: t == null ? '' : t,
+                             size: (t || '').length, mtime: now() });
+          };
+          if (!ow) return io.stat(p).then(function (e) {
+            if (e) throw new Error('已存在，不覆盖：' + p);
+            return go();
+          });
+          return go();
+        },
+        writeBase64: function (p, b64, ow) {
+          p = API._sbNorm(p);
+          var go = function () {
+            return io._put({ path: p, is_dir: false, content: '', blob: b64 || '',
+                             size: Math.floor(((b64 || '').length) * 3 / 4), mtime: now() });
+          };
+          if (!ow) return io.stat(p).then(function (e) {
+            if (e) throw new Error('已存在，不覆盖：' + p);
+            return go();
+          });
+          return go();
+        },
+        appendLine: function (p, line) {
+          p = API._sbNorm(p);
+          return io._one(p).then(function (r) {
+            var cur = (r && r.content) || '';
+            if (cur && cur.charAt(cur.length - 1) !== '\n') cur += '\n';
+            cur += line + '\n';
+            return io._put({ path: p, is_dir: false, content: cur, size: cur.length, mtime: now() });
+          });
+        },
+        stat: function (p) {
+          p = API._sbNorm(p);
+          if (!p) return Promise.resolve(null);
+          return io._one(p).then(function (r) {
+            if (!r) return null;
+            return { name: p.split('/').pop(), isDir: !!r.is_dir, size: r.size || 0, mtime: r.mtime || 0 };
+          });
+        },
+        move: function (f, t) {
+          return API._sbFetch('PATCH', T(), { path: 'eq.' + API._sbNorm(f) },
+            { path: API._sbNorm(t) }, 'return=minimal').then(function () {});
+        },
+        'delete': function (p) {
+          return API._sbFetch('DELETE', T(), { path: 'eq.' + API._sbNorm(p) }, null,
+            'return=minimal').then(function () {});
+        },
+        mkdir: function (p) {
+          p = API._sbNorm(p);
+          if (!p) return Promise.resolve();
+          return API._sbFetch('POST', T(), null,
+            { path: p, is_dir: true, content: '', size: 0, mtime: now() },
+            'resolution=ignore-duplicates,return=minimal').then(function () {});
+        }
+      };
+      return io;
+    },
+
+    /// 连上 Supabase 并建引擎。设备ID 存在本机 localStorage，**必须稳定** ——
+    /// 每次打开都换新 ID 的话，自己的旧消息会被当成别人发的，已读文件也变孤儿。
+    initSupabase: function (url, key, secret) {
+      API.sb.url = url; API.sb.key = key; API.sb.secret = secret;
+      var devID = null;
+      try { devID = localStorage.getItem('xx.deviceID'); } catch (e) {}
+      if (!devID) {
+        devID = window.XiangxinCore.deviceIdFromSeed('supabase:' + url + ':' + (navigator.userAgent || ''));
+        try { localStorage.setItem('xx.deviceID', devID); } catch (e) {}
+      }
+      var nm = null;
+      try { nm = localStorage.getItem('xx.deviceName'); } catch (e) {}
+      var state = {
+        get: function () { try { return JSON.parse(localStorage.getItem('xx.seen') || 'null'); } catch (e) { return null; } },
+        set: function (o) { try { localStorage.setItem('xx.seen', JSON.stringify(o)); } catch (e) {} }
+      };
+      API.mode = 'core';        // 复用 core 模式的引擎路径，只是底座换成了 Supabase
+      API.usingSupabase = true;  // 给界面判断用（提示文案、诊断信息）
+      API.davConfigured = true;
+      API._ioImpl = API._ioSupabase();
+      API.engine = window.XiangxinCore.createEngine(API._ioImpl, {
+        deviceID: devID,
+        deviceName: nm || '手机',
+        platform: 'web',
+        owner: null,
+        state: state
+      });
+      return API.engine.ensureTree().then(function () { return API.engine.announceSelf(); });
+    },
+
+    _initCore: function () {
+      return call('host.androidId').then(function (r) {
+        var id = (r && r.id) || '';
+        var model = (r && r.model) || '安卓手机';
+        if (!id) throw new Error('拿不到设备标识（host.androidId）');
+        // 设备ID 必须**稳定**：用 ANDROID_ID 派生，重装 App 也不能变，
+        // 否则自己的旧消息会被当成别人发的、已读文件会变成孤儿。
+        var state = {
+          get: function () { try { return JSON.parse(localStorage.getItem('xx.seen') || 'null'); } catch (e) { return null; } },
+          set: function (o) { try { localStorage.setItem('xx.seen', JSON.stringify(o)); } catch (e) {} }
+        };
+        var savedName = null;
+        try { savedName = localStorage.getItem('xx.deviceName'); } catch (e) {}
+        // 身份码由宿主保存（跨会话共用）；没配就是 null = 一人一台设备
+        return call('xx.conversations').then(function (cv) {
+          var owner = (cv && cv.owner) ? String(cv.owner) : null;
+          API.davConfigured = !!(cv && cv.davConfigured);
+          API._ioImpl = API._io();
+          API.engine = window.XiangxinCore.createEngine(API._ioImpl, {
+            deviceID: window.XiangxinCore.deviceIdFromSeed('android:' + id),
+            deviceName: savedName || model,
+            platform: 'android',
+            owner: owner,
+            state: state
+          });
+          // ⚠️ **没配账号时不要连网**。原来这里无条件 ensureTree()（要发 4 次 MKCOL），
+          // 首启必然失败 -> 首屏显示"初始化失败"，而真正的原因只是"还没填账号"。
+          // 那是句误导人的错误（踩过）。
+          if (!API.davConfigured) {
+            API.needsSetup = true;
+            return null;
+          }
+          return API.engine.ensureTree().then(function () {
+            return API.engine.announceSelf();
+          });
+        });
+      });
+    },
+
+    // ── 界面用的动作（两种模式返回结构一致）──
+    scan: function () {
+      if (API.mode === 'host') return call('xx.scan');
+      if (API.mode === 'core') {
+        // 没配账号就别去连网了（每次轮询都失败一次，白费流量还刷一屏错）
+        if (API.needsSetup) return Promise.resolve({ error: '', needsSetup: true });
+        return API.engine.snapshot().catch(function (e) {
+          return { error: String(e && e.message || e) };
+        });
+      }
+      return Promise.resolve({ error: '还没有和宿主握手' });
+    },
+
+    send: function (text) {
+      if (API.mode === 'host') return call('xx.send', { text: text });
+      return API.engine.sendText(text).then(function () { return { ok: true }; },
+        function (e) { return { error: String(e && e.message || e) }; });
+    },
+
+    sendFile: function (text) {
+      if (API.mode === 'host') return call('xx.sendFile', { text: text });
+      var st = API.staged;
+      if (!st || !st.file) return Promise.resolve({ error: '没有选中的文件' });
+      return API._readBytes(st.file).then(function (bytes) {
+        return API.engine.sendAttachment(bytes, st.name, text, st.file.type || '', null, null);
+      }).then(function () { setStaged(null); return { ok: true }; },
+        function (e) { return { error: String(e && e.message || e) }; });
+    },
+
+    pickFiles: function () {
+      if (API.mode === 'host') {
+        // 宿主支持多选就用多选；不支持就退回单选，包成同一种形状
+        if (API.caps.indexOf('fs.pickFiles') >= 0) return call('fs.pickFiles');
+        return call('fs.pickFile').then(function (r) {
+          if (!r || r.error || r.canceled) return r;
+          return { ok: true, files: [{ name: r.name, path: r.path, size: r.size }] };
+        });
+      }
+      return new Promise(function (res) {
+        var inp = document.getElementById('filePick');
+        var done = false;
+        inp.value = '';
+        inp.multiple = true;
+        inp.onchange = function () {
+          done = true;
+          var fs = inp.files ? Array.prototype.slice.call(inp.files) : [];
+          if (!fs.length) { res({ canceled: true }); return; }
+          res({ ok: true, files: fs.map(function (f) {
+            return { name: f.name, size: f.size, file: f };
+          }) });
+        };
+        inp.click();
+        setTimeout(function () { if (!done) res({ canceled: true }); }, 120000);
+      });
+    },
+
+    /// 发一个"界面已经知道路径"的文件（Mac）。**不会再弹选择框。**
+    sendPath: function (path, name, text) {
+      return call('xx.sendPath', { path: path, name: name, text: text || '' });
+    },
+
+    /// 发一段字节（拖拽 / 手机选的文件）。
+    sendBytes: function (name, bytes, text) {
+      if (API.mode === 'host') {
+        return call('xx.sendBytes', {
+          name: name, base64: window.XiangxinCore.bytesToBase64(bytes), text: text || ''
+        });
+      }
+      return API.engine.sendAttachment(bytes, name, text || '',
+          window.XiangxinCore.mimeForExt((name.split('.').pop() || '')))
+        .then(function () { return { ok: true }; },
+              function (e) { return { error: String(e && e.message || e) }; });
+    },
+
+    pickFile: function () {
+      if (API.mode === 'host') return call('fs.pickFile');
+      // 手机上不需要宿主的文件面板：用 <input type=file> 就行
+      return new Promise(function (res) {
+        var inp = document.getElementById('filePick');
+        var done = false;
+        inp.value = '';
+        inp.onchange = function () {
+          done = true;
+          var f = inp.files && inp.files[0];
+          if (!f) { res({ canceled: true }); return; }
+          res({ name: f.name, size: f.size, file: f });
+        };
+        inp.click();
+        // 用户直接关掉选择器时不会触发 change，给个兜底
+        setTimeout(function () { if (!done) res({ canceled: true }); }, 60000);
+      });
+    },
+
+    _readBytes: function (file) {
+      return new Promise(function (res, rej) {
+        var fr = new FileReader();
+        fr.onload = function () { res(new Uint8Array(fr.result)); };
+        fr.onerror = function () { rej(new Error('读不了这个文件')); };
+        fr.readAsArrayBuffer(file);
+      });
+    },
+
+    markRead: function (ids) {
+      if (API.mode === 'host') return call('xx.markRead', { ids: ids });
+      // 一次标 3 条以上就用高水位（省同步流量）；这是**调用方的政策**，引擎不管这事
+      return API.engine.markRead(ids, ids.length >= 3).then(function () { return { ok: true }; },
+        function (e) { return { error: String(e && e.message || e) }; });
+    },
+
+    deleteMessages: function (ids) {
+      if (API.mode === 'host') return call('xx.deleteMessages', { ids: ids });
+      // core / supabase 模式：底座是 io（安卓是 fs.*，手机网页是 Supabase REST）
+      var io = API._ioImpl;
+      if (!io) return Promise.resolve({ error: '还没连上，稍后再试' });
+      var errs = [], n = 0;
+      return (ids || []).reduce(function (chain, id) {
+        return chain.then(function () {
+          return io['delete']('消息/' + id + '.json')
+            .then(function () { n++; },
+                  function (e) { errs.push(id + '：' + ((e && e.message) || e)); });
+        });
+      }, Promise.resolve()).then(function () {
+        return { ok: true, count: n, errors: errs };
+      });
+    },
+
+    attachment: function (id) {
+      if (API.mode === 'host') return call('xx.attachment', { id: id });
+      var m = API.engine.messageById(id);
+      if (!m || !m.ref) return Promise.resolve({ error: '找不到这条附件消息' });
+      return API.engine.attachmentBytes(m).then(function (bytes) {
+        return {
+          ok: true, name: m.ref.name, mime: m.ref.mime, size: bytes.length,
+          base64: window.XiangxinCore.bytesToBase64(bytes)
+        };
+      }, function (e) { return { error: String(e && e.message || e) }; });
+    },
+
+    setName: function (name) {
+      if (API.mode === 'host') return call('xx.setName', { name: name });
+      API.engine.cfg.deviceName = name;
+      try { localStorage.setItem('xx.deviceName', name); } catch (e) {}
+      return API.engine.announceSelf().then(function () { return { ok: true, name: name }; },
+        function (e) { return { error: String(e && e.message || e) }; });
+    },
+
+    pickFolder: function () {
+      if (API.mode === 'host') return call('xx.pickFolder');
+      return Promise.resolve({ error: '手机版是直连坚果云，没有本地文件夹可选' });
+    },
+
+    openFull: function () {
+      if (API.mode === 'host') return call('xx.openFull');
+      return Promise.resolve({ ok: true });      // 手机上本来就是一个完整标签页
+    },
+
+    hideMini: function () {
+      if (API.mode === 'host') return call('xx.hideMini');
+      return Promise.resolve({ ok: true });
+    },
+
+    // ── 会话（两种模式的动作名一样，宿主各自实现）──
+    conversations: function () { return call('xx.conversations'); },
+    newConversation: function (name, path, kind) {
+      return call('xx.newConversation', { name: name, path: path || '', kind: kind || 'local' });
+    },
+    setConversationKind: function (id, kind, path) {
+      return call('xx.setConversationKind', { id: id, kind: kind, path: path || '' });
+    },
+    selectConversation: function (id) { return call('xx.selectConversation', { id: id }); },
+    renameConversation: function (id, name) {
+      return call('xx.renameConversation', { id: id, name: name });
+    },
+    removeConversation: function (id) { return call('xx.removeConversation', { id: id }); },
+    setOwner: function (owner) { return call('xx.setOwner', { owner: owner }); },
+
+    nutstoreInfo: function () {
+      // Mac（host 模式）和手机（core 模式）都能直连坚果云，所以这里不再按模式区分
+      if (API.caps.indexOf('nutstore.info') < 0) return Promise.resolve({ ok: false });
+      return call('nutstore.info');
+    },
+
+    nutstoreSet: function (user, pass, root) {
+      return call('nutstore.set', { user: user, pass: pass, root: root });
+    },
+    nutstoreTest: function () { return call('nutstore.test'); }
+  };
+
+  // ══════════════════════════════════════════════════════════
+  //  状态
+  // ══════════════════════════════════════════════════════════
+  // 小窗模式：宿主用 xapp://xiangxin-lite/index.html?mini=1 打开
+  var lastListHtml = null;     // 上一次渲染出来的列表 HTML（用来判断「内容变了没有」）
+  var lastHintHtml = null;     // 同上，顶栏那行提示
+  var MINI = /[?&]mini=1/.test(location.search);
+  /// 自动已读：记住"已经为哪一组未读消息标过已读"，避免同一组反复发请求
+  var autoReadFor = '';
+
+  // ══════════════════════════════════════════════════════════
+  //  手机浏览器直连 Supabase 用的常量
+  //  URL 和 publishable key **都不是秘密**（设计上就是公开的，靠 RLS 策略兜底）；
+  //  真正的门锁是「连接密钥」，第一次打开时让用户输入，只存在本机 localStorage。
+  // ══════════════════════════════════════════════════════════
+  var XX_SB_URL = 'https://wxftncusytrdkrogqgjw.supabase.co';
+  var XX_SB_KEY = 'sb_publishable_Qy8NgPrDETVbTJJuRh-ZYg_rHRlqZTD';
+  if (MINI) document.body.classList.add('mini');
+
+  var state = { messages: [], deviceID: '', deviceName: '', root: '', unreadCount: 0 };
+  var stagedFiles = [];       // 待发送的附件（可能多个）：{name, size, path?|file?}
+  var polling = false, busy = false;
+  var blobCache = {};         // id -> objectURL（图片预览用）
+
+  var $ = function (id) { return document.getElementById(id); };
+  var listEl = $('list'), textEl = $('text');
+
+  // ══════════════════════════════════════════════════════════
+  //  小工具
+  // ══════════════════════════════════════════════════════════
+  function toast(msg, bad) {
+    var t = $('toast');
+    t.textContent = msg;
+    t.className = bad ? 'show bad' : 'show';
+    clearTimeout(toast._t);
+    toast._t = setTimeout(function () { t.className = ''; }, bad ? 4200 : 2400);
+  }
+  function busyOn(on) { $('bar').className = on ? 'on' : ''; }
+
+  function fmtSize(n) {
+    if (n == null) return '';
+    if (n < 1024) return n + ' B';
+    if (n < 1024 * 1024) return (n / 1024).toFixed(1) + ' KB';
+    if (n < 1024 * 1024 * 1024) return (n / 1048576).toFixed(1) + ' MB';
+    return (n / 1073741824).toFixed(2) + ' GB';
+  }
+
+  function fmtTime(ms, tzMinutes) {
+    var d = new Date(ms);
+    var now = new Date();
+    var sameDay = d.toDateString() === now.toDateString();
+    var y = new Date(now.getTime() - 86400000);
+    var hh = String(d.getHours()).padStart(2, '0');
+    var mm = String(d.getMinutes()).padStart(2, '0');
+    if (sameDay) return hh + ':' + mm;
+    if (d.toDateString() === y.toDateString()) return '昨天 ' + hh + ':' + mm;
+    return (d.getMonth() + 1) + '月' + d.getDate() + '日 ' + hh + ':' + mm;
+  }
+
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;');
+  }
+
+  function iconFor(name, mime) {
+    var ext = (name || '').split('.').pop().toLowerCase();
+    if ((mime || '').indexOf('image/') === 0) return '🖼';
+    if ((mime || '').indexOf('video/') === 0) return '🎬';
+    if ((mime || '').indexOf('audio/') === 0) return '🎵';
+    if (ext === 'pdf') return '📕';
+    if (ext === 'zip' || ext === 'rar' || ext === '7z') return '🗜';
+    if (ext === 'txt' || ext === 'md' || ext === 'log') return '📄';
+    if (ext === 'json' || ext === 'csv') return '🧾';
+    if (ext === 'dmg' || ext === 'pkg' || ext === 'apk') return '📦';
+    return '📎';
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  渲染
+  // ══════════════════════════════════════════════════════════
+  function render() {
+    var nearBottom = (listEl.scrollHeight - listEl.scrollTop - listEl.clientHeight) < 90;
+    var unread = state.messages.filter(function (m) { return m.unread; }).length;
+    state.unreadCount = unread;
+    var badge = $('unread');
+    badge.textContent = unread;
+    badge.className = 'badge' + (unread ? '' : ' zero');
+    $('readAll').style.display = unread ? '' : 'none';
+
+    // ── 打开完整页面看到消息 = 已读 ──
+    // 以前只靠右上角那个「全部已读」按钮，用户看了消息、角标还挂着 1，以为是坏了。
+    // 小窗（悬浮球快速回复）不算"看过"，不自动标。
+    // 用一组未读的 id 当键：同一组只标一次，失败了也不会每 5 秒重发。
+    if (!MINI && unread > 0) {
+      var unreadKey = state.messages.filter(function (m) { return m.unread; })
+                                    .map(function (m) { return m.id; }).join(',');
+      if (unreadKey && unreadKey !== autoReadFor) {
+        autoReadFor = unreadKey;
+        setTimeout(markAllRead, 500);
+      }
+    }
+
+    $('convBtn').textContent = (state.conversationName || '会话') + ' ▾';
+    $('convBtn').title = '当前会话：' + (state.conversationName || '未命名') + '（点一下切换或新建）';
+    $('whoami').textContent = MINI
+      ? (state.deviceName || state.deviceID || '…')
+      : (state.deviceName ? (state.deviceName + ' · ' + state.deviceID)
+                          : (state.deviceID || '…'));
+
+    // 设置面板里的只读信息
+    $('kvID').textContent = state.deviceID || '—';
+    $('kvCount').textContent = state.messages.length + ' 条';
+    var names = [];
+    for (var k in (state.devices || {})) {
+      names.push((state.devices[k].isMe ? '我 · ' : '') + (state.devices[k].name || k));
+    }
+    $('kvDevices').textContent = names.length ? names.join('、') : '只有我';
+    if (document.activeElement !== $('rootInput')) {
+      $('rootInput').value = state.root || '';
+      $('nameInput').placeholder = state.deviceName || '例如：牛牛的 MacBook';
+    }
+
+    if (!state.messages.length) {
+      // 空列表也要走去抖：原来这里直接 innerHTML 就 return 了，
+      // 于是"还没有消息"的状态下每 5 秒照样重建一次 —— 手机上看就是一直在抖。
+      var emptyHtml =
+        '<div class="empty"><div class="big">🐘</div>' +
+        '<div>还没有消息</div>' +
+        '<div style="font-size:12px;max-width:340px">在下面对话框里说句话，' +
+        '它会被写成一个文件放进同步文件夹。另一台设备同步到之后就能看到。</div></div>';
+      if (emptyHtml !== lastListHtml) { lastListHtml = emptyHtml; listEl.innerHTML = emptyHtml; }
+      return;
+    }
+
+    // 小窗只渲染最近的若干条（DOM 少、开得快）；完整页面全渲染
+    var all = state.messages;
+    var from = 0;
+    if (MINI && all.length > 40) from = all.length - 40;
+    var html = '';
+    if (from > 0) {
+      html += '<div class="who" style="text-align:center;padding:4px 0 10px">' +
+              '上面还有 ' + from + ' 条，打开完整页面可看全部</div>';
+    }
+    var nowMs = Date.now();
+    for (var i = from; i < all.length; i++) {
+      var m = all[i];
+      var me = m.isMe;
+      var ahead = !me && (m.ts - nowMs > 120000);   // 对方的钟快了 2 分钟以上
+
+      html += '<div class="row' + (me ? ' me' : '') + '">';
+      html += '<div class="avatar">' + (me ? '我' : esc((m.fromName || '?').slice(0, 1))) + '</div>';
+      html += '<div class="col">';
+      if (!me) html += '<div class="who">' + esc(m.fromName || m.from) + '</div>';
+
+      if (m.file) {
+        var ready = m.file.ready;
+        var cls = 'att' + (ready ? '' : ' pending');
+        html += '<button class="' + cls + '" data-att="' + esc(m.id) + '"' +
+                (ready ? '' : ' disabled') + ' title="' +
+                (ready ? '打开/保存' : '附件还在同步中') + '">' +
+                '<span class="ico">' + (ready ? iconFor(m.file.name, m.file.mime) : '⏳') + '</span>' +
+                '<span class="info"><span class="nm">' + esc(m.file.name) + '</span>' +
+                '<span class="sz">' + (ready ? fmtSize(m.file.size) : '同步中… ' + fmtSize(m.file.size)) +
+                '</span></span></button>';
+        if (m.text) html += '<div class="bubble">' + esc(m.text) + '</div>';
+      } else {
+        if (m.text) html += '<div class="bubble">' + esc(m.text) + '</div>';
+      }
+
+      html += '<div class="meta"><span>' + fmtTime(m.ts, m.tz) + '</span>';
+      if (ahead) html += '<span class="skew" title="对方的时钟比本机快 2 分钟以上，时间显示可能有偏差">⏱ 时钟偏差</span>';
+      if (me) {
+        // 双勾 = **对方那一侧有人读过**（readByPeer），不是"我所有设备都读过"。
+        // readByPeer 缺失时退回旧字段，兼容旧宿主。
+        var peerRead = (m.readByPeer !== undefined) ? !!m.readByPeer
+                                                   : ((m.readPending || []).length === 0);
+        var waiting = (m.peerPending || m.readPending || []).length;
+        var tip = peerRead ? '对方已读'
+                           : (waiting ? '对方还没读（对方 ' + waiting + ' 台设备未读）' : '对方还没读');
+        html += '<span class="ticks' + (peerRead ? ' all' : '') + '" title="' + tip + '">' +
+                (peerRead ? '✓✓' : '✓') + '</span>';
+      }
+      // 删掉这一条（悬停才显形，见 .delmsg 样式）
+      html += '<button class="delmsg" data-delmsg="' + esc(m.id) + '" title="删掉这条消息">✕</button>';
+      html += '</div></div></div>';
+    }
+    // ── 只有内容真的变了才动 DOM ──
+    // 为什么：手机端每 5 秒 refresh 一次，每次整块重建 innerHTML，
+    // 会造成肉眼可见的「乱晃」（列表闪一下、滚动位置漂移、图片重新解码）。
+    // 内容没变就整段跳过，一次重排都不做。
+    var changed = (html !== lastListHtml);
+    if (changed) {
+      lastListHtml = html;
+      var keepTop = listEl.scrollTop;    // 不在底部时，等会儿要还原到这个位置
+      listEl.innerHTML = html;
+      // 贴底就跟着新消息走；否则把原位置还回去（**原来这里缺 else：一刷新就跳**）
+      if (nearBottom) listEl.scrollTop = listEl.scrollHeight;
+      else listEl.scrollTop = keepTop;
+    }
+
+    // 图片预览每轮都过一遍：已预览过的很便宜（只是 display 一下），
+    // 而「附件刚就绪」的那一条也能在下一轮补上预览（不能因为跳过重建就不做）
+    var imgs = listEl.querySelectorAll('[data-att]');
+    for (var j = 0; j < imgs.length; j++) previewIfImage(imgs[j]);
+  }
+
+  function previewIfImage(btn) {
+    var id = btn.getAttribute('data-att');
+    var m = state.messages.filter(function (x) { return x.id === id; })[0];
+    if (!m || !m.file || !m.file.ready) return;
+    if ((m.file.mime || '').indexOf('image/') !== 0) return;
+    if (blobCache[id]) { applyPreview(btn, blobCache[id]); return; }
+    API.attachment(id).then(function (r) {
+      if (!r || !r.ok) return;
+      var url = base64ToObjectURL(r.base64, r.mime);
+      if (!url) return;
+      blobCache[id] = url;
+      applyPreview(btn, url);
+    });
+  }
+
+  function applyPreview(btn, url) {
+    btn.classList.add('hasimg');
+    var w = btn.querySelector('.imgwrap');
+    if (!w) {
+      w = document.createElement('span');
+      w.className = 'imgwrap';
+      var im = document.createElement('img');
+      im.src = url;
+      im.alt = '';
+      w.appendChild(im);
+      btn.appendChild(w);
+    }
+    w.style.display = 'block';
+  }
+
+  function base64ToObjectURL(b64, mime) {
+    try {
+      var bin = atob(b64);
+      var len = bin.length;
+      var bytes = new Uint8Array(len);
+      for (var i = 0; i < len; i++) bytes[i] = bin.charCodeAt(i);
+      return URL.createObjectURL(new Blob([bytes], { type: mime || 'application/octet-stream' }));
+    } catch (e) { return null; }
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  刷新
+  // ══════════════════════════════════════════════════════════
+  function refresh(showBar) {
+    if (busy) return Promise.resolve();
+    busy = true;
+    if (showBar) busyOn(true);
+    return API.scan().then(function (r) {
+      busy = false;
+      busyOn(false);
+      if (!r || r.error) {
+        // 扫不动先重试一次（第一次请求/建目录经常抖），别让界面就这么空着
+        // —— 以前失败就直接显示"还没有消息"，用户看到的就是"消息全没了"。
+        if (!refresh.retried) {
+          refresh.retried = true;
+          $('hint').textContent = '第一次没读上，正在重试…';
+          return new Promise(function (res) { setTimeout(res, 1500); })
+            .then(function () { return refresh(showBar); });
+        }
+        $('hint').textContent = '⚠️ ' + ((r && r.error) || '扫描失败');
+        return;
+      }
+      refresh.retried = false;
+      state.messages = r.messages || [];
+      state.devices = r.devices || {};
+      state.deviceID = r.deviceID || '';
+      state.deviceName = r.deviceName || '';
+      state.root = r.root || '';
+      // core 模式的 snapshot 报的是"坚果云 WebDAV"；手机直连 Supabase 时得改过来，
+      // 否则手机上明明走的云表，却显示坚果云目录，排查时会被带沟里。
+      if (API.usingSupabase) {
+        state.root = 'Supabase · ' + String(API.sb.url || '').replace(/^https?:\/\//, '');
+      }
+      state.conversations = r.conversations || [];
+      state.activeConversation = r.activeConversation || '';
+      state.conversationName = r.conversationName || '';
+      if (r.owner) state.owner = r.owner;
+      state.engineKind = r.engineKind || state.engineKind || 'local';
+      state.davConfigured = !!r.davConfigured;
+      render();
+      var hintHtml = MINI
+        ? esc(state.deviceName || '')
+        : '同步目录：<span class="mono">' + esc(shortPath(state.root)) + '</span>' +
+          ' · 每 ' + Math.round((API.mode === 'core' ? 5000 : 3000) / 1000) + ' 秒自动检查一次新消息';
+      if (hintHtml !== lastHintHtml) {           // 一样就别碰 DOM，省一次重排
+        lastHintHtml = hintHtml;
+        if (MINI) $('hint').textContent = state.deviceName || '';
+        else $('hint').innerHTML = hintHtml;
+      }
+    });
+  }
+
+  function shortPath(p) {
+    if (!p) return '（未设置）';
+    var home = '/Users/';
+    if (p.indexOf(home) === 0) {
+      var rest = p.slice(home.length);
+      var i = rest.indexOf('/');
+      return '~' + (i >= 0 ? rest.slice(i) : '');
+    }
+    return p;
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  动作
+  // ══════════════════════════════════════════════════════════
+  // ══════════════════════════════════════════════════════════
+  //  发附件：可以一次发多个（多选 / 拖拽都行）
+  //  - Mac：拿到的是路径，走 xx.sendPath（**不会再弹一次选择框**）
+  //  - 手机/拖拽：拿到的是字节，走 xx.sendBytes（core 模式直接进 core.js）
+  //  两条路最后都落到"写进「文件/」+ 发一条带 sha256 的引用消息"
+  // ══════════════════════════════════════════════════════════
+
+  function setStaged(list) {
+    stagedFiles = list || [];
+    var el = $('staged');
+    if (!stagedFiles.length) {
+      el.className = 'staged';
+      $('stagedName').textContent = '';
+      return;
+    }
+    if (stagedFiles.length === 1) {
+      $('stagedName').textContent = '📎 ' + stagedFiles[0].name +
+        '（' + fmtSize(stagedFiles[0].size) + '）';
+    } else {
+      var total = stagedFiles.reduce(function (a, f) { return a + (f.size || 0); }, 0);
+      $('stagedName').textContent = '📎 ' + stagedFiles.length + ' 个文件（共 ' + fmtSize(total) + '）';
+    }
+    el.className = 'staged show';
+  }
+
+  function pushStaged(files) {
+    if (!files || !files.length) return;
+    setStaged(stagedFiles.concat(files));
+  }
+
+  function readBytes(file) {
+    return new Promise(function (res, rej) {
+      var fr = new FileReader();
+      fr.onload = function () { res(new Uint8Array(fr.result)); };
+      fr.onerror = function () { rej(new Error('读不了这个文件（可能太大）')); };
+      fr.readAsArrayBuffer(file);
+    });
+  }
+
+  /// 一个一个发，界面上显示"正在发送 2/5"。
+  /// 用 promise 链而不是 async/await —— 老一点的 Android WebView 不认 async。
+  function sendStaged(caption) {
+    var list = stagedFiles.slice();
+    if (!list.length) return Promise.resolve({ sent: 0, failed: [] });
+    var sent = 0, failed = [], i = 0;
+    $('send').disabled = true;
+    busyOn(true);
+
+    function step() {
+      if (i >= list.length) return Promise.resolve();
+      var f = list[i];
+      $('hint').textContent = '正在发送 ' + (i + 1) + '/' + list.length + '：' + f.name;
+      var p;
+      if (f.path) {
+        p = API.sendPath(f.path, f.name, caption);
+      } else {
+        p = readBytes(f.file).then(function (bytes) {
+          return API.sendBytes(f.name, bytes, caption);
+        });
+      }
+      return p.then(function (r) {
+        if (r && r.error) failed.push(f.name + '：' + r.error); else sent++;
+      }, function (e) {
+        failed.push(f.name + '：' + (e && e.message || e));
+      }).then(function () {
+        i++;
+        return step();
+      });
+    }
+
+    return step().then(function () {
+      busyOn(false);
+      $('send').disabled = false;
+      setStaged(null);
+      return { sent: sent, failed: failed };
+    });
+  }
+
+  function finishSend(res, txt) {
+    if (res.failed && res.failed.length) {
+      toast('有 ' + res.failed.length + ' 个没发出去：' + res.failed[0], true);
+    } else if (res.sent > 1) {
+      toast('已发出 ' + res.sent + ' 个文件');
+    } else if (txt) {
+      toast('已发出');
+    }
+    textEl.value = '';
+    autoGrow();
+    refresh(true);
+  }
+
+  function send() {
+    var t = textEl.value.trim();
+    if (!t && !stagedFiles.length) return;
+    if (stagedFiles.length) {
+      sendStaged(t).then(function (r) { finishSend(r, t); });
+      return;
+    }
+    $('send').disabled = true;
+    busyOn(true);
+    API.send(t).then(function (r) {
+      $('send').disabled = false;
+      busyOn(false);
+      if (!r || r.error) { toast((r && r.error) || '发送失败', true); return; }
+      textEl.value = '';
+      autoGrow();
+      refresh(true);
+    });
+  }
+
+  function pickFiles() {
+    busyOn(true);
+    API.pickFiles().then(function (r) {
+      busyOn(false);
+      if (!r || r.canceled) return;
+      if (r.error) { toast(r.error, true); return; }
+      var files = r.files || [];
+      if (!files.length) return;
+      pushStaged(files);
+      toast(files.length === 1
+        ? ('已选择：' + files[0].name + '，点「发送」传过去')
+        : ('已选择 ' + files.length + ' 个文件，点「发送」一起传过去'));
+      textEl.focus();
+    });
+  }
+
+  function markAllRead() {
+    var ids = state.messages.filter(function (m) { return m.unread; })
+                           .map(function (m) { return m.id; });
+    if (!ids.length) return;
+    busyOn(true);
+    API.markRead(ids).then(function (r) {
+      busyOn(false);
+      if (r && r.error) { toast(r.error, true); return; }
+      refresh(false);
+    });
+  }
+
+  /// 删一条消息：先确认，再从云端删掉（对方也会看不到）
+  function askDeleteMessage(id) {
+    var m = state.messages.filter(function (x) { return x.id === id; })[0];
+    var what = m ? (m.text ? m.text.slice(0, 30) : (m.file ? m.file.name : '这条消息')) : '这条消息';
+    if (!window.confirm('删掉「' + what + '」？\n\n'
+        + '会从云端真删掉，对方那边也看不到了。')) return;
+    busyOn(true);
+    API.deleteMessages([id]).then(function (r) {
+      busyOn(false);
+      if (!r || r.error) { toast((r && r.error) || '删除失败', true); return; }
+      if (r.errors && r.errors.length) { toast('删除失败：' + r.errors[0], true); return; }
+      toast('已删除');
+      autoReadFor = '';          // 消息集变了，重新算
+      refresh(false);
+    });
+  }
+
+  function openAttachment(id) {
+    var m = state.messages.filter(function (x) { return x.id === id; })[0];
+    if (!m || !m.file) return;
+    busyOn(true);
+    API.attachment(id).then(function (r) {
+      busyOn(false);
+      if (!r || r.error) { toast((r && r.error) || '取不到附件', true); return; }
+      var url = base64ToObjectURL(r.base64, r.mime);
+      if (!url) { toast('附件解码失败', true); return; }
+      var a = document.createElement('a');
+      a.href = url;
+      a.download = r.name || m.file.name;
+      a.rel = 'noopener';
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(function () { document.body.removeChild(a); }, 0);
+    });
+  }
+
+  function autoGrow() {
+    textEl.style.height = 'auto';
+    textEl.style.height = Math.min(150, Math.max(44, textEl.scrollHeight)) + 'px';
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  设置面板
+  // ══════════════════════════════════════════════════════════
+  function openSettings() {
+    logStep('打开设置面板');
+    // 整段兜住：任何一步出错都必须**把面板显示出来**，并把原因写在面板里。
+    // 以前只要中间哪一步抛异常，面板就不会弹出（手机上看到的就是「点了没反应」），
+    // 而且手机上根本看不到控制台。
+    try {
+      $('settingsErr').innerHTML = '';
+      // 名字/身份码优先用「本机存下来的」：
+      // 扫描失败（比如还没连上云）时 state.* 是空的，但用户明明存过 ——
+      // 以前这里就显示成"名字没了、号码没了"。
+      var savedName = state.deviceName || '';
+      if (!savedName) { try { savedName = localStorage.getItem('xx.deviceName') || ''; } catch (e) {} }
+      $('nameInput').value = savedName;
+      $('rootInput').value = state.root || '';
+      $('ownerInput').value = state.owner || '';
+      var core = (API.mode === 'core');       // 手机：只能用云端；Mac：两种都行
+      var hasDav = API.caps.indexOf('nutstore.set') >= 0;
+      // Mac 才显示"本地同步文件夹"这一项（手机上拿不到别的 App 的目录）
+      $('folderField').style.display = core ? 'none' : '';
+      $('pickFolder').style.display = core ? 'none' : '';
+      $('nutstoreField').style.display = hasDav ? '' : 'none';
+      $('nsTest').style.display = hasDav ? '' : 'none';
+      if (hasDav) {
+        API.nutstoreInfo().then(function (r) {
+          if (r && r.ok) {
+            if (!$('ownerInput').value && r.owner) $('ownerInput').value = r.owner;   // 本机存的身份码
+            $('nsUser').value = r.user || '';
+            var fullRoot = String(r.root || '');
+          var davHost = String(r.host || 'https://dav.jianguoyun.com/dav');
+          $('nsRoot').value = (fullRoot.indexOf(davHost) === 0)
+            ? fullRoot.slice(davHost.length).replace(/^\/+/, '')
+            : fullRoot;
+            $('nsState').innerHTML = r.configured
+              ? '<span class="ticks all">✓ 已配置</span>　当前会话：' +
+                ((state.engineKind === 'webdav') ? '直连坚果云' : '本地文件夹')
+              : '<span class="skew">还没配置</span>';
+          }
+        })['catch'](function () { /* 读不到账号信息不影响打开面板 */ });
+      }
+      try { loadDiag(); } catch (e2) { noteJsError('诊断信息：' + ((e2 && e2.message) || e2)); }
+    } catch (e) {
+      try {
+        $('settingsErr').innerHTML = '<div class="errbox">打开设置时出错：' +
+          esc((e && e.message) || e) + '<br>把这一行截图发我就能定位</div>';
+      } catch (e3) {}
+    }
+    $('settings').className = 'show';
+  }
+  function closeSettings() { $('settings').className = ''; }
+
+  function pickFolder() {
+    $('settingsErr').innerHTML = '<div class="warnbox">正在等你在系统面板里选…</div>';
+    busyOn(true);
+    API.pickFolder().then(function (r) {
+      busyOn(false);
+      if (!r || r.error) {
+        $('settingsErr').innerHTML = '<div class="errbox">' + esc((r && r.error) || '换目录失败') + '</div>';
+        return;
+      }
+      $('settingsErr').innerHTML = '<div class="warnbox">已换到：' + esc(r.root) + '</div>';
+      toast('同步文件夹已切换');
+      refresh(true);
+    });
+  }
+
+  /// 把"现在到底什么状态"拼出来。手机不在手边时，这一屏就是全部线索。
+  function loadDiag() {
+    var lines = [];
+    // 这几个字段是"卡在哪一步"的关键：配没配、有没有引擎、扫描最后一次是什么结果
+    lines.push('宿主模式：' + API.mode + (API.needsSetup ? '（还没配账号）' : '')
+      + '　davConfigured：' + (API.davConfigured ? '是' : '否')
+      + '　引擎：' + (API.engine ? '有' : '无')
+      + '　界面版本：' + (window.__xxVer || '?'));
+    lines.push('设备ID：' + (state.deviceID || '?') + '　名字：' + (state.deviceName || '?'));
+    lines.push('身份码：' + (state.owner || '（未设）'));
+    lines.push('当前会话：' + (state.conversationName || '?') + '　存储：' + (state.engineKind || '?'));
+    lines.push('同步位置：' + (state.root || '?'));
+    lines.push('会话数：' + ((state.conversations || []).length));
+    lines.push('界面：' + (MINI ? '小窗' : '完整') + '　UA：' + navigator.userAgent.slice(0, 80));
+    if (jsErrors.length) {
+      lines.push('', '── 脚本报错（' + jsErrors.length + '）──');
+      jsErrors.slice(-6).forEach(function (e) { lines.push(e); });
+    }
+    $('diagBox').textContent = lines.join('\n');
+    if (API.caps.indexOf('host.diag') >= 0) {
+      call('host.diag').then(function (r) {
+        $('diagBox').textContent += '\n\n── 宿主 ──\n' + JSON.stringify(r, null, 1);
+      });
+    }
+  }
+
+  function saveName() {
+    var n = $('nameInput').value.trim();
+    if (!n) { $('settingsErr').innerHTML = '<div class="errbox">名字不能为空</div>'; return; }
+    var ow = $('ownerInput').value.trim();
+    busyOn(true);
+    // 顺序很重要：
+    //   ① 身份码（走本机 prefs，离线也能成）
+    //   ② 名字**先落本机**（localStorage + 引擎配置）—— 保证"重启还在"
+    //   ③ 最后才试着同步到云端；这一步失败**绝不能**把刚存的本机值也弄丢
+    //     （以前顺序反了：云端一失败整个保存中断，界面上就"没了"）
+    API.setOwner(ow).then(function () {
+      try { localStorage.setItem('xx.deviceName', n); } catch (e) {}
+      if (API.engine && API.engine.cfg) API.engine.cfg.deviceName = n;
+      state.deviceName = n;
+      state.owner = ow || state.deviceID;
+      return API.setName(n).then(function (x) { return x; },
+        function (e) { return { error: String((e && e.message) || e) }; });
+    }).then(function (r) {
+      busyOn(false);
+      if (r && r.error) {
+        $('settingsErr').innerHTML = '<div class="warnbox">✓ 已存本机（重启还在）' +
+          '<br>云端暂时同步不上：' + esc(r.error) + '</div>';
+        toast('已存本机');
+      } else {
+        closeSettings();
+        toast('已保存');
+      }
+      refresh(false);
+    });
+  }
+
+  // ══════════════════════════════════════════════════════════
+  //  事件绑定
+  // ══════════════════════════════════════════════════════════
+  $('send').onclick = send;
+  $('attach').onclick = pickFiles;
+  $('miniOnly').onclick = function () { API.openFull(); };
+
+  // ── 拖拽：把文件拖到窗口上就能发（Mac 从访达拖，Windows/手机浏览器也支持）──
+  ['dragenter', 'dragover'].forEach(function (ev) {
+    document.addEventListener(ev, function (e) {
+      e.preventDefault();
+      document.body.classList.add('dragging');
+    });
+  });
+  document.addEventListener('dragleave', function (e) {
+    if (!e.relatedTarget) document.body.classList.remove('dragging');
+  });
+  document.addEventListener('drop', function (e) {
+    e.preventDefault();
+    document.body.classList.remove('dragging');
+    var dt = e.dataTransfer;
+    if (!dt || !dt.files || !dt.files.length) return;
+    var files = Array.prototype.slice.call(dt.files).map(function (f) {
+      return { name: f.name, size: f.size, file: f };
+    });
+    pushStaged(files);
+    toast(files.length === 1
+      ? ('拖进来：' + files[0].name + '，点「发送」传过去')
+      : ('拖进来 ' + files.length + ' 个文件，点「发送」一起传过去'));
+  });
+  $('clearStaged').onclick = function () { setStaged(null); };
+  $('readAll').onclick = markAllRead;
+  $('openSettings').onclick = openSettings;
+  $('closeSettings').onclick = closeSettings;
+  $('pickFolder').onclick = pickFolder;
+  // ══════════════════════════════════════════════════════════
+  //  会话（一个会话 = 一个同步文件夹）
+  // ══════════════════════════════════════════════════════════
+  function openConvs() {
+    $('convErr').innerHTML = '';
+    $('newConvField').style.display = 'none';
+    $('newConvName').value = '';
+    $('newConvPath').value = '';
+    renderConvList();
+    $('convs').className = 'show';
+  }
+  function closeConvs() { $('convs').className = ''; }
+
+  function renderConvList() {
+    var list = state.conversations || [];
+    var html = '';
+    list.forEach(function (c) {
+      var on = (c.id === state.activeConversation);
+      html += '<div class="convrow' + (on ? ' on' : '') + '">' +
+        '<button class="convpick" data-pick="' + esc(c.id) + '" title="切到这个会话">' +
+        '<span class="cn">' + esc(c.name) + (on ? ' <span class="ticks all">当前</span>' : '') + '</span>' +
+        '<span class="cp">' + ((c.kind === 'webdav') ? '☁ ' : '📁 ') +
+        esc(shortPath(c.path)) + '</span></button>' +
+        '<button class="txtbtn" data-rename="' + esc(c.id) + '" title="改名">✎</button>' +
+        (list.length > 1
+          ? '<button class="txtbtn" data-del="' + esc(c.id) + '" title="移除（云端文件不动）">✕</button>'
+          : '') +
+        '</div>';
+    });
+    $('convList').innerHTML = html || '<div class="hintline">还没有会话</div>';
+  }
+
+  function pickConversation(id) {
+    busyOn(true);
+    API.selectConversation(id).then(function (r) {
+      busyOn(false);
+      if (!r || r.error) { toast((r && r.error) || '切换失败', true); return; }
+      closeConvs();
+      refresh(true);
+    });
+  }
+
+  function askRemoveConversation(id) {
+    var c = (state.conversations || []).filter(function (x) { return x.id === id; })[0];
+    var nm = c ? c.name : '这个会话';
+    $('convErr').innerHTML = '<div class="warnbox">再点一次「移除」确认移除「' + esc(nm) +
+      '」。只删本地这条记录，云端文件夹和里面的消息都不动。</div>';
+    var btn = document.querySelector('[data-del="' + id + '"]');
+    if (btn) {
+      btn.textContent = '确认移除';
+      btn.onclick = function (e) {
+        e.stopPropagation();
+        busyOn(true);
+        API.removeConversation(id).then(function (r) {
+          busyOn(false);
+          if (!r || r.error) { toast((r && r.error) || '移除失败', true); return; }
+          $('convErr').innerHTML = '';
+          refresh(true).then(function () { renderConvList(); });
+        });
+      };
+    }
+  }
+
+  function updateNewConvHint() {
+    var kind = $('newConvKind').value;
+    if (kind === 'webdav') {
+      $('newConvPathLabel').textContent = '云端目录（两台设备填同一个）';
+      $('newConvPath').placeholder = '例如：我的坚果云/象信-妈妈';
+      $('newConvHint').innerHTML =
+        '直连坚果云：<b>不用装坚果云客户端</b>，只要在设置里填一次账号。' +
+        (API.caps.indexOf('nutstore.set') >= 0 && !(state.davConfigured)
+          ? ' ⚠️ <b>还没配账号</b> —— 先去右上角 ⚙ 里填邮箱和应用密码。' : '') +
+        ' 要和对方聊，就各自填<b>同一个云端目录名</b>（或者把目录共享给他）。';
+    } else {
+      $('newConvPathLabel').textContent = '本地同步文件夹';
+      $('newConvPath').placeholder = '留空会弹出文件夹选择框';
+      $('newConvHint').innerHTML =
+        '本地文件夹：放进坚果云同步范围，再把文件夹共享给对方。' +
+        '（和对方的"云端目录名"其实指向同一个地方，两种方式可以混用。）';
+    }
+  }
+
+  function createConversation() {
+    var nm = $('newConvName').value.trim();
+    if (!nm) { $('convErr').innerHTML = '<div class="errbox">给会话起个名字</div>'; return; }
+    var kind = $('newConvKind').value;
+    var pth = $('newConvPath').value.trim();
+    if (kind === 'webdav' && !pth) {
+      $('convErr').innerHTML = '<div class="errbox">直连坚果云要填云端目录名，比如 我的坚果云/象信-妈妈</div>';
+      return;
+    }
+    $('convErr').innerHTML = '<div class="warnbox">' +
+      ((kind === 'local' && !pth) ? '请在弹出的系统面板里选一个文件夹…' : '正在建…') + '</div>';
+    busyOn(true);
+    API.newConversation(nm, pth, kind).then(function (r) {
+      busyOn(false);
+      if (!r || r.error) {
+        $('convErr').innerHTML = '<div class="errbox">' + esc((r && r.error) || '建不了') + '</div>';
+        return;
+      }
+      if (r.canceled) { $('convErr').innerHTML = ''; return; }
+      closeConvs();
+      toast('会话「' + (r.name || nm) + '」建好了');
+      refresh(true);
+    });
+  }
+
+  $('convBtn').onclick = openConvs;
+  $('closeConvs').onclick = closeConvs;
+  $('convs').onclick = function (e) { if (e.target === $('convs')) closeConvs(); };
+  $('addConv').onclick = function () {
+    if ($('newConvField').style.display === 'none') {
+      $('newConvField').style.display = '';
+      updateNewConvHint();
+      $('newConvKind').onchange = updateNewConvHint;
+      $('newConvName').focus();
+      return;
+    }
+    createConversation();
+  };
+  $('convList').onclick = function (e) {
+    var t = e.target.closest ? e.target.closest('[data-pick],[data-rename],[data-del]') : null;
+    if (!t) return;
+    var pick = t.getAttribute('data-pick');
+    var ren = t.getAttribute('data-rename');
+    var del = t.getAttribute('data-del');
+    if (pick) { pickConversation(pick); return; }
+    if (ren) {
+      var c = (state.conversations || []).filter(function (x) { return x.id === ren; })[0];
+      var nm = prompt('改名', c ? c.name : '');
+      if (nm && nm.trim()) {
+        API.renameConversation(ren, nm.trim()).then(function () { refresh(false).then(renderConvList); });
+      }
+      return;
+    }
+    if (del) { askRemoveConversation(del); }
+  };
+
+  /// 留面包屑：**只有宿主声明了 host.log 才调**。
+  /// Mac 宿主没有这个动作，直接调会回 not_implemented，
+  /// 页面上就冒出一行莫名其妙的错误（用户看到的就是这个）。
+  function logStep(tag) {
+    try {
+      if (!hasHost || API.caps.indexOf('host.log') < 0) return;
+      call('host.log', { tag: tag })['catch'](function () {});
+    } catch (e) {}
+  }
+
+  /// 「云端目录」这格既接受目录名，也接受完整链接（https://…）：
+  /// 完整链接去掉查询串和末尾斜杠；目录名去掉两头的斜杠。
+  function normDav(v) {
+    var s = String(v || '').trim();
+    if (!s) return '';
+    if (/^https?:\/\//i.test(s)) {
+      s = s.replace(/[?#].*$/, '').replace(/\/+$/, '');
+      // 只填到 WebDAV 根（.../dav）的话，补上默认目录 ——
+      // 否则 消息/文件/已读/设备 会直接建在你坚果云的根目录里，很难看也很难收拾。
+      if (/\/dav$/i.test(s)) s = s + '/我的坚果云/象信';
+      return s;
+    }
+    return s.replace(/^\/+/, '').replace(/\/+$/, '');
+  }
+
+  $('nsSave').onclick = function () {
+    // 密码必须清洗：手机键盘会补空格，从聊天软件粘贴经常带换行或零宽空格（\u200b），
+    // 肉眼完全看不出来，但 Basic 认证会直接 401 —— 用户就会觉得"我密码明明是对的"。
+    var u = $('nsUser').value.replace(/[\s\u200b]+/g, ''),
+        pw = $('nsPass').value.replace(/[\s\u200b]+/g, ''),
+        rt = normDav($('nsRoot').value);
+    $('nsRoot').value = rt;      // 把规范化后的值写回框里，看得见
+    if (!u || !pw) {
+      $('settingsErr').innerHTML = '<div class="errbox">邮箱和应用密码都要填</div>';
+      return;
+    }
+    busyOn(true);
+    logStep('点了保存账号');
+    API.nutstoreSet(u, pw, rt || '我的坚果云/象信').then(function (res) {
+      busyOn(false);
+      if (!res || res.error) {
+        $('settingsErr').innerHTML = '<div class="errbox">' + esc((res && res.error) || '保存失败') + '</div>';
+        return;
+      }
+      $('settingsErr').innerHTML = '<div class="warnbox">✓ ' + esc(res.message || '连上了') +
+        (res.root ? '<br>实际用的地址：<span class="mono">' + esc(res.root) + '</span>' : '') + '</div>';
+      $('nsPass').value = '';
+      // 换了账号/目录 = 换了一个世界，本地的"已见"记录必须作废，
+      // 否则旧世界的消息 id 会让新世界的消息被当成"看过了"。
+      try { localStorage.removeItem('xx.seen'); } catch (e) {}
+      toast('坚果云已连上');
+      API.needsSetup = false;
+      API._initCore().then(function () {
+        if (API.needsSetup) { showSetup(); return; }   // 还是没配成
+        refresh(true);
+      });
+    });
+  };
+  $('diagBtn').onclick = function () { loadDiag(); };
+  $('nsTest').onclick = function () {
+    busyOn(true);
+    call('nutstore.test').then(function (res) {
+      busyOn(false);
+      $('settingsErr').innerHTML = (res && res.ok)
+        ? '<div class="warnbox">✓ ' + esc(res.message || '连上了') + '</div>'
+        : '<div class="errbox">' + esc((res && res.error) || '连不上') + '</div>';
+    });
+  };
+  $('saveSettings').onclick = saveName;
+  $('settings').onclick = function (e) { if (e.target === $('settings')) closeSettings(); };
+
+  textEl.addEventListener('input', autoGrow);
+  textEl.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(); }
+  });
+
+  listEl.addEventListener('click', function (e) {
+    var d = e.target.closest ? e.target.closest('[data-delmsg]') : null;
+    if (d) { askDeleteMessage(d.getAttribute('data-delmsg')); return; }
+    var b = e.target.closest ? e.target.closest('[data-att]') : null;
+    if (b && !b.disabled) openAttachment(b.getAttribute('data-att'));
+  });
+
+  window.addEventListener('keydown', function (e) {
+    if (e.key === 'Escape') {
+      if (MINI) { API.hideMini(); return; }   // 小窗里 Esc = 收起，不要关掉整个页面
+      closeConvs();
+      closeSettings();
+    }
+    if ((e.metaKey || e.ctrlKey) && e.key === 'r') { e.preventDefault(); refresh(true); }
+  });
+
+  // ══════════════════════════════════════════════════════════
+  //  启动
+  // ══════════════════════════════════════════════════════════
+  // ══════════════════════════════════════════════════════════
+  //  启动
+  // ══════════════════════════════════════════════════════════
+  function showDead(title, body, hint) {
+    listEl.innerHTML =
+      '<div class="empty"><div class="big">🐘</div>' +
+      '<div>' + esc(title) + '</div>' +
+      '<div style="font-size:12px;max-width:380px">' + esc(body) + '</div></div>';
+    $('hint').textContent = hint;
+    $('send').disabled = true;
+    $('attach').disabled = true;
+  }
+
+  /// 手机端首启：还没配坚果云账号。**这是个正常的中间状态，不是错误。**
+  function showSetup() {
+    listEl.innerHTML =
+      '<div class="empty"><div class="big">🐘</div>' +
+      '<div>还差一步：配置坚果云账号</div>' +
+      '<div style="font-size:12px;max-width:400px">' +
+      '象信 Lite 手机版是<b>直连坚果云</b>的（不用装坚果云 App）。' +
+      '点右上角 ⚙，填「登录邮箱」和「应用密码」就行。' +
+      '<br><br>应用密码去坚果云网页版「账户信息 → 安全选项 → 添加应用」生成。' +
+      '</div>' +
+      '<button class="primary" id="setupBtn" style="margin-top:16px">去填账号</button></div>';
+    var b = document.getElementById('setupBtn');
+    if (b) b.onclick = openSettings;
+    $('hint').textContent = '还没配置坚果云账号';
+  }
+
+  // ── 崩溃 / 报错都得看得见（手机不在手边时，这是唯一的线索）──
+  var jsErrors = [];
+  function noteJsError(txt) {
+    if (jsErrors.length < 20) jsErrors.push(txt);
+    var h = $('hint');
+    if (h) h.textContent = '⚠️ 脚本报错：' + txt;
+  }
+  window.addEventListener('error', function (e) {
+    noteJsError((e.message || 'error') + ' @' + (e.lineno || 0) + ':' + (e.colno || 0));
+  });
+  window.addEventListener('unhandledrejection', function (e) {
+    var r = e && e.reason;
+    noteJsError('Promise 未处理：' + ((r && (r.message || r)) || r));
+  });
+
+  function checkCrashLog() {
+    if (API.caps.indexOf('host.lastCrash') < 0) return;
+    call('host.lastCrash').then(function (r) {
+      if (!r || !r.ok || !r.text) return;
+      var el = document.createElement('div');
+      el.id = 'crashbar';
+      el.innerHTML =
+        '<div style="display:flex;align-items:center;gap:8px">' +
+        '<b>上次运行崩溃了</b><span class="sub">（点「详情」，截图发我就能定位）</span>' +
+        '<span style="flex:1"></span>' +
+        '<button class="txtbtn" id="crashToggle">详情</button>' +
+        '<button class="txtbtn" id="crashDismiss">知道了</button></div>' +
+        '<pre id="crashText" style="display:none"></pre>';
+      document.body.insertBefore(el, document.getElementById('list'));
+      $('crashToggle').onclick = function () {
+        var pre = $('crashText');
+        pre.style.display = (pre.style.display === 'none') ? 'block' : 'none';
+        pre.textContent = r.text;
+      };
+      $('crashDismiss').onclick = function () {
+        call('host.clearCrash');
+        el.remove();
+      };
+    });
+  }
+
+  /// 起来之后开始轮询。手机走网络，每次刷新都是往返 —— 别 3 秒一次，太费流量。
+  function startPolling() {
+    var interval = (API.mode === 'core') ? 5000 : 3000;
+    refresh(true).then(function () {
+      setInterval(function () {
+        if (document.hidden) return;      // 页面在后台就不刷，省电省流量
+        refresh(false);
+      }, interval);
+      setInterval(function () { render(); }, 30000);   // 每 30 秒重算一次"几分钟前"
+    });
+  }
+
+  if (!hasHost) {
+    // ── 没有宿主：手机浏览器直连 Supabase ──
+    // 这就是"手机端什么都不用装"的那条路：一个网页 + 能上网。
+    var sbCfg = null;
+    try { sbCfg = JSON.parse(localStorage.getItem('xx.supabase') || 'null'); } catch (e0) {}
+    // URL 里带 #k=<连接密钥> 就自动填好 —— 省得在手机上敲 36 个字符。
+    // 填完立刻把地址栏里的密钥抹掉，之后只从本机 localStorage 读。
+    var hashKey = '';
+    try {
+      var mh = /[#&]k=([^&]+)/.exec(location.hash || location.href);
+      if (mh) hashKey = decodeURIComponent(mh[1]);
+    } catch (e0) {}
+    if (hashKey) {
+      sbCfg = { url: XX_SB_URL, key: XX_SB_KEY, secret: hashKey };
+      try { localStorage.setItem('xx.supabase', JSON.stringify(sbCfg)); } catch (e0) {}
+      try { history.replaceState(null, '', location.pathname); } catch (e0) {}
+    }
+    if (!sbCfg || !sbCfg.secret) {
+      var entered = window.prompt(
+        '象信 Lite · 连接设置\n\n请填入连接密钥（xxl_ 开头那串）。\n' +
+        '只保存在这台设备的浏览器里，不会外传。', '');
+      if (!entered || !String(entered).trim()) {
+        showDead('需要连接密钥',
+          '这个页面直连云表，需要一次性的连接密钥才能读写消息。',
+          '⚠️ 还没填连接密钥');
+        return;
+      }
+      sbCfg = { url: XX_SB_URL, key: XX_SB_KEY, secret: String(entered).trim() };
+      try { localStorage.setItem('xx.supabase', JSON.stringify(sbCfg)); } catch (e0) {}
+    }
+    API.initSupabase(sbCfg.url, sbCfg.key, sbCfg.secret).then(function () {
+      startPolling();
+    }).catch(function (e) {
+      showDead('连不上云表',
+        String((e && e.message) || e) + '\n（密钥填错的话，清掉本站数据重开就能重填）',
+        '⚠️ 连接失败');
+    });
+    return;
+  }
+
+  if (false) {
+    showDead('没有检测到象览Air 宿主',
+      '象信 Lite 依赖宿主提供的文件能力来读写消息。请在象览Air 里通过「应用」菜单打开它。',
+      '（独立打开模式：只能看界面，不能收发）');
+  } else {
+    // 先问宿主"你有哪些能力"，再决定走哪条路：
+    //   Mac 宿主 → 自带协议逻辑（xx.*）
+    //   Android 宿主 → 只给原始文件操作，协议走 core.js
+    call('info').then(function (info) {
+      if (!info || info.error) {
+        showDead('和宿主握手失败', String((info && info.error) || '未知错误'), '⚠️ 握手失败');
+        return;
+      }
+      return API.init(info).then(function () {
+        try { sessionStorage.removeItem('xx.bootTried'); } catch (e2) {}   // 连上了就清零重试计数
+        checkCrashLog();
+        if (API.mode === 'none') {
+          showDead('宿主能力不足',
+            '这个宿主既没有 xx.*（协议动作）也没有 fs.*（文件动作），没法读写消息。',
+            '⚠️ 宿主能力不足');
+          return;
+        }
+        if (API.needsSetup) { showSetup(); return; }
+        startPolling();
+      });
+    }).catch(function (e) {
+      // 首次加载失败太常见了：第一次请求常常失败（服务端冷启动 / 网络还没醒 /
+      // 第一次建目录撞上"父目录还不存在"），第二次就好。
+      // 以前第一次失败就甩一个"初始化失败"整页，用户看到的就是"加载失败！但是又能用"。
+      // 这里自动重载重试，最多两次（用 sessionStorage 记数，关掉页面就清零，不会无限重载）。
+      var tried = 0;
+      try { tried = parseInt(sessionStorage.getItem('xx.bootTried') || '0', 10) || 0; } catch (e2) {}
+      if (tried < 2) {
+        try { sessionStorage.setItem('xx.bootTried', String(tried + 1)); } catch (e2) {}
+        var h = $('hint');
+        if (h) h.textContent = '第一次没连上，正在重试（' + (tried + 1) + '/2）…';
+        setTimeout(function () { location.reload(); }, 1500);
+        return;
+      }
+      showDead('初始化失败', String(e && e.message || e), '⚠️ 初始化失败');
+    });
+  }
+})();
+</script>
+</body>
+</html>
