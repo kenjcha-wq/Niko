@@ -382,7 +382,10 @@
       owner: (config.owner && String(config.owner).toUpperCase()) || null,
       msgDir: '消息', fileDir: '文件', readDir: '已读', deviceDir: '设备',
       seenLimit: config.seenLimit || DEFAULT_SEEN_LIMIT,
-      state: config.state || null          // {get(), set(obj)} 用来持久化"已见"集合
+      state: config.state || null,         // {get(), set(obj)} 用来持久化"已见"集合
+      // 个人资料（头像 / 账号 / 口令哈希）。**引擎不认识这些字段的含义**，
+      // 只负责原样写进 设备/<ID>.json —— 这样以后加字段不用改引擎。
+      profile: config.profile || {}
     };
 
     var messages = [];
@@ -415,12 +418,18 @@
 
     function announceSelf(now) {
       var t = now == null ? Date.now() : now;
-      var body = JSON.stringify({
+      var body = {
         v: 1, deviceID: cfg.deviceID, name: cfg.deviceName, platform: cfg.platform,
         owner: myOwner(),
         lastSeen: t, lastSeenISO: isoString(t, localTZMinutes())
+      };
+      // 个人资料：头像 / 账号 / 口令哈希。空值不上传，免得把对方的好数据覆盖成空。
+      var pf = cfg.profile || {};
+      Object.keys(pf).forEach(function (k) {
+        if (pf[k] !== null && pf[k] !== undefined && pf[k] !== '') body[k] = pf[k];
       });
-      return io.writeText(cfg.deviceDir + '/' + cfg.deviceID + '.json', body, true);
+      return io.writeText(cfg.deviceDir + '/' + cfg.deviceID + '.json',
+                          JSON.stringify(body), true);
     }
 
     /// 设备ID -> 身份码。**没写 owner 的老设备文件按"它自己一个人一台设备"处理**（向后兼容）。
@@ -456,6 +465,34 @@
               if (o && o.deviceID && o.name) out[String(o.deviceID).toUpperCase()] = o.name;
             } catch (err) { /* 坏文件跳过 */ }
           }).catch(function () { /* 读不到就算了 */ }));
+        });
+        return Promise.all(jobs).then(function () { return out; });
+      }).catch(function () { return {}; });
+    }
+
+    /// 设备ID -> {name, owner, avatar, account}
+    ///
+    /// ⚠️ 存在的意义不只是头像：原来 snapshot() 分别调 deviceNames() 和
+    ///    deviceOwners()，**同一批设备文件要被读两遍**。手机到 Supabase
+    ///    单次往返约 1.2 秒，这一下就省掉一整轮往返。
+    function deviceProfiles() {
+      return io.listDir(cfg.deviceDir).then(function (list) {
+        var out = {}, jobs = [];
+        (list || []).forEach(function (e) {
+          if (e.isDir || !/\.json$/.test(e.name) || /^temp-/.test(e.name)) return;
+          jobs.push(io.readText(cfg.deviceDir + '/' + e.name).then(function (txt) {
+            try {
+              var o = JSON.parse(txt);
+              if (!o || !o.deviceID) return;
+              var id = String(o.deviceID).toUpperCase();
+              out[id] = {
+                name: o.name ? String(o.name) : '',
+                owner: o.owner ? String(o.owner).toUpperCase() : id,
+                avatar: typeof o.avatar === 'string' ? o.avatar : '',
+                account: o.account ? String(o.account) : ''
+              };
+            } catch (err) { /* 坏文件跳过 */ }
+          }).catch(function () {}));
         });
         return Promise.all(jobs).then(function () { return out; });
       }).catch(function () { return {}; });
@@ -695,9 +732,17 @@
     ///   每台设备 1× GET 已读文件
     function snapshot() {
       return scan().then(function () {
-        return Promise.all([deviceNames(), knownDevices(), listFiles(), deviceOwners()])
+        return Promise.all([deviceProfiles(), knownDevices(), listFiles()])
           .then(function (r) {
-            var names = r[0], devices = r[1], fileSizes = r[2], owners = r[3];
+            var profs = r[0], devices = r[1], fileSizes = r[2];
+            var names = {}, owners = {};
+            Object.keys(profs).forEach(function (id) {
+              if (profs[id].name) names[id] = profs[id].name;
+              owners[id] = profs[id].owner || id;
+            });
+            // 自己这台的资料以本机配置为准（云端那份可能还是旧的）
+            owners[cfg.deviceID] = myOwner();
+            if (!names[cfg.deviceID]) names[cfg.deviceID] = cfg.deviceName;
             return Promise.all(devices.map(function (d) {
               return readStateOf(d).then(function (x) { return [d, x]; });
             })).then(function (pairs) {
@@ -707,10 +752,15 @@
               var myState = states[cfg.deviceID] ? states[cfg.deviceID].state : null;
               var deviceMap = {};
               devices.forEach(function (d) {
+                var pf = profs[d] || {};
                 deviceMap[d] = {
                   name: names[d] || (d === cfg.deviceID ? cfg.deviceName : d),
                   isMe: d === cfg.deviceID,
-                  hasReadFile: !!(states[d] && states[d].available)
+                  hasReadFile: !!(states[d] && states[d].available),
+                  // 界面靠这两个字段画头像。对方那头像是**别的设备写进来的**，
+                  // 页面那边会当成不可信输入再校验一次（只认 data:image/*）。
+                  avatar: pf.avatar || '',
+                  account: pf.account || ''
                 };
               });
 
@@ -783,6 +833,7 @@
       myOwner: myOwner,
       announceSelf: announceSelf,
       deviceNames: deviceNames,
+      deviceProfiles: deviceProfiles,
       scan: scan,
       markSeen: markSeen,
       sendText: sendText,
