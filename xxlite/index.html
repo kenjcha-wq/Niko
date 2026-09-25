@@ -1180,12 +1180,27 @@ body.mini .mecard{padding:0}
   var CALL_TIMEOUT_MS = (typeof window.__xxCallTimeout === 'number' && window.__xxCallTimeout > 0)
     ? window.__xxCallTimeout : 60000;
 
+  // 最近几次桥调用：有没有回话、用了多久。
+  // 「消息发出去了但输入框没清」这种事，光看界面完全不知道为什么 ——
+  // 有这张表就能看见「xx.send 发出去了，但没回话」。诊断面板里会显示。
+  var callLog = [];
+  function logCall(action, ms, ok) {
+    callLog.push(action + '  ' + (ok ? '✓' : '✗ 没回话/报错') + '  ' + ms + 'ms');
+    if (callLog.length > 16) callLog.shift();
+  }
+
   function call(action, payload) {
     return new Promise(function (resolve) {
       if (!hasHost) { resolve({ error: '没有宿主：象信 Lite 需要跑在象览Air 里' }); return; }
       var id = ++seq;
       var done = false;
-      var finish = function (v) { if (done) return; done = true; resolve(v); };
+      var t0 = Date.now();
+      var finish = function (v) {
+        if (done) return;
+        done = true;
+        logCall(action, Date.now() - t0, !(v && v.error));
+        resolve(v);
+      };
       waiters[id] = finish;
       // ⚠️ 没有超时的话，宿主只要**不回话**，这个 Promise 就永远不结束：
       //    · send() 里的 $('send').disabled 会卡在 true
@@ -2155,7 +2170,40 @@ body.mini .mecard{padding:0}
     API.send(t).then(function (r) {
       $('send').disabled = false;
       busyOn(false);
-      if (!r || r.error) { toast((r && r.error) || '发送失败', true); return; }
+      if (!r || r.error) {
+        // ⚠️ 真机上出现过：「消息已经发出去了，字却还留在输入框里」。
+        //    原因是**消息落盘了，但回给页面的那条回执没送到** ——
+        //    页面停在"失败"分支上，既不清输入框也不刷新，看着就像没发出去。
+        //    所以失败时不能直接认输：刷一次列表，看这条到底在不在。
+        //    在 → 就是发成功了（用户要的是结果，不是内部谁对谁错）。
+        var err = (r && r.error) || '发送失败';
+        var before = {};
+        (state.messages || []).forEach(function (m) { before[m.id] = 1; });
+        refresh(true).then(function () {
+          var found = null;
+          (state.messages || []).forEach(function (m) {
+            if (before[m.id]) return;              // 只看这一轮新出现的
+            if (m.text !== t) return;
+            var mine = m.isMe || (state.owner &&
+              (((state.owners || {})[m.from] || m.from) === state.owner));
+            if (mine) found = m;
+          });
+          if (found) {
+            textEl.value = '';
+            autoGrow();
+            toast('已发出');
+            // ⚠️ 这里**故意不调 noteJsError** —— 那是往屏幕上打
+            //    「⚠️ 脚本报错」的，可这一次消息其实发成功了，
+            //    报个红字只会把人吓一跳。留在 callLog 里就够了
+            //    （诊断面板里能看到那条 xx.send 是 ✗）。
+          } else {
+            textEl.value = t;   // 真没发出去：把字放回去，别让人白打一遍
+            autoGrow();
+            toast(err, true);
+          }
+        });
+        return;
+      }
       textEl.value = '';
       autoGrow();
       refresh(true);
@@ -2378,6 +2426,10 @@ body.mini .mecard{padding:0}
     if (jsErrors.length) {
       lines.push('', '── 脚本报错（' + jsErrors.length + '）──');
       jsErrors.slice(-6).forEach(function (e) { lines.push(e); });
+    }
+    if (callLog.length) {
+      lines.push('', '── 最近的桥调用（✗ = 宿主没回话或报错）──');
+      callLog.slice(-10).forEach(function (l) { lines.push('  ' + l); });
     }
     $('diagBox').textContent = lines.join('\n');
     if (API.caps.indexOf('host.diag') >= 0) {
