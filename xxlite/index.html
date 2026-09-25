@@ -784,6 +784,16 @@ body.view-setup .convbtn,body.view-setup #readAll,body.view-setup #miniOnly{disp
 body.mini #home{display:none !important}
 body.mini .backbtn,body.mini .appname{display:none}
 body.mini .mecard{padding:0}
+
+/* ── 设置里的「已知设备 / 身份」列表 ── */
+.devrow{
+  display:flex; align-items:center; gap:8px; padding:6px 0;
+  border-top:1px solid var(--line2); font-size:12px;
+}
+.devrow:first-child{border-top:0}
+.devtxt{flex:1; min-width:0; display:flex; flex-direction:column; gap:1px}
+.devtxt b{font-weight:500; color:var(--fg); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.devtxt .mono{color:var(--dim2); font-size:11px}
 </style>
 </style>
 <!-- ══════════════════════════════════════════════════════════════
@@ -940,8 +950,13 @@ body.mini .mecard{padding:0}
         <label>用户号</label>
         <input id="ownerInput" placeholder="留空 = 只有这一台设备">
         <div class="hintline" style="margin-top:5px;white-space:normal">
-          <b>同一个人的多台设备填同一个值</b>（比如 Mac 和手机都填 <span class="mono">ME0001</span>）。
-          不填的话，你在手机上读了自己 Mac 发的话，会被误当成「对方已读」。
+          <b>同一个人的多台设备必须填同一个值</b>（比如 Mac 和手机都填 <span class="mono">KENJCHA</span>）。
+          ⚠️ 填得不一样的话，你自己另一台设备发来的消息会被当成「别人发的」，
+          <b>全挤到左边去</b>。
+        </div>
+        <div class="field" style="margin-top:10px">
+          <label>已知设备的身份（对不上就点「并成同一人」）</label>
+          <div id="devList"></div>
         </div>
       </div>
     </div>
@@ -1155,18 +1170,44 @@ body.mini .mecard{padding:0}
     }
     r(v);
   };
+  // 这些动作要**等用户亲自操作**，不能加超时：
+  // 用户挑文件挑了三分钟是正常的，超时会把还在进行的选择误判成失败。
+  var CALL_NO_TIMEOUT = {
+    'fs.pickFile': 1, 'fs.pickFiles': 1, 'fs.pickFolder': 1, 'xx.pickFolder': 1,
+    'xx.saveAttachment': 1, 'xx.sendFile': 1, 'xx.sendPath': 1, 'xx.sendBytes': 1
+  };
+  // 超时时长允许被测试覆盖（window.__xxCallTimeout），生产就是 60 秒
+  var CALL_TIMEOUT_MS = (typeof window.__xxCallTimeout === 'number' && window.__xxCallTimeout > 0)
+    ? window.__xxCallTimeout : 60000;
+
   function call(action, payload) {
     return new Promise(function (resolve) {
       if (!hasHost) { resolve({ error: '没有宿主：象信 Lite 需要跑在象览Air 里' }); return; }
       var id = ++seq;
-      waiters[id] = resolve;
+      var done = false;
+      var finish = function (v) { if (done) return; done = true; resolve(v); };
+      waiters[id] = finish;
+      // ⚠️ 没有超时的话，宿主只要**不回话**，这个 Promise 就永远不结束：
+      //    · send() 里的 $('send').disabled 会卡在 true
+      //      → 界面上就是「发送按钮按下去再也没反应」
+      //    · refresh() 里的 busy 会卡在 true
+      //      → 消息列表再也不刷新（发出去的消息不出现）
+      //    这两种**都不报任何错**，是最难查的一类故障。
+      if (!CALL_NO_TIMEOUT[action]) {
+        setTimeout(function () {
+          if (waiters[id] !== finish) return;      // 已经回过了，别覆盖真结果
+          delete waiters[id];
+          finish({ error: '宿主没有响应（' + action + ' 超过 ' +
+                          Math.round(CALL_TIMEOUT_MS / 1000) + ' 秒）' });
+        }, CALL_TIMEOUT_MS);
+      }
       var obj = Object.assign({ id: id, action: action }, payload || {});
       try {
         if (hasWebKit) window.webkit.messageHandlers.app.postMessage(obj);
         else XiangxinHost.post(JSON.stringify(obj));
       } catch (e) {
         delete waiters[id];
-        resolve({ error: '桥调用失败：' + e.message });
+        finish({ error: '桥调用失败：' + e.message });
       }
     });
   }
@@ -1682,7 +1723,7 @@ body.mini .mecard{padding:0}
 
   var state = { messages: [], deviceID: '', deviceName: '', root: '', unreadCount: 0 };
   var stagedFiles = [];       // 待发送的附件（可能多个）：{name, size, path?|file?}
-  var polling = false, busy = false;
+  var polling = false, busy = false, busySince = 0, ownerLoaded = false;
   var blobCache = {};         // id -> objectURL（图片预览用）
 
   var $ = function (id) { return document.getElementById(id); };
@@ -1935,11 +1976,24 @@ body.mini .mecard{padding:0}
   //  刷新
   // ══════════════════════════════════════════════════════════
   function refresh(showBar) {
-    if (busy) return Promise.resolve();
+    // ⚠️ busy 是**整页共享**的防抖标志。某次 scan 永远不结束的话，
+    //    busy 会一直卡在 true，之后**所有** refresh 都变成空操作 ——
+    //    界面上就是「消息列表再也不更新 / 发出去的消息不出现」。
+    //    加了 call() 的超时之后基本不会发生了，这里再兜一道。
+    if (busy) {
+      if (busySince && (Date.now() - busySince) > 90000) {
+        noteJsError('refresh 卡了 ' + Math.round((Date.now() - busySince) / 1000) +
+                    ' 秒，强制放行一次');
+      } else {
+        return Promise.resolve();
+      }
+    }
     busy = true;
+    busySince = Date.now();
     if (showBar) busyOn(true);
     return API.scan().then(function (r) {
       busy = false;
+      busySince = 0;
       busyOn(false);
       if (!r || r.error) {
         // 扫不动先重试一次（第一次请求/建目录经常抖），别让界面就这么空着
@@ -2247,7 +2301,15 @@ body.mini .mecard{padding:0}
       if (!savedName) { try { savedName = localStorage.getItem('xx.deviceName') || ''; } catch (e) {} }
       $('nameInput').value = savedName;
       $('rootInput').value = state.root || '';
-      $('ownerInput').value = state.owner || '';
+      // ⚠️ 「名字」早就有本机兜底，「用户号」原来**没有** —— 这是个真 bug：
+      //    扫描还没回来（或扫描失败）时 state.owner 是空的，输入框就是空的；
+      //    这时点「保存」会把用户号**清成空**，于是这台设备变成"自己一个人"，
+      //    自己另一台设备发来的消息全被当成别人发的
+      //    → **消息全挤到一边**（就是踩过好几次的那个症状）。
+      var savedOwner = state.owner || '';
+      if (!savedOwner) { try { savedOwner = localStorage.getItem('xx.owner') || ''; } catch (e) {} }
+      $('ownerInput').value = savedOwner;
+      ownerLoaded = !!savedOwner;
       var core = (API.mode === 'core');       // 手机：只能用云端；Mac：两种都行
       var hasDav = API.caps.indexOf('nutstore.set') >= 0;
       // Mac 才显示"本地同步文件夹"这一项（手机上拿不到别的 App 的目录）
@@ -2329,17 +2391,22 @@ body.mini .mecard{padding:0}
     var n = $('nameInput').value.trim();
     if (!n) { $('settingsErr').innerHTML = '<div class="errbox">名字不能为空</div>'; return; }
     var ow = $('ownerInput').value.trim();
+    // 输入框是空的、而且我们**从来没成功读到过**原值 —— 那就不要写。
+    // 空 == 用户想清空，和 空 == 我们没读到，是两件事，不能一律当成前者。
+    var skipOwner = (!ow && !ownerLoaded);
     busyOn(true);
     // 顺序很重要：
     //   ① 身份码（走本机 prefs，离线也能成）
     //   ② 名字**先落本机**（localStorage + 引擎配置）—— 保证"重启还在"
     //   ③ 最后才试着同步到云端；这一步失败**绝不能**把刚存的本机值也弄丢
     //     （以前顺序反了：云端一失败整个保存中断，界面上就"没了"）
-    API.setOwner(ow).then(function () {
+    (skipOwner ? Promise.resolve({ ok: true, skipped: true }) : API.setOwner(ow))
+      .then(function () {
       try { localStorage.setItem('xx.deviceName', n); } catch (e) {}
+      if (!skipOwner) { try { localStorage.setItem('xx.owner', ow); } catch (e) {} }
       if (API.engine && API.engine.cfg) API.engine.cfg.deviceName = n;
       state.deviceName = n;
-      state.owner = ow || state.deviceID;
+      if (!skipOwner) state.owner = ow || state.deviceID;
       return API.setName(n).then(function (x) { return x; },
         function (e) { return { error: String((e && e.message) || e) }; });
     }).then(function (r) {
@@ -2352,6 +2419,14 @@ body.mini .mecard{padding:0}
         return;
       }
       // 名字/用户号存住了，接着落个人资料（头像 / 账号 / 密码）
+      if (skipOwner) {
+        $('settingsErr').innerHTML = '<div class="warnbox">⚠️ <b>用户号这次没有改</b>：' +
+          '还没读到本机原来的值（扫描可能还没回来）。这是刻意的 —— ' +
+          '免得把用户号清空，导致自己另一台设备发来的消息被当成别人的、全挤到一边。' +
+          '<br>连上以后再来改一次就好。</div>';
+        refresh(false);
+        return;
+      }
       saveProfileExtras().then(function (pr) {
         var cloud = pr && pr.cloud;
         if (cloud && cloud.ok === false && cloud.reason === 'host-mode') {
@@ -2938,10 +3013,39 @@ body.mini .mecard{padding:0}
     if ($('accountInput')) $('accountInput').value = XXAuth.account();
     if ($('passInput')) { $('passInput').value = ''; $('passConfirm').value = ''; }
     renderAvatarPreview();
+    renderDeviceList();
     Theme.syncSeg();
     if (typeof Status !== 'undefined') Status.syncSeg();
     Wallpaper.syncSwatches();
     updateAuthNote();
+  }
+
+  /// 把「哪台设备用了哪个用户号」列出来。
+  /// 存在的意义：消息挤到一边时，光看输入框根本不知道为什么 ——
+  /// 得让人看见"我这台是 KENJCHA，那台是 QALFWV"，才知道该改成什么。
+  function renderDeviceList() {
+    var box = $('devList');
+    if (!box) return;
+    var ids = Object.keys(state.devices || {});
+    if (!ids.length) {
+      box.innerHTML = '<div class="hintline">还没发现别的设备（只看到这一台）</div>';
+      return;
+    }
+    var mine = state.owner || '';
+    var html = '';
+    ids.sort().forEach(function (d) {
+      var rec = state.devices[d] || {};
+      var ow = (state.owners || {})[d] || d;
+      var same = (ow === mine);
+      html += '<div class="devrow">' +
+          '<span class="devtxt"><b>' + esc(rec.name || d) + '</b>' +
+          '<span class="mono">' + esc(ow) + (rec.isMe ? ' · 本机' : '') + '</span></span>' +
+          (same ? '<span class="ticks all">同一身份</span>'
+                : '<button class="txtbtn" data-adopt="' + esc(ow) + '" ' +
+                  'title="把我的用户号也改成这个，这样我们就算同一个人">并成同一人</button>') +
+        '</div>';
+    });
+    box.innerHTML = html;
   }
 
   function updateAuthNote() {
@@ -3232,6 +3336,20 @@ body.mini .mecard{padding:0}
       $('homeConvs').onclick = function (e) {
         var b = (e.target && e.target.closest) ? e.target.closest('[data-enter]') : null;
         if (b) enterConv(b.getAttribute('data-enter'));
+      };
+    }
+    // 「并成同一人」：把我的用户号填成那台设备的值。
+    // 不替他直接保存 —— 让用户看着输入框里的变化再按保存，动作可见。
+    if ($('devList')) {
+      $('devList').onclick = function (e) {
+        var b = (e.target && e.target.closest) ? e.target.closest('[data-adopt]') : null;
+        if (!b) return;
+        var ow = b.getAttribute('data-adopt');
+        $('ownerInput').value = ow;
+        ownerLoaded = true;      // 用户显式选的，允许写进去
+        $('settingsErr').innerHTML = '<div class="warnbox">已把用户号填成 <b>' + esc(ow) +
+          '</b>。点下面的「保存」生效 —— 之后这台设备发过的消息就会认成你自己发的。' +
+          '<br>⚠️ 别忘了<b>另一台设备也要填成同一个值</b>，两边一致才有效。</div>';
       };
     }
     if ($('statusSeg')) {
