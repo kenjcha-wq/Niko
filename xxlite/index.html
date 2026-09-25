@@ -1,8 +1,8 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="gtalk-light">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>象信 Lite</title>
 <style>
   :root{
@@ -252,152 +252,476 @@
 
 <style id="xx-im-skin">
 /* ══════════════════════════════════════════════════════════════
-   手机 IM 皮肤（追加在最后，靠后覆盖；只改观感，不动任何逻辑）
+   主题层 · Gtalk 风格双主题
+   ──────────────────────────────────────────────────────────────
+   设计原则：**颜色全部走语义 token，布局规则一律不许写死颜色**。
+   这样加一套主题 = 加一组 token 值，不用碰任何布局。
+
+   注入方式：<html data-theme="gtalk-light"> / "gtalk-dark"
+   切换由 <head> 里的 bootstrap 脚本在首屏绘制前完成（避免闪白/闪黑）。
+
+   Gtalk（2005-2010 桌面版）的视觉特征，这里是刻意还原的：
+     · 窗口 chrome 是浅灰 #f2f2f2，内容区纯白
+     · 分割线又细又淡，几乎没有阴影
+     · 圆角极小（2~3px），方正是那个年代的味道
+     · 蓝色 #1a73e8 做唯一强调色
+     · 绿色 #0f9d58 = 「在线」小圆点
+     · 排版紧凑：行距小、留白少、信息密度高
+   ⚠️ 刻意**不**复刻 Gtalk 的无气泡纯文本行 —— 手机上看文本行没法区分
+      谁说的。保留气泡，但做成扁平小圆角，兼顾可读性与年代感。
    ══════════════════════════════════════════════════════════════ */
-:root{
-  --im-bg:#0d1015; --im-bar:rgba(22,26,33,.92); --im-line:rgba(255,255,255,.075);
-  --im-me:#2f6df6; --im-you:#1d222b; --im-txt:#e9edf4; --im-dim:#8892a4;
+
+/* ── ① Gtalk 浅色经典（原版那个样子）──────────────────────── */
+html[data-theme="gtalk-light"]{
+  --bg:#ffffff;
+  --panel:#f2f2f2;          /* Gtalk 的窗口 chrome 灰 */
+  --panel2:#ffffff;         /* 输入框：白底 + 细边框 */
+  --panel3:#e8eaed;         /* 悬停面 */
+  --line:#d4d4d4;           /* 主分割线 */
+  --line2:#ebebeb;          /* 消息之间的淡线 */
+  --fg:#1f1f1f;
+  --dim:#5f6368;
+  --dim2:#8a9096;
+
+  --brand:#1a73e8;
+  --brand2:#4d90fe;
+  --brand-ink:#ffffff;
+  --brand-grad:linear-gradient(180deg,#4d90fe,#1a73e8);
+  --brand-soft:#e8f0fe;     /* 选中行/悬停高亮（Gtalk 联系人列表就是这色）*/
+
+  --ok:#0f9d58;             /* 在线绿 */
+  --warn:#f4b400;
+  --bad:#d93025;
+
+  --bub-you-bg:#f1f3f4; --bub-you-fg:#1f1f1f; --bub-you-line:#e4e6e8;
+  --bub-me-bg:#1a73e8;  --bub-me-fg:#ffffff;  --bub-me-line:transparent;
+
+  --av-bg:#dadce0; --av-fg:#5f6368;
+  --av-me-bg:#1a73e8; --av-me-fg:#ffffff;
+
+  --scrim:rgba(32,33,36,.42);
+  --hover:var(--brand-soft);
+  --wall-default:linear-gradient(180deg,#ffffff,#f8f9fa);
+
+  --radius:3px;             /* 那个年代的圆角就是这么小 */
+  --radius-lg:6px;
+  --fs:13.5px;              /* 紧凑排版 */
+  --bub-pad:7px 11px;
 }
 
-/* ① 高度：手机上的命门。
+/* ── ② Gtalk 深色（同一套布局与密度，换配色）─────────────── */
+html[data-theme="gtalk-dark"]{
+  --bg:#0d1015;
+  --panel:#161b24;
+  --panel2:#1d222b;
+  --panel3:#232a38;
+  --line:#252c3a;
+  --line2:#1e242f;
+  --fg:#e9edf4;
+  --dim:#8892a4;
+  --dim2:#66707f;
+
+  --brand:#3d7bfb;
+  --brand2:#5b93ff;
+  --brand-ink:#ffffff;
+  --brand-grad:linear-gradient(180deg,#4d87ff,#2f63e8);
+  --brand-soft:#1b2740;
+
+  --ok:#3ddc84;
+  --warn:#f2c94c;
+  --bad:#ff6b6b;
+
+  --bub-you-bg:#1d222b; --bub-you-fg:#e9edf4; --bub-you-line:#252c3a;
+  --bub-me-bg:#2f6df6;  --bub-me-fg:#ffffff;  --bub-me-line:transparent;
+
+  --av-bg:#232a38; --av-fg:#8892a4;
+  --av-me-bg:#2f6df6; --av-me-fg:#ffffff;
+
+  --scrim:rgba(6,8,12,.72);
+  --hover:var(--panel3);
+  --wall-default:radial-gradient(1200px 400px at 50% -10%, rgba(61,123,251,.10), transparent 70%);
+
+  --radius:3px;
+  --radius-lg:6px;
+  --fs:13.5px;
+  --bub-pad:7px 11px;
+}
+
+/* ── ③ 兼容层：老规则里的 --im-* 名字，全部指向新 token ──
+   （基础样式块和媒体查询里还有引用，留着这条就不用满地改）*/
+html[data-theme]{
+  --im-bg:var(--bg); --im-bar:var(--panel); --im-line:var(--line);
+  --im-me:var(--brand); --im-you:var(--panel2);
+  --im-txt:var(--fg); --im-dim:var(--dim2);
+}
+
+/* ── ④ 把基础样式块里写死的颜色拉回 token ──────────────────
+   基础块（第一个 <style>）是深色写死的。这里覆盖掉，
+   这样两套主题都不用改布局规则。 */
+.logo{background:var(--brand-grad)}
+.badge{background:var(--brand);color:var(--brand-ink)}
+.badge.zero{background:var(--panel3);color:var(--dim2)}
+.iconbtn{background:var(--panel3);color:var(--dim)}
+.iconbtn:hover{color:var(--fg);background:var(--hover)}
+.txtbtn{background:var(--panel3);color:var(--dim)}
+.txtbtn:hover{color:var(--fg);background:var(--hover)}
+.avatar{background:var(--av-bg);color:var(--av-fg)}
+.row.me .avatar{background:var(--av-me-bg);color:var(--av-me-fg)}
+.bubble{
+  background:var(--bub-you-bg); color:var(--bub-you-fg);
+  border:1px solid var(--bub-you-line);
+  border-radius:var(--radius-lg); border-bottom-left-radius:2px;
+  padding:var(--bub-pad);
+}
+.row.me .bubble{
+  background:var(--bub-me-bg); color:var(--bub-me-fg);
+  border-color:var(--bub-me-line);
+  border-radius:var(--radius-lg); border-bottom-right-radius:2px;
+}
+.row.me .att{background:transparent;border-color:var(--bub-me-line)}
+#send{background:var(--brand-grad);color:var(--brand-ink);border-radius:var(--radius-lg)}
+.primary{background:var(--brand-grad);color:var(--brand-ink);border-radius:var(--radius-lg)}
+.convbtn{background:var(--panel3);color:var(--fg);border-radius:var(--radius)}
+.convbtn:hover{background:var(--hover)}
+#settings,#convs{background:var(--scrim)}
+.convrow.on .convpick{border-color:var(--brand);background:var(--brand-soft)}
+body.dragging::after{color:var(--brand-ink);background:var(--brand-soft);
+  border-color:var(--brand2);color:var(--brand)}
+.delmsg:hover{color:var(--bad);background:rgba(217,48,37,.10)}
+.ticks.all{color:var(--ok)}
+.diag{background:var(--panel3);border-color:var(--line);color:var(--dim)}
+
+/* ── ⑤ 高度：手机上的命门（保留原来的 dvh 修法）────────────
    100% = 布局视口，地址栏一出现可视区就矮一截 → 底部输入条被顶出屏幕。
-   100dvh 是「动态视口高度」，会跟着地址栏收放，输入条永远在屏幕里。 */
+   100dvh 是「动态视口高度」，跟着地址栏收放，输入条永远在屏幕里。 */
 html,body{
-  height:100%;
-  height:100dvh;
-  overflow:hidden;
+  height:100%; height:100dvh; overflow:hidden;
   -webkit-text-size-adjust:100%;
-  background:var(--im-bg);
+  background:var(--bg);
 }
-body{background:var(--im-bg); color:var(--im-txt); overscroll-behavior:none}
+body{background:var(--bg); color:var(--fg); overscroll-behavior:none}
 
-/* ② 顶栏：玻璃质感 */
+/* ── ⑥ 顶栏：扁平细线，不做玻璃拟态（Gtalk 是纯平的）─────── */
 header{
-  background:var(--im-bar);
-  border-bottom:1px solid var(--im-line);
-  padding:10px 12px;
-  padding-top:calc(10px + env(safe-area-inset-top));
-  -webkit-backdrop-filter:saturate(1.5) blur(14px);
-  backdrop-filter:saturate(1.5) blur(14px);
+  background:var(--panel);
+  border-bottom:1px solid var(--line);
+  padding:7px 10px;
+  padding-top:calc(7px + env(safe-area-inset-top));
+  gap:9px;
   z-index:10;
 }
-header .logo{font-size:18px; border-radius:11px}
-header .title{font-size:15px; align-items:baseline}
-header .convbtn{font-size:15.5px; font-weight:600; letter-spacing:.2px}
-header .sub{font-size:11px; color:var(--im-dim)}
-header .badge{font-size:11px; min-width:20px; height:20px; border-radius:10px;
-              display:inline-flex; align-items:center; justify-content:center}
-header .txtbtn,header .iconbtn{font-size:12px}
+header .logo{font-size:17px;border-radius:var(--radius);overflow:hidden}
+header .logo img{width:100%;height:100%;display:block}
+header .title{font-size:14px;align-items:baseline;gap:6px}
+header .convbtn{font-size:14px;font-weight:600;letter-spacing:0;padding:1px 6px}
+header .sub{font-size:11px;color:var(--dim)}
+header .badge{font-size:10.5px;min-width:18px;height:18px;border-radius:9px;
+  display:inline-flex;align-items:center;justify-content:center;padding:0 6px}
+header .txtbtn,header .iconbtn{font-size:11.5px;padding:3px 8px;border-radius:var(--radius)}
 
-/* ③ 消息区 */
+/* 我自己：头像 + 绿色在线点。点一下开设置 —— Gtalk 里点头像就是改状态。 */
+.me-btn{
+  display:flex;align-items:center;gap:6px;padding:2px 3px;border-radius:var(--radius);
+  background:none;flex:none;
+}
+.me-btn:hover{background:var(--hover)}
+.me-av{
+  position:relative;width:26px;height:26px;border-radius:var(--radius);flex:none;
+  background:var(--av-me-bg);color:var(--av-me-fg);overflow:hidden;
+  display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;
+}
+.me-av img{width:100%;height:100%;object-fit:cover;display:block}
+/* 在线点：Gtalk 的标志性绿点。用伪元素而不是额外标签 —— 头像内容会被 JS
+   整块替换（图片 / 首字母），多塞一个真元素每次都得重新插回去，容易漏。 */
+.me-av::after{
+  content:'';position:absolute;right:-1px;bottom:-1px;
+  width:8px;height:8px;border-radius:50%;
+  background:var(--ok);border:2px solid var(--panel);
+}
+
+/* ── ⑦ 消息区 ─────────────────────────────────────────────── */
 #list{
-  padding:14px 12px 8px;
+  padding:12px 12px 6px;
   overscroll-behavior:contain;
   -webkit-overflow-scrolling:touch;
   scrollbar-width:none;
-  background:
-    radial-gradient(1200px 400px at 50% -10%, rgba(47,109,246,.10), transparent 70%),
-    var(--im-bg);
+  /* 背景壁纸：--wall-img 由设置写进来；没设就用主题默认 */
+  background-color:var(--wall-color,transparent);
+  background-image:var(--wall-img,var(--wall-default));
+  background-size:cover; background-position:center;
 }
 #list::-webkit-scrollbar{display:none}
 
-.row{margin-bottom:12px; gap:7px}
-.avatar{width:30px; height:30px; border-radius:10px; font-size:11.5px; flex:none}
-.col{max-width:min(78%,560px); gap:3px}
+.row{margin-bottom:9px;gap:7px}
+.avatar{
+  width:28px;height:28px;border-radius:var(--radius);font-size:11.5px;flex:none;
+  margin-bottom:15px;overflow:hidden;
+}
+.avatar img{width:100%;height:100%;object-fit:cover;display:block}
+.col{max-width:min(78%,560px);gap:2px}
 
 .bubble{
-  padding:9px 13px; border-radius:18px; font-size:15px; line-height:1.45;
-  box-shadow:0 1px 2px rgba(0,0,0,.20);
+  font-size:var(--fs); line-height:1.5;
+  box-shadow:none;                 /* 那个年代没有投影 */
   word-break:break-word;
 }
-/* 对方：左上直角（气泡尾巴感）；自己：右上直角 + 渐变 */
-.row .bubble{background:var(--im-you); border-top-left-radius:6px}
-.row.me .bubble{
-  background:linear-gradient(135deg,#3d7bfb,#2f63e8);
-  color:#fff; border-top-left-radius:18px; border-top-right-radius:6px;
-}
-.who{font-size:11px; color:var(--im-dim); margin:0 0 2px 2px}
-.meta{font-size:10.5px; color:var(--im-dim); opacity:.85; margin-top:2px}
+.who{font-size:11px;color:var(--dim);margin:0 0 1px 3px;font-weight:500}
+.meta{font-size:10.5px;color:var(--dim2);opacity:.9;margin-top:1px}
 .ticks{font-size:11px}
-.ticks.all{color:#5aa2ff}
+.ticks.all{color:var(--ok)}
 
-/* 附件卡片圆一点 */
-.att{border-radius:16px}
-.row.me .att{background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.18)}
+.att{border-radius:var(--radius-lg);border-color:var(--line);background:var(--panel2)}
+.att .sz,.att .nm{color:inherit}
+.row.me .att .sz{color:var(--bub-me-fg);opacity:.8}
 
-/* ④ 底部输入条：胶囊输入框 + 圆角发送键，iPhone 横条留白 */
-footer{
-  background:var(--im-bar);
-  border-top:1px solid var(--im-line);
-  padding:8px 10px;
-  padding-bottom:calc(8px + env(safe-area-inset-bottom));
-  -webkit-backdrop-filter:saturate(1.5) blur(14px);
-  backdrop-filter:saturate(1.5) blur(14px);
-  gap:6px;
+/* 日期分隔条：Gtalk 那种居中的细字小标签 */
+.daysep{
+  text-align:center;font-size:10.5px;color:var(--dim2);
+  margin:10px 0 8px;display:flex;align-items:center;gap:8px;
 }
-.compose{gap:8px; align-items:flex-end; min-width:0}
+.daysep::before,.daysep::after{
+  content:'';flex:1;height:1px;background:var(--line2);
+}
+
+/* ── ⑧ 底部输入条 ─────────────────────────────────────────── */
+footer{
+  background:var(--panel);
+  border-top:1px solid var(--line);
+  padding:7px 9px;
+  padding-bottom:calc(7px + env(safe-area-inset-bottom));
+  gap:5px;
+}
+.compose{gap:7px;align-items:flex-end;min-width:0}
 textarea{
-  font-size:16px;              /* ← 小于 16px 时 iOS 会自动把整页放大 */
+  font-size:16px;              /* ⚠️ 小于 16px 时 iOS 会自动把整页放大 */
   line-height:1.4;
-  /* ⚠️ 关键：flex 子项默认 min-width:auto —— 占位文字太长时它撑着不缩，
-     会把右边的「发送」按钮整个顶出屏幕。手机上表现就是"输入框不对/没有发送键"。
-     实测：390pt 宽的手机上，发送键完全在屏幕外。 */
+  /* ⚠️ flex 子项默认 min-width:auto —— 占位文字太长时它撑着不缩，
+     会把右边的「发送」按钮整个顶出屏幕（390pt 实测发送键完全在屏幕外）。 */
   min-width:0;
-  min-height:42px; height:42px; max-height:118px;
-  padding:10px 15px;
-  border-radius:21px;
-  background:#1d222b; border:1px solid var(--im-line); color:var(--im-txt);
+  min-height:40px;height:40px;max-height:118px;
+  padding:9px 12px;
+  border-radius:var(--radius-lg);
+  background:var(--panel2);border:1px solid var(--line);color:var(--fg);
   transition:border-color .15s;
 }
-textarea:focus{border-color:rgba(47,109,246,.55)}
+textarea::placeholder{color:var(--dim2)}
+textarea:focus{border-color:var(--brand);outline:none}
 #send{
-  height:42px; min-width:62px; padding:0 18px;
-  border-radius:21px; font-size:15px; font-weight:600;
-  background:linear-gradient(135deg,#3d7bfb,#2f63e8);
-  box-shadow:0 2px 10px rgba(47,109,246,.35);
+  height:40px;min-width:60px;padding:0 16px;
+  border-radius:var(--radius-lg);font-size:14px;font-weight:600;flex:none;
 }
-#send:active{transform:scale(.96)}
+#send:active{transform:translateY(1px)}
+#send:disabled{opacity:.45;cursor:default}
 #attach{
-  width:42px!important; height:42px!important; border-radius:21px!important;
-  font-size:17px!important; background:#1d222b; border:1px solid var(--im-line);
+  width:40px!important;height:40px!important;border-radius:var(--radius-lg)!important;
+  font-size:16px!important;background:var(--panel3);border:1px solid var(--line);
 }
-.hintline{font-size:10px; color:var(--im-dim); opacity:.65; padding-top:4px;
-          white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
-.staged{border-radius:12px}
+.hintline{font-size:10px;color:var(--dim2);opacity:.75;padding-top:3px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.staged{border-radius:var(--radius);background:var(--panel3);border-color:var(--line)}
 
-/* ⑤ 小窗（Mac 悬浮球）保持紧凑，别被上面这些撑大 */
-body.mini header{padding:8px 10px}
-body.mini footer{padding:7px 9px 9px}
-body.mini textarea{height:38px; min-height:38px; font-size:15px}
-body.mini #send{height:38px}
-body.mini #attach{width:38px!important; height:38px!important}
-body.mini .bubble{font-size:14px}
-body.mini #list{padding:12px 10px 4px}
+/* ── ⑨ 设置面板：分区化 ───────────────────────────────────── */
+.card{
+  background:var(--panel);border:1px solid var(--line);
+  border-radius:var(--radius-lg);padding:0;
+  width:min(560px,100%);max-height:88vh;overflow:auto;
+}
+.card h3{
+  margin:0;font-size:14px;font-weight:600;
+  padding:12px 16px;border-bottom:1px solid var(--line);
+  position:sticky;top:0;background:var(--panel);z-index:2;
+}
+/* 分区标题：Gtalk 式的细字小节 + 上分割线 */
+.sect{padding:14px 16px;border-bottom:1px solid var(--line2)}
+.sect:last-of-type{border-bottom:0}
+.sect > h4{
+  margin:0 0 10px;font-size:11px;font-weight:600;color:var(--dim);
+  text-transform:uppercase;letter-spacing:.6px;
+}
+.card .desc{color:var(--dim2);font-size:11.5px;margin:0 0 12px;line-height:1.6}
+.field{margin-bottom:12px}
+.field:last-child{margin-bottom:0}
+.field label{display:block;font-size:11.5px;color:var(--dim);margin-bottom:4px}
+.field input,.field select{
+  width:100%;padding:8px 10px;background:var(--panel2);color:var(--fg);
+  border:1px solid var(--line);border-radius:var(--radius);outline:none;
+  font-size:13.5px;
+}
+.field input:focus,.field select:focus{border-color:var(--brand)}
+.field input[readonly]{color:var(--dim);background:var(--panel3)}
+.kv{font-size:11.5px;color:var(--dim);display:grid;grid-template-columns:84px 1fr;gap:4px 10px}
+.kv b{color:var(--fg);font-weight:500;word-break:break-all}
+.card .actions{
+  display:flex;gap:8px;justify-content:flex-end;
+  padding:12px 16px;border-top:1px solid var(--line);
+  position:sticky;bottom:0;background:var(--panel);
+}
+.primary,.ghost{padding:7px 14px;border-radius:var(--radius);font-size:13px;font-weight:600}
+.ghost{background:var(--panel3);color:var(--dim);font-weight:500}
+.ghost:hover{color:var(--fg);background:var(--hover)}
+.warnbox{
+  background:rgba(244,180,0,.10);border:1px solid rgba(244,180,0,.35);
+  color:var(--warn);border-radius:var(--radius);padding:8px 10px;font-size:11.5px;margin-bottom:12px;
+}
+.errbox{
+  background:rgba(217,48,37,.08);border:1px solid rgba(217,48,37,.32);
+  color:var(--bad);border-radius:var(--radius);padding:8px 10px;font-size:11.5px;margin-bottom:12px;
+}
 
-/* ⑥ 连接设置表单（替代被手机屏蔽的 window.prompt） */
+/* 头像编辑行 */
+.avrow{display:flex;align-items:center;gap:12px}
+.avbig{
+  width:64px;height:64px;border-radius:var(--radius);flex:none;overflow:hidden;
+  background:var(--av-bg);color:var(--av-fg);
+  display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:600;
+}
+.avbig img{width:100%;height:100%;object-fit:cover;display:block}
+.avacts{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1}
+.avacts .row2{display:flex;gap:6px;flex-wrap:wrap}
+.avacts button{
+  padding:5px 10px;border-radius:var(--radius);font-size:12px;
+  background:var(--panel3);color:var(--dim);border:1px solid var(--line);
+}
+.avacts button:hover{color:var(--fg);background:var(--hover)}
+
+/* 分段选择器（主题 / 背景）—— Gtalk 时代的按钮组 */
+.seg{display:flex;gap:0;border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}
+.seg button{
+  flex:1;padding:7px 10px;font-size:12.5px;background:var(--panel2);color:var(--dim);
+  border-right:1px solid var(--line);
+}
+.seg button:last-child{border-right:0}
+.seg button.on{background:var(--brand);color:var(--brand-ink);font-weight:600}
+.seg button:not(.on):hover{background:var(--hover);color:var(--fg)}
+
+/* 背景色板 */
+.swatches{display:flex;gap:7px;flex-wrap:wrap;margin-top:9px}
+.sw{
+  width:30px;height:30px;border-radius:var(--radius);border:1px solid var(--line);
+  cursor:pointer;padding:0;position:relative;
+}
+.sw.on{outline:2px solid var(--brand);outline-offset:1px}
+.sw.none::after{
+  content:'✕';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;
+  font-size:12px;color:var(--dim);
+}
+
+/* ── ⑩ 登录门禁（账号/密码）───────────────────────────────── */
+#gate{
+  position:fixed;inset:0;background:var(--bg);z-index:90;
+  display:none;flex-direction:column;align-items:center;justify-content:center;
+  padding:24px;
+}
+#gate.show{display:flex}
+.gatebox{width:min(330px,100%);text-align:center}
+.gatebox .glogo{width:64px;height:64px;margin:0 auto 14px}
+.gatebox .glogo img,.gatebox .glogo svg{width:100%;height:100%;display:block}
+.gatebox .gname{font-size:18px;font-weight:600;margin-bottom:3px}
+.gatebox .gsub{font-size:12px;color:var(--dim);margin-bottom:20px}
+.gatebox input{
+  width:100%;box-sizing:border-box;font-size:16px;padding:11px 13px;margin-bottom:9px;
+  background:var(--panel2);color:var(--fg);border:1px solid var(--line);
+  border-radius:var(--radius);outline:none;
+}
+.gatebox input:focus{border-color:var(--brand)}
+.gatebox button.go{
+  width:100%;height:42px;border:0;border-radius:var(--radius);font-size:14.5px;font-weight:600;
+  color:var(--brand-ink);background:var(--brand-grad);
+}
+.gatebox button.go:disabled{opacity:.6}
+.gatebox .gerr{
+  font-size:11.5px;color:var(--bad);background:rgba(217,48,37,.08);
+  border:1px solid rgba(217,48,37,.3);border-radius:var(--radius);
+  padding:7px 9px;margin-bottom:10px;text-align:left;word-break:break-all;
+}
+.gatebox .gfoot{font-size:11px;color:var(--dim2);margin-top:16px;line-height:1.7}
+.gatebox .gfoot a{color:var(--brand);cursor:pointer;text-decoration:none}
+
+/* ── ⑪ 连接设置表单（替代被手机屏蔽的 window.prompt）──────── */
 .setup{max-width:340px;margin:8vh auto 0;padding:0 18px;text-align:center}
 .setup .big{font-size:52px;line-height:1;margin-bottom:14px}
 .setup .st{font-size:19px;font-weight:600;margin-bottom:8px}
-.setup .sd{font-size:13px;color:var(--im-dim);line-height:1.6;margin-bottom:18px}
-.setup .se{font-size:12px;color:#ff8b8b;background:rgba(255,107,107,.10);
-           border:1px solid rgba(255,107,107,.28);border-radius:10px;
-           padding:8px 10px;margin-bottom:12px;text-align:left;word-break:break-all}
+.setup .sd{font-size:13px;color:var(--dim);line-height:1.6;margin-bottom:18px}
+.setup .se{font-size:11.5px;color:var(--bad);background:rgba(217,48,37,.08);
+  border:1px solid rgba(217,48,37,.3);border-radius:var(--radius);
+  padding:8px 10px;margin-bottom:12px;text-align:left;word-break:break-all}
 .setup input{
-  width:100%;box-sizing:border-box;font-size:16px;padding:13px 15px;margin-bottom:10px;
-  background:#1d222b;color:var(--im-txt);border:1px solid var(--im-line);border-radius:14px;outline:none;
+  width:100%;box-sizing:border-box;font-size:16px;padding:12px 14px;margin-bottom:10px;
+  background:var(--panel2);color:var(--fg);border:1px solid var(--line);
+  border-radius:var(--radius);outline:none;
 }
-.setup input:focus{border-color:rgba(47,109,246,.6)}
+.setup input:focus{border-color:var(--brand)}
 .setup button{
-  width:100%;height:46px;border:0;border-radius:14px;font-size:16px;font-weight:600;color:#fff;
-  background:linear-gradient(135deg,#3d7bfb,#2f63e8);box-shadow:0 4px 16px rgba(47,109,246,.35);
+  width:100%;height:44px;border:0;border-radius:var(--radius);font-size:15px;font-weight:600;
+  color:var(--brand-ink);background:var(--brand-grad);
 }
 .setup button:disabled{opacity:.6}
+
+/* 空状态 */
+.empty .big{font-size:34px;opacity:.9}
+
+/* ── ⑫ 小窗（Mac 悬浮球）保持紧凑 ─────────────────────────── */
+body.mini header{padding:6px 9px}
+body.mini .me-btn,body.mini #openSettings,body.mini .hintline,
+body.mini #mode,body.mini #attach{display:none}
+body.mini footer{padding:6px 8px 8px}
+body.mini textarea{height:36px;min-height:36px;font-size:15px}
+body.mini #send{height:36px;min-width:54px;padding:0 13px}
+body.mini .bubble{font-size:13.5px}
+body.mini #list{padding:10px 9px 4px}
+body.mini .avatar{width:24px;height:24px;font-size:11px;margin-bottom:13px}
+body.mini .row{margin-bottom:8px}
+body.mini .col{max-width:86%}
+body.mini .title{font-size:13px}
+body.mini .me-av{width:22px;height:22px}
 </style>
+
+</style>
+<!-- ══════════════════════════════════════════════════════════════
+     主题引导 · 必须在首屏绘制前跑完
+     ──────────────────────────────────────────────────────────────
+     ⚠️ 这段脚本故意放在 <head> 最末尾、<body> 之前：
+        放到 </body> 前的话，页面会先用默认主题画一帧，
+        深色用户会看到刺眼的白色闪一下（浅色用户看到黑闪）。
+     ══════════════════════════════════════════════════════════════ -->
+<script>
+(function () {
+  var t = 'gtalk-light';
+  try {
+    var v = localStorage.getItem('xx.theme');
+    if (v === 'gtalk-light' || v === 'gtalk-dark') t = v;
+  } catch (e) { /* 隐私模式下 localStorage 会抛，用默认主题就是了 */ }
+  document.documentElement.setAttribute('data-theme', t);
+
+  // 背景壁纸也在这里恢复：晚一步就会「先白底再变壁纸」地闪一下
+  try {
+    var w = JSON.parse(localStorage.getItem('xx.wallpaper') || 'null');
+    if (w && w.kind === 'color' && w.value) {
+      document.documentElement.style.setProperty('--wall-color', w.value);
+      document.documentElement.style.setProperty('--wall-img', 'none');
+    } else if (w && w.kind === 'image' && w.value) {
+      document.documentElement.style.setProperty('--wall-img', 'url("' + w.value + '")');
+    }
+  } catch (e) { /* 壁纸坏了不影响启动 */ }
+})();
+</script>
+
+<!-- ── 图标 / 添加到主屏 ─────────────────────────────────────
+     相对路径：手机上从 /xxlite/ 取，Mac 上从应用目录取，同一个页面两处都对。 -->
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#1a73e8" id="themeColor">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="象信">
+<meta name="mobile-web-app-capable" content="yes">
 </head>
 <body>
 
 <header>
-  <div class="logo">🐘</div>
+  <div class="logo"><img src="icon.svg" alt="象信" id="brandLogo"></div>
   <div>
     <div class="title">
       <button class="convbtn" id="convBtn" title="切换 / 新建会话">会话 ▾</button>
@@ -409,7 +733,11 @@ body.mini #list{padding:12px 10px 4px}
   <span class="badge zero" id="unread" title="未读">0</span>
   <button class="txtbtn" id="readAll" title="把未读全部标记为已读">全部已读</button>
   <button class="txtbtn" id="miniOnly" title="打开完整的象信页面">完整页面</button>
-  <button class="iconbtn" id="openSettings" title="设置">⚙</button>
+  <!-- 点自己的头像 = 改资料/状态。这是 Gtalk 的做法（右上角那个状态菜单），
+       比一个孤零零的 ⚙ 更像即时通讯。 id 保持 openSettings，老绑定不用改。 -->
+  <button class="me-btn" id="openSettings" title="我的资料 / 设置">
+    <span class="me-av" id="meAv"></span>
+  </button>
 </header>
 <div id="bar"></div>
 
@@ -432,67 +760,141 @@ body.mini #list{padding:12px 10px 4px}
 <div id="settings">
   <div class="card">
     <h3>设置</h3>
-    <div class="desc">象信 Lite 把每条消息写成一个独立文件，放进一个同步文件夹；文件传输走同一套机制。</div>
-    <div id="settingsErr"></div>
-    <div class="field">
-      <label>我在对方那里显示的名字</label>
-      <input id="nameInput" placeholder="例如：牛牛的 MacBook">
-    </div>
-    <div class="field">
-      <label>我的身份码</label>
-      <input id="ownerInput" placeholder="留空 = 只有这一台设备">
-      <div class="hintline" style="margin-top:6px">
-        <b>同一个人的多台设备填同一个值</b>（比如你的 Mac 和手机都填 <span class="mono">ME0001</span>）。
-        不填的话，你在手机上读了自己 Mac 发的话，会被误当成"对方已读"。
+    <div id="settingsErr" style="padding:0 16px"></div>
+
+    <!-- ── ① 个人资料 ─────────────────────────────────────── -->
+    <div class="sect">
+      <h4>个人资料</h4>
+      <div class="avrow">
+        <div class="avbig" id="avBig">象</div>
+        <div class="avacts">
+          <div class="row2">
+            <button id="avPick">换头像…</button>
+            <button id="avClear">清除</button>
+          </div>
+          <div class="hintline" id="avHint">
+            头像会同步到云端，对方也能看到。建议方形图，会自动裁成正方形。
+          </div>
+        </div>
+      </div>
+      <div class="field" style="margin-top:14px">
+        <label>用户名（对方看到的名字）</label>
+        <input id="nameInput" placeholder="例如：乌鸦">
+      </div>
+      <div class="field">
+        <label>用户号</label>
+        <input id="ownerInput" placeholder="留空 = 只有这一台设备">
+        <div class="hintline" style="margin-top:5px;white-space:normal">
+          <b>同一个人的多台设备填同一个值</b>（比如 Mac 和手机都填 <span class="mono">ME0001</span>）。
+          不填的话，你在手机上读了自己 Mac 发的话，会被误当成「对方已读」。
+        </div>
       </div>
     </div>
-    <div class="field" id="folderField">
-      <label>同步文件夹（两台设备必须指向同一个、且已在同步范围内）</label>
-      <input id="rootInput" readonly>
-      <div class="hintline" style="margin-top:6px">换目录会立即生效；换完这个文件夹里会自动建好 消息/ 文件/ 已读/ 设备/</div>
-    </div>
-    <div class="field" id="nutstoreField" style="display:none">
-      <label>坚果云账号（WebDAV 直连）</label>
-      <!-- ⚠️ 刻意不用 autocomplete / type=password：MIUI 的自动填充服务介入 WebView 的密码框时
-           会闪退（真机上就是这么崩的）。改用 type=text + -webkit-text-security 遮住显示，
-           同时原生侧也禁掉了 importantForAutofill。 -->
-      <input id="nsUser" type="text" autocomplete="off" autocorrect="off" spellcheck="false"
-             placeholder="坚果云登录邮箱">
-      <input id="nsPass" type="text" autocomplete="off" autocorrect="off" spellcheck="false"
-             class="masked" placeholder="应用密码（不是登录密码）" style="margin-top:6px">
-      <input id="nsRoot" placeholder="云端目录（可粘完整链接）" style="margin-top:6px">
-      <div class="hintline" style="margin-top:6px">
-        这一格<b>既能填目录名，也能直接粘完整链接</b>：
-        <span class="mono">https://dav.jianguoyun.com/dav/我的坚果云/象信</span><br>
-        粘链接的话我会自动拆成「地址 + 目录」；只填 <span class="mono">我的坚果云/象信</span>
-        这种目录名，就用坚果云官方地址。
+
+    <!-- ── ② 账号与安全 ───────────────────────────────────── -->
+    <div class="sect">
+      <h4>账号与安全</h4>
+      <div class="field">
+        <label>账号</label>
+        <input id="accountInput" placeholder="登录用的账号名" autocomplete="off"
+               autocorrect="off" spellcheck="false" autocapitalize="off">
       </div>
-      <div class="hintline" style="margin-top:6px" id="nsState"></div>
-      <div class="hintline" style="margin-top:6px">
-        应用密码去坚果云「账户信息 → 安全选项 → 添加应用」生成。<b>登录密码不行。</b>
-        手机端直连坚果云，所以不需要在手机上装坚果云 App。
+      <div class="field">
+        <label>密码</label>
+        <!-- ⚠️ 不用 type=password：MIUI 自动填充会让 WebView 闪退（真机踩过） -->
+        <input id="passInput" type="text" class="masked" placeholder="留空 = 不设密码"
+               autocomplete="off" autocorrect="off" spellcheck="false" autocapitalize="off">
+        <input id="passConfirm" type="text" class="masked" placeholder="再输一次确认"
+               style="margin-top:6px" autocomplete="off" autocorrect="off"
+               spellcheck="false" autocapitalize="off">
       </div>
-      <button class="ghost" id="nsSave" style="margin-top:8px;width:100%">保存并测试连接</button>
+      <div class="hintline" id="authNote" style="white-space:normal;line-height:1.7"></div>
+      <div class="row2" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:10px">
+        <button class="ghost" id="passSave" style="padding:6px 12px;font-size:12px">设置 / 修改密码</button>
+        <button class="ghost" id="passClear" style="padding:6px 12px;font-size:12px">清除密码</button>
+        <button class="ghost" id="lockNow" style="padding:6px 12px;font-size:12px">立即锁定</button>
+      </div>
     </div>
-    <div class="field">
-      <label>诊断（出问题时截图这一段给我）</label>
-      <pre id="diagBox" class="diag"></pre>
-      <button class="ghost" id="diagBtn" style="margin-top:6px;width:100%">刷新诊断信息</button>
+
+    <!-- ── ③ 外观 ─────────────────────────────────────────── -->
+    <div class="sect">
+      <h4>外观</h4>
+      <div class="field">
+        <label>主题</label>
+        <div class="seg">
+          <button id="segLight">浅色 · 经典 Gtalk</button>
+          <button id="segDark">深色</button>
+        </div>
+      </div>
+      <div class="field">
+        <label>聊天背景</label>
+        <div class="swatches" id="wallSwatches"></div>
+        <div class="row2" style="display:flex;gap:6px;flex-wrap:wrap;margin-top:9px">
+          <button class="ghost" id="wallPick" style="padding:6px 12px;font-size:12px">自定义图片…</button>
+          <button class="ghost" id="wallClear" style="padding:6px 12px;font-size:12px">恢复默认</button>
+        </div>
+        <div class="hintline" id="wallHint" style="margin-top:6px"></div>
+      </div>
     </div>
-    <div class="kv">
-      <span>我的设备ID</span><b class="mono" id="kvID">—</b>
-      <span>已知道设备</span><b id="kvDevices">—</b>
-      <span>消息总数</span><b id="kvCount">—</b>
+
+    <!-- ── ④ 连接（高级）──────────────────────────────────── -->
+    <div class="sect">
+      <h4>连接</h4>
+      <div class="desc">
+        象信 Lite 把每条消息写成一个独立文件，放进一个同步文件夹；文件传输走同一套机制。
+      </div>
+      <div class="field" id="folderField">
+        <label>同步文件夹（两台设备必须指向同一个、且已在同步范围内）</label>
+        <input id="rootInput" readonly>
+        <div class="hintline" style="margin-top:5px;white-space:normal">换目录会立即生效；换完这个文件夹里会自动建好 消息/ 文件/ 已读/ 设备/</div>
+      </div>
+      <div class="field" id="nutstoreField" style="display:none">
+        <label>坚果云账号（WebDAV 直连）</label>
+        <input id="nsUser" type="text" autocomplete="off" autocorrect="off" spellcheck="false"
+               placeholder="坚果云登录邮箱">
+        <input id="nsPass" type="text" autocomplete="off" autocorrect="off" spellcheck="false"
+               class="masked" placeholder="应用密码（不是登录密码）" style="margin-top:6px">
+        <input id="nsRoot" placeholder="云端目录（可粘完整链接）" style="margin-top:6px">
+        <div class="hintline" style="margin-top:6px;white-space:normal">
+          这一格<b>既能填目录名，也能直接粘完整链接</b>：
+          <span class="mono">https://dav.jianguoyun.com/dav/我的坚果云/象信</span><br>
+          粘链接的话我会自动拆成「地址 + 目录」；只填 <span class="mono">我的坚果云/象信</span>
+          这种目录名，就用坚果云官方地址。
+        </div>
+        <div class="hintline" style="margin-top:6px" id="nsState"></div>
+        <div class="hintline" style="margin-top:6px;white-space:normal">
+          应用密码去坚果云「账户信息 → 安全选项 → 添加应用」生成。<b>登录密码不行。</b>
+          手机端直连坚果云，所以不需要在手机上装坚果云 App。
+        </div>
+        <button class="ghost" id="nsSave" style="margin-top:8px;width:100%">保存并测试连接</button>
+      </div>
     </div>
+
+    <!-- ── ⑤ 诊断 ─────────────────────────────────────────── -->
+    <div class="sect">
+      <h4>诊断</h4>
+      <div class="field">
+        <label>出问题时截图这一段</label>
+        <pre id="diagBox" class="diag"></pre>
+        <button class="ghost" id="diagBtn" style="margin-top:6px;width:100%">刷新诊断信息</button>
+      </div>
+      <div class="kv">
+        <span>我的设备ID</span><b class="mono" id="kvID">—</b>
+        <span>已知道设备</span><b id="kvDevices">—</b>
+        <span>消息总数</span><b id="kvCount">—</b>
+      </div>
+    </div>
+
     <div class="actions">
       <button class="ghost" id="pickFolder">选择同步文件夹…</button>
       <button class="ghost" id="nsTest" style="display:none">测试连接</button>
-      <button class="primary" id="saveSettings">保存名字</button>
+      <button class="primary" id="saveSettings">保存</button>
       <button class="ghost" id="closeSettings">关闭</button>
     </div>
   </div>
 </div>
-
+<input type="file" id="avFile" accept="image/*" style="display:none">
+<input type="file" id="wallFile" accept="image/*" style="display:none">
 <div id="convs">
   <div class="card">
     <h3>会话</h3>
@@ -523,6 +925,43 @@ body.mini #list{padding:12px 10px 4px}
 
 <input type="file" id="filePick" style="display:none">
 <div id="toast"></div>
+
+<!-- ══════════════════════════════════════════════════════════════
+     登录门禁（账号 / 密码）
+     ──────────────────────────────────────────────────────────────
+     ⚠️ 这一屏是**本地门禁**，不是安全边界：
+        它拦的是「别人拿起这台设备随手点开」，拦不住拿到连接密钥的人 ——
+        消息本身没有加密，拿到密钥的人绕过这个页面直接读云端就能看。
+        界面上的文案必须诚实说明这一点，不能让人以为它是加密。
+     把 Supabase Auth 接上以后，这一屏可以直接换成真的登录，
+     见 XXAuth 模块（换了实现，这一屏的 DOM 一行都不用动）。
+     ══════════════════════════════════════════════════════════════ -->
+<div id="gate">
+  <div class="gatebox">
+    <div class="glogo"><img src="icon.svg" alt="" id="gateLogo"></div>
+    <div class="gname">象信</div>
+    <div class="gsub" id="gateSub">输入密码解锁</div>
+    <div class="gerr" id="gateErr" style="display:none"></div>
+    <!-- ⚠️ 刻意不用 type=password / autocomplete：MIUI 的自动填充服务介入
+         WebView 的密码框时会闪退（真机上就是这么崩的）。用 type=text + 遮罩。 -->
+    <input id="gateUser" placeholder="账号" autocomplete="off" autocorrect="off"
+           spellcheck="false" autocapitalize="off">
+    <input id="gatePass" type="text" class="masked" placeholder="密码" autocomplete="off"
+           autocorrect="off" spellcheck="false" autocapitalize="off">
+    <button class="go" id="gateGo">解锁</button>
+    <div class="gfoot">
+      <label style="display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer">
+        <input type="checkbox" id="gateRemember" style="width:auto;margin:0"> 记住这台设备
+      </label>
+      <div style="margin-top:12px">
+        <a id="gateForgot" style="color:var(--brand);cursor:pointer">忘了密码？</a>
+      </div>
+      <div style="margin-top:8px;color:var(--dim2)">
+        仅为本机加锁，消息未加密 —— 拿不到本机的人也拿不到你的密码。
+      </div>
+    </div>
+  </div>
+</div>
 
 <script src="core.js"></script>
 <script>
@@ -1073,6 +1512,7 @@ body.mini #list{padding:12px 10px 4px}
   var lastListHtml = null;     // 上一次渲染出来的列表 HTML（用来判断「内容变了没有」）
   var lastHintHtml = null;     // 同上，顶栏那行提示
   var MINI = /[?&]mini=1/.test(location.search);
+  window.__xxVer = 'gtalk-1';      // 诊断面板里显示，方便确认线上页面是不是新版
   /// 自动已读：记住"已经为哪一组未读消息标过已读"，避免同一组反复发请求
   var autoReadFor = '';
 
@@ -1175,6 +1615,7 @@ body.mini #list{padding:12px 10px 4px}
       ? (state.deviceName || state.deviceID || '…')
       : (state.deviceName ? (state.deviceName + ' · ' + state.deviceID)
                           : (state.deviceID || '…'));
+    Profile.refreshHeader();
 
     // 设置面板里的只读信息
     $('kvID').textContent = state.deviceID || '—';
@@ -1211,6 +1652,7 @@ body.mini #list{padding:12px 10px 4px}
               '上面还有 ' + from + ' 条，打开完整页面可看全部</div>';
     }
     var nowMs = Date.now();
+    var lastDay = null;          // 跨天才插一条日期分隔条
     for (var i = from; i < all.length; i++) {
       var m = all[i];
       // ⚠️ 原来只认 m.isMe（= 消息的设备ID == 我这台的设备ID）。
@@ -1221,8 +1663,14 @@ body.mini #list{padding:12px 10px 4px}
                (state.owner && ((state.owners || {})[m.from] || m.from) === state.owner);
       var ahead = !me && (m.ts - nowMs > 120000);   // 对方的钟快了 2 分钟以上
 
+      var dayKey = dayOf(m.ts);
+      if (dayKey !== lastDay) {
+        lastDay = dayKey;
+        html += '<div class="daysep">' + esc(dayLabel(m.ts)) + '</div>';
+      }
+
       html += '<div class="row' + (me ? ' me' : '') + '">';
-      html += '<div class="avatar">' + (me ? '我' : esc((m.fromName || '?').slice(0, 1))) + '</div>';
+      html += '<div class="avatar">' + Profile.html(m.from, me, m.fromName || m.from) + '</div>';
       html += '<div class="col">';
       if (!me) html += '<div class="who">' + esc(m.fromName || m.from) + '</div>';
 
@@ -1659,6 +2107,7 @@ body.mini #list{padding:12px 10px 4px}
           }
         })['catch'](function () { /* 读不到账号信息不影响打开面板 */ });
       }
+      try { populateProfileUI(); } catch (e3) { noteJsError('资料分区：' + ((e3 && e3.message) || e3)); }
       try { loadDiag(); } catch (e2) { noteJsError('诊断信息：' + ((e2 && e2.message) || e2)); }
     } catch (e) {
       try {
@@ -1734,12 +2183,737 @@ body.mini #list{padding:12px 10px 4px}
         $('settingsErr').innerHTML = '<div class="warnbox">✓ 已存本机（重启还在）' +
           '<br>云端暂时同步不上：' + esc(r.error) + '</div>';
         toast('已存本机');
-      } else {
-        closeSettings();
-        toast('已保存');
+        refresh(false);
+        return;
       }
-      refresh(false);
+      // 名字/用户号存住了，接着落个人资料（头像 / 账号 / 密码）
+      saveProfileExtras().then(function (pr) {
+        var cloud = pr && pr.cloud;
+        if (cloud && cloud.ok === false && cloud.reason === 'host-mode') {
+          // Mac 宿主是 host 模式，页面没有写文件的能力 —— 说清楚，别假装同步了
+          toast('已保存（头像/资料仅本机）');
+        } else if (cloud && cloud.ok === false) {
+          $('settingsErr').innerHTML = '<div class="warnbox">✓ 已存本机' +
+            '<br>资料暂未同步到云端：' + esc(cloud.reason) + '</div>';
+          refresh(false);
+          return;
+        } else {
+          toast('已保存');
+        }
+        closeSettings();
+        refresh(false);
+      }, function (e) {
+        $('settingsErr').innerHTML = '<div class="errbox">' + esc((e && e.message) || e) + '</div>';
+        refresh(false);
+      });
     });
+  }
+
+  // ══════════════════════════════════════════════════════════════
+  //  个人资料层 · 主题 / 头像 / 背景 / 账号
+  //  ──────────────────────────────────────────────────────────────
+  //  这一段是**纯附加**的：它只往页面上加东西，不改协议、不改消息格式。
+  //  消息怎么排、已读怎么算、谁是"我"，全都还是原来的那套。
+  // ══════════════════════════════════════════════════════════════
+
+  // ── ① 纯 JS SHA-256 ───────────────────────────────────────────
+  // ⚠️ 为什么不用 core.js 的 sha256Hex（它走 crypto.subtle）：
+  //    crypto.subtle 只在**安全上下文**里存在。手机走 https 有，
+  //    但 Mac 宿主是用 file:// 把页面读进 WKWebView 的 —— 那里**没有**。
+  //    密码哈希必须在两端算出同一个值，所以只能自带一份不依赖环境的实现。
+  //    （core.js 那份的降级行为是"返回 null = 没法校验"，用在附件完整性上
+  //      是对的，但用在密码上会让 Mac 上根本设不了密码。）
+  var SHA256 = (function () {
+    var K = [
+      0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+      0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+      0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+      0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+      0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+      0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+      0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+      0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2];
+
+    function utf8Bytes(s) {
+      var out = [], i, c;
+      for (i = 0; i < s.length; i++) {
+        c = s.charCodeAt(i);
+        if (c < 0x80) out.push(c);
+        else if (c < 0x800) { out.push(0xc0 | (c >> 6), 0x80 | (c & 63)); }
+        else if (c >= 0xd800 && c <= 0xdbff && i + 1 < s.length) {
+          // 代理对 —— emoji 就靠这条走对
+          var c2 = s.charCodeAt(++i);
+          var cp = 0x10000 + ((c - 0xd800) << 10) + (c2 - 0xdc00);
+          out.push(0xf0 | (cp >> 18), 0x80 | ((cp >> 12) & 63), 0x80 | ((cp >> 6) & 63), 0x80 | (cp & 63));
+        } else { out.push(0xe0 | (c >> 12), 0x80 | ((c >> 6) & 63), 0x80 | (c & 63)); }
+      }
+      return out;
+    }
+
+    function hex(bytes) {
+      var s = '', i;
+      for (i = 0; i < bytes.length; i++) s += (bytes[i] < 16 ? '0' : '') + bytes[i].toString(16);
+      return s;
+    }
+
+    /// 输入字符串 → 64 位十六进制摘要
+    function digest(str) {
+      var msg = utf8Bytes(str);
+      var bitLen = msg.length * 8;
+      msg.push(0x80);
+      while (msg.length % 64 !== 56) msg.push(0);
+      // 长度按 64 位大端补（高位恒为 0：我们有生之年的输入都不会超过 2^32 位）
+      msg.push(0, 0, 0, 0, (bitLen >>> 24) & 255, (bitLen >>> 16) & 255, (bitLen >>> 8) & 255, bitLen & 255);
+
+      var h = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
+               0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
+      var w = new Array(64), i, j;
+
+      for (i = 0; i < msg.length; i += 64) {
+        for (j = 0; j < 16; j++) {
+          w[j] = (msg[i + j * 4] << 24) | (msg[i + j * 4 + 1] << 16) |
+                 (msg[i + j * 4 + 2] << 8) | msg[i + j * 4 + 3];
+        }
+        for (j = 16; j < 64; j++) {
+          var s0 = rotr(w[j - 15], 7) ^ rotr(w[j - 15], 18) ^ (w[j - 15] >>> 3);
+          var s1 = rotr(w[j - 2], 17) ^ rotr(w[j - 2], 19) ^ (w[j - 2] >>> 10);
+          w[j] = (w[j - 16] + s0 + w[j - 7] + s1) | 0;
+        }
+        var a = h[0], b = h[1], c = h[2], d = h[3], e = h[4], f = h[5], g = h[6], hh = h[7];
+        for (j = 0; j < 64; j++) {
+          var S1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
+          var ch = (e & f) ^ (~e & g);
+          var t1 = (hh + S1 + ch + K[j] + w[j]) | 0;
+          var S0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22);
+          var mj = (a & b) ^ (a & c) ^ (b & c);
+          var t2 = (S0 + mj) | 0;
+          hh = g; g = f; f = e; e = (d + t1) | 0;
+          d = c; c = b; b = a; a = (t1 + t2) | 0;
+        }
+        h[0] = (h[0] + a) | 0; h[1] = (h[1] + b) | 0; h[2] = (h[2] + c) | 0; h[3] = (h[3] + d) | 0;
+        h[4] = (h[4] + e) | 0; h[5] = (h[5] + f) | 0; h[6] = (h[6] + g) | 0; h[7] = (h[7] + hh) | 0;
+      }
+      var out = [], t;
+      for (i = 0; i < 8; i++) {
+        t = h[i] < 0 ? h[i] + 4294967296 : h[i];
+        out.push((t >>> 24) & 255, (t >>> 16) & 255, (t >>> 8) & 255, t & 255);
+      }
+      return hex(out);
+    }
+    function rotr(x, n) { return (x >>> n) | (x << (32 - n)); }
+
+    return { digest: digest };
+  })();
+
+  // ── ② 口令派生（迭代哈希）───────────────────────────────────
+  // ⚠️ 必须说清楚这是什么级别的保护：
+  //    这是**本机门禁**，不是密码学意义上的口令存储。
+  //    它能挡住"捡到手机随手点开"，挡不住拿到云端连接密钥的人 ——
+  //    消息本身没有加密，绕过这个页面直接读云端才是真正的入口。
+  //    迭代次数刻意保守（手机上算得完），别把它当 bcrypt 用。
+  var KDF_ITER = 12000;
+  function derivePass(pass, salt, iter) {
+    var n = iter || KDF_ITER;
+    var h = SHA256.digest(salt + '\u0000' + pass);
+    for (var i = 0; i < n; i++) h = SHA256.digest(h + '\u0000' + salt);
+    return h;
+  }
+  function newSalt() {
+    var s = '', i, r;
+    try {
+      if (window.crypto && crypto.getRandomValues) {
+        var b = new Uint8Array(16);
+        crypto.getRandomValues(b);
+        for (i = 0; i < 16; i++) s += (b[i] < 16 ? '0' : '') + b[i].toString(16);
+        return s;
+      }
+    } catch (e) { /* 掉到下面的弱随机兜底 */ }
+    for (i = 0; i < 32; i++) { r = Math.floor(Math.random() * 16); s += r.toString(16); }
+    return s;
+  }
+
+  // ── ③ 主题 ───────────────────────────────────────────────────
+  var THEMES = ['gtalk-light', 'gtalk-dark'];
+  var Theme = {
+    get: function () {
+      var t = 'gtalk-light';
+      try {
+        var v = localStorage.getItem('xx.theme');
+        if (THEMES.indexOf(v) >= 0) t = v;
+      } catch (e) {}
+      return t;
+    },
+    set: function (t) {
+      if (THEMES.indexOf(t) < 0) return;
+      document.documentElement.setAttribute('data-theme', t);
+      try { localStorage.setItem('xx.theme', t); } catch (e) {}
+      // 手机状态栏颜色跟着主题走，不然浅色主题配黑状态栏很割裂
+      var m = $('themeColor');
+      if (m) m.setAttribute('content', t === 'gtalk-dark' ? '#161b24' : '#1a73e8');
+      Theme.syncSeg();
+    },
+    syncSeg: function () {
+      var t = Theme.get();
+      var l = $('segLight'), d = $('segDark');
+      if (l) l.className = (t === 'gtalk-light') ? 'on' : '';
+      if (d) d.className = (t === 'gtalk-dark') ? 'on' : '';
+    }
+  };
+
+  // ── ④ 头像 ───────────────────────────────────────────────────
+  // 存储：本机 localStorage 缓存一份（离线也能显示自己），
+  //       同时写进云端 设备/<ID>.json 的 avatar 字段（对方才看得到）。
+  // ⚠️ avatar 是**别的设备**写进来的内容，必须当成不可信输入：
+  //    只接受 data:image/*;base64 —— 否则一个恶意设备塞个
+  //    `javascript:` 或 `"><script>` 进来就是 XSS。
+  var AV_COLORS = ['#1a73e8', '#0f9d58', '#d93025', '#f4b400', '#ab47bc',
+                   '#00897b', '#e8710a', '#3949ab', '#c2185b', '#5e35b1'];
+  var avURLCache = {};        // '设备ID|是否我' -> {src, url}
+  var lastMeAvHtml = '';
+
+  function safeAvatar(v) {
+    if (typeof v !== 'string' || !v) return '';
+    return /^data:image\/(png|jpeg|jpg|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(v) ? v : '';
+  }
+  function colorFor(seed) {
+    var s = String(seed == null ? '' : seed), h = 0, i;
+    for (i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) >>> 0;
+    return AV_COLORS[h % AV_COLORS.length];
+  }
+  function initialOf(name, fallback) {
+    var s = String(name == null ? '' : name).trim();
+    return s ? s.slice(0, 1).toUpperCase() : (fallback || '?');
+  }
+
+  var Profile = {
+    localAvatar: function () {
+      try { return safeAvatar(localStorage.getItem('xx.avatar') || ''); } catch (e) { return ''; }
+    },
+    setLocalAvatar: function (v) {
+      try {
+        if (v) localStorage.setItem('xx.avatar', v);
+        else localStorage.removeItem('xx.avatar');
+      } catch (e) { /* 存不下就只留内存里的，不致命 */ }
+    },
+    /// 某个设备ID 的头像（data URL）：先看云端扫描结果，再看本地缓存（只有自己）
+    avatarFor: function (devId, isMe, name) {
+      var id = String(devId || '').toUpperCase();
+      var rec = (state.devices || {})[id];
+      var fromCloud = rec ? safeAvatar(rec.avatar) : '';
+      if (fromCloud) return fromCloud;
+      if (isMe) return Profile.localAvatar();
+      return '';
+    },
+
+    /// data URL → object URL，并按设备缓存。
+    /// ⚠️ 为什么非要转这一道：render() 每 5 秒整块重建 innerHTML。
+    ///    直接把 data URL 拼进去的话，40 条消息 × 每个约 8KB 的 base64
+    ///    = 每 5 秒构造三百多 KB 的字符串；而且 blob 每次都是新 URL，
+    ///    「内容没变就不动 DOM」的比较永远命中不了，等于每 5 秒全量重排。
+    ///    转成 blob: URL（几十个字符）后，同一个头像每轮都是**同一个字符串**。
+    avatarURL: function (devId, isMe, name) {
+      var key = String(devId || '') + '|' + (isMe ? '1' : '0');
+      var src = Profile.avatarFor(devId, isMe, name);
+      var c = avURLCache[key];
+      if (!src) {
+        if (c && c.url && c.url.indexOf('blob:') === 0) {
+          try { URL.revokeObjectURL(c.url); } catch (e) {}
+        }
+        avURLCache[key] = null;
+        return '';
+      }
+      if (c && c.src === src) return c.url;
+      if (c && c.url && c.url.indexOf('blob:') === 0) {
+        try { URL.revokeObjectURL(c.url); } catch (e) {}
+      }
+      var url = '';
+      try {
+        var m = /^data:([^;]+);base64,(.*)$/.exec(src);
+        if (m && window.URL && URL.createObjectURL) {
+          var bin = atob(m[2]), n = bin.length, bytes = new Uint8Array(n);
+          for (var i = 0; i < n; i++) bytes[i] = bin.charCodeAt(i);
+          url = URL.createObjectURL(new Blob([bytes], { type: m[1] }));
+        }
+      } catch (e) { url = ''; }
+      if (!url) url = src;              // 转不了就退回 data URL，还能用
+      avURLCache[key] = { src: src, url: url };
+      return url;
+    },
+
+    /// 头像元素的 innerHTML。没有图片就退回 Gtalk 那种「首字母色块」。
+    html: function (devId, isMe, name) {
+      var url = Profile.avatarURL(devId, isMe, name);
+      if (url) return '<img src="' + url + '" alt="">';
+      var t = initialOf(name, isMe ? '我' : '?');
+      var col = isMe ? 'var(--av-me-bg)' : colorFor(devId || name);
+      return '<span style="width:100%;height:100%;display:flex;align-items:center;' +
+             'justify-content:center;background:' + col + ';color:#fff">' +
+             esc(t) + '</span>';
+    },
+    /// 刷新顶栏那个「我」的头像。
+    /// 内容没变就不动 innerHTML —— 否则每 5 秒一次 render() 都会让
+    /// 浏览器重新解析一遍 <img>，头像会肉眼可见地闪。
+    refreshHeader: function () {
+      var el = $('meAv');
+      if (!el) return;
+      var h = Profile.html(state.deviceID, true, state.deviceName);
+      if (h === lastMeAvHtml) return;
+      lastMeAvHtml = h;
+      el.innerHTML = h;
+    }
+  };
+
+  // ── ⑤ 背景壁纸 ───────────────────────────────────────────────
+  var WALL_PRESETS = [
+    { kind: 'none', value: '', label: '默认' },
+    { kind: 'color', value: '#ffffff', label: '白' },
+    { kind: 'color', value: '#f4f6f8', label: '浅灰' },
+    { kind: 'color', value: '#eaf1fb', label: '浅蓝' },
+    { kind: 'color', value: '#eef7f0', label: '浅绿' },
+    { kind: 'color', value: '#fdf6e3', label: '米黄' },
+    { kind: 'color', value: '#f7eef6', label: '浅紫' },
+    { kind: 'color', value: '#131722', label: '深蓝黑' },
+    { kind: 'color', value: '#101418', label: '炭黑' }
+  ];
+
+  var Wallpaper = {
+    get: function () {
+      try { return JSON.parse(localStorage.getItem('xx.wallpaper') || 'null'); } catch (e) { return null; }
+    },
+    set: function (w) {
+      try {
+        if (w && w.kind && w.kind !== 'none') localStorage.setItem('xx.wallpaper', JSON.stringify(w));
+        else localStorage.removeItem('xx.wallpaper');
+      } catch (e) { toast('背景存不下（图片太大？）', true); }
+      Wallpaper.apply();
+      Wallpaper.syncSwatches();
+    },
+    apply: function () {
+      var w = Wallpaper.get(), r = document.documentElement.style;
+      r.removeProperty('--wall-color');
+      r.removeProperty('--wall-img');
+      if (!w) return;
+      if (w.kind === 'color' && w.value) {
+        r.setProperty('--wall-color', w.value);
+        r.setProperty('--wall-img', 'none');
+      } else if (w.kind === 'image' && w.value) {
+        r.setProperty('--wall-img', 'url("' + w.value + '")');
+      }
+    },
+    syncSwatches: function () {
+      var box = $('wallSwatches');
+      if (!box) return;
+      var cur = Wallpaper.get() || { kind: 'none' };
+      var html = '', i, p, on;
+      for (i = 0; i < WALL_PRESETS.length; i++) {
+        p = WALL_PRESETS[i];
+        on = (p.kind === cur.kind && p.value === (cur.value || '')) ? ' on' : '';
+        if (p.kind === 'none') {
+          html += '<button class="sw none' + on + '" data-wall="none" title="' + esc(p.label) + '"></button>';
+        } else {
+          html += '<button class="sw' + on + '" data-wall="' + esc(p.value) + '" ' +
+                  'style="background:' + esc(p.value) + '" title="' + esc(p.label) + '"></button>';
+        }
+      }
+      box.innerHTML = html;
+      var hint = $('wallHint');
+      if (hint) hint.textContent = (cur.kind === 'image') ? '当前：自定义图片' : '';
+    }
+  };
+
+  // ── ⑥ 账号 / 密码（本地门禁）─────────────────────────────────
+  // ⚠️ 这个对象是**留给以后换 Supabase Auth 的缝**。
+  //    换实现 = 换掉 XXAuth 里的方法体，下面的界面（#gate、设置里的
+  //    「账号与安全」区）一行都不用动。契约就是下面这几个方法。
+  var XXAuth = {
+    kind: 'local',                      // 'local' | 'supabase'
+
+    /// 本机存的门禁记录 {account, salt, hash, iter, v}
+    cred: function () {
+      try { return JSON.parse(localStorage.getItem('xx.cred') || 'null'); } catch (e) { return null; }
+    },
+    setCredRaw: function (c) {
+      try {
+        if (c) localStorage.setItem('xx.cred', JSON.stringify(c));
+        else localStorage.removeItem('xx.cred');
+      } catch (e) {}
+    },
+    /// 有没有设过密码
+    isEnabled: function () { var c = XXAuth.cred(); return !!(c && c.hash); },
+    account: function () { var c = XXAuth.cred(); return (c && c.account) || ''; },
+    /// 本机是否已解锁（本次会话内）
+    isUnlocked: function () {
+      try {
+        // 「记住这台设备」= 以后不再问；否则本次会话内有效
+        if (localStorage.getItem('xx.remember') === '1') return true;
+        return sessionStorage.getItem('xx.unlocked') === '1';
+      } catch (e) { return true; }
+    },
+    markUnlocked: function () {
+      try { sessionStorage.setItem('xx.unlocked', '1'); } catch (e) {}
+    },
+    /// 设/改密码。返回 Promise<void>，失败时 reject 一个能直接给用户看的 Error。
+    setCredential: function (account, pass) {
+      var c = { v: 1, algo: 'sha256-iter', iter: KDF_ITER, account: account || '',
+                salt: newSalt() };
+      c.hash = derivePass(pass, c.salt, c.iter);
+      XXAuth.setCredRaw(c);
+      return Promise.resolve();
+    },
+    clearCredential: function () {
+      XXAuth.setCredRaw(null);
+      try { sessionStorage.removeItem('xx.unlocked'); } catch (e) {}
+      return Promise.resolve();
+    },
+    /// 校验。返回 Promise<boolean>
+    verify: function (pass) {
+      var c = XXAuth.cred();
+      if (!c || !c.hash) return Promise.resolve(true);
+      var h = derivePass(pass, c.salt, c.iter || KDF_ITER);
+      return Promise.resolve(h === c.hash);
+    },
+    lock: function () {
+      try { sessionStorage.removeItem('xx.unlocked'); } catch (e) {}
+    },
+
+    /// 把门禁记录也同步到云端 —— 这样换台设备还能用同一套账号密码，
+    /// 而且**以后换成 Supabase Auth 时，这个字段正好可以退休**。
+    syncToCloud: function () {
+      var c = XXAuth.cred();
+      if (!API.engine || !API.engine.cfg) return;
+      API.engine.cfg.profile = API.engine.cfg.profile || {};
+      if (c) {
+        API.engine.cfg.profile.account = c.account || '';
+        // 只把 salt/hash 传上去，明文密码永远不出本机
+        API.engine.cfg.profile.passsalt = c.salt;
+        API.engine.cfg.profile.passhash = c.hash;
+        API.engine.cfg.profile.passiter = c.iter;
+      } else {
+        delete API.engine.cfg.profile.account;
+        delete API.engine.cfg.profile.passsalt;
+        delete API.engine.cfg.profile.passhash;
+        delete API.engine.cfg.profile.passiter;
+      }
+    }
+  };
+
+  // ── ⑦ 图片处理（头像和背景共用）──────────────────────────────
+  /// 读文件 → canvas 裁成正方形 → 缩放 → 压成 JPEG dataURL
+  function makeSquareImage(file, maxSide, quality, cb) {
+    var fr = new FileReader();
+    fr.onerror = function () { cb('读不到这个文件'); };
+    fr.onload = function () {
+      var im = new Image();
+      im.onerror = function () { cb('这不是一张能识别的图片'); };
+      im.onload = function () {
+        try {
+          var w = im.naturalWidth || im.width, h = im.naturalHeight || im.height;
+          if (!w || !h) { cb('图片尺寸读不出来'); return; }
+          var side = Math.min(w, h);                 // 居中裁正方形
+          var out = Math.min(maxSide, side);
+          var cv = document.createElement('canvas');
+          cv.width = out; cv.height = out;
+          var cx = cv.getContext('2d');
+          cx.drawImage(im, (w - side) / 2, (h - side) / 2, side, side, 0, 0, out, out);
+          cb(null, cv.toDataURL('image/jpeg', quality));
+        } catch (e) { cb('处理图片时出错：' + ((e && e.message) || e)); }
+      };
+      im.src = fr.result;
+    };
+    fr.readAsDataURL(file);
+  }
+
+  /// 背景不裁方，按长边缩放即可
+  function makeWallpaperImage(file, maxSide, quality, cb) {
+    var fr = new FileReader();
+    fr.onerror = function () { cb('读不到这个文件'); };
+    fr.onload = function () {
+      var im = new Image();
+      im.onerror = function () { cb('这不是一张能识别的图片'); };
+      im.onload = function () {
+        try {
+          var w = im.naturalWidth || im.width, h = im.naturalHeight || im.height;
+          var sc = Math.min(1, maxSide / Math.max(w, h));
+          var cv = document.createElement('canvas');
+          cv.width = Math.max(1, Math.round(w * sc));
+          cv.height = Math.max(1, Math.round(h * sc));
+          cv.getContext('2d').drawImage(im, 0, 0, cv.width, cv.height);
+          cb(null, cv.toDataURL('image/jpeg', quality));
+        } catch (e) { cb('处理图片时出错：' + ((e && e.message) || e)); }
+      };
+      im.src = fr.result;
+    };
+    fr.readAsDataURL(file);
+  }
+
+  // ── ⑧ 把资料推上云端 ─────────────────────────────────────────
+  /// 头像/账号要写到 设备/<ID>.json 才能让对方看到。
+  /// ⚠️ 这条路只在 core 模式（手机直连 Supabase / 安卓宿主）下走得通：
+  ///    Mac 宿主是 host 模式，只暴露 xx.* 动作，页面拿不到写文件的能力。
+  ///    所以 Mac 上改了头像只存在本机，不会同步给手机 —— 这是已知限制，
+  ///    要打通得让 Swift 侧把 profile 字段带进 statePayload（约 6 行）。
+  function pushProfileToCloud() {
+    if (!API.engine || typeof API.engine.announceSelf !== 'function') {
+      return Promise.resolve({ ok: false, reason: 'host-mode' });
+    }
+    API.engine.cfg.profile = API.engine.cfg.profile || {};
+    var av = Profile.localAvatar();
+    if (av) API.engine.cfg.profile.avatar = av;
+    else delete API.engine.cfg.profile.avatar;
+    XXAuth.syncToCloud();
+    return API.engine.announceSelf().then(function () { return { ok: true }; },
+      function (e) { return { ok: false, reason: String((e && e.message) || e) }; });
+  }
+
+  // ── ⑨ 日期分隔条 ─────────────────────────────────────────────
+  // Gtalk 的聊天窗里跨天会有一条细线小标签，这里补上。
+  function dayOf(ms) {
+    var d = new Date(ms);
+    return d.getFullYear() + '-' + d.getMonth() + '-' + d.getDate();
+  }
+  function dayLabel(ms) {
+    var d = new Date(ms), now = new Date();
+    if (d.toDateString() === now.toDateString()) return '今天';
+    if (d.toDateString() === new Date(now.getTime() - 86400000).toDateString()) return '昨天';
+    var md = (d.getMonth() + 1) + '月' + d.getDate() + '日';
+    return d.getFullYear() === now.getFullYear() ? md : (d.getFullYear() + '年' + md);
+  }
+
+  // ── ⑨ 登录门禁 ───────────────────────────────────────────────
+  var gateOnPass = null;      // 解锁成功后要接着跑的那段（startPolling）
+  /// 显示门禁。onPass 在解锁成功后调用。
+  function showGate(onPass) {
+    var g = $('gate');
+    if (!g) { onPass(); return; }
+    gateOnPass = onPass;
+    $('gateSub').textContent = XXAuth.isEnabled() ? '输入密码解锁' : '继续';
+    $('gateErr').style.display = 'none';
+    $('gateUser').value = XXAuth.account() || '';
+    $('gatePass').value = '';
+    g.className = 'show';
+    // 设过账号的话，焦点直接给密码框 —— 少点一次
+    setTimeout(function () {
+      try { (XXAuth.account() ? $('gatePass') : $('gateUser')).focus(); } catch (e) {}
+    }, 120);
+  }
+
+  function hideGate() { var g = $('gate'); if (g) g.className = ''; }
+
+  function gateError(msg) {
+    var e = $('gateErr');
+    e.textContent = msg;
+    e.style.display = '';
+  }
+
+  function gateUnlock() {
+    var acc = ($('gateUser').value || '').trim();
+    var pass = $('gatePass').value || '';
+    var btn = $('gateGo');
+    btn.disabled = true;
+    btn.textContent = '校验中…';
+    XXAuth.verify(pass).then(function (ok) {
+      btn.disabled = false;
+      btn.textContent = '解锁';
+      if (!ok) {
+        gateError('密码不对');
+        $('gatePass').value = '';
+        $('gatePass').focus();
+        return;
+      }
+      XXAuth.markUnlocked();
+      if ($('gateRemember').checked) {
+        try { localStorage.setItem('xx.remember', '1'); } catch (e) {}
+      }
+      hideGate();
+      var f = gateOnPass; gateOnPass = null;
+      if (f) f();
+    })['catch'](function (e) {
+      btn.disabled = false;
+      btn.textContent = '解锁';
+      gateError('校验出错：' + ((e && e.message) || e));
+    });
+  }
+
+  function bindGate() {
+    if (!$('gate')) return;
+    $('gateGo').onclick = gateUnlock;
+    $('gatePass').onkeydown = function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); gateUnlock(); }
+    };
+    $('gateUser').onkeydown = function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); $('gatePass').focus(); }
+    };
+    // ⚠️ 密码是**本机门禁**，忘了就找不回 —— 但消息没有加密，
+    //    所以「清掉密码」不会丢任何东西。这个出口必须留，
+    //    否则用户忘了密码就等于把自己锁在自己的聊天记录外面。
+    $('gateForgot').onclick = function () {
+      if (!window.confirm('密码是本机门禁，忘了找不回。\n\n因为消息没有加密，'
+          + '清掉密码不会丢任何消息 —— 只是这台设备以后不再需要密码。\n\n'
+          + '要清掉这台设备的密码吗？')) return;
+      XXAuth.clearCredential().then(function () {
+        pushProfileToCloud();          // 顺手把云端的哈希也抹掉
+        hideGate();
+        var f = gateOnPass; gateOnPass = null;
+        if (f) f();
+      });
+    };
+  }
+
+  // ── ⑩ 设置面板新增分区 ───────────────────────────────────────
+  function renderAvatarPreview() {
+    var el = $('avBig');
+    if (!el) return;
+    var av = Profile.localAvatar();
+    if (av) el.innerHTML = '<img src="' + av + '" alt="">';
+    else el.innerHTML = esc(initialOf(state.deviceName, '象'));
+  }
+
+  /// openSettings() 里调用：把新分区的当前值填进去
+  function populateProfileUI() {
+    if ($('accountInput')) $('accountInput').value = XXAuth.account();
+    if ($('passInput')) { $('passInput').value = ''; $('passConfirm').value = ''; }
+    renderAvatarPreview();
+    Theme.syncSeg();
+    Wallpaper.syncSwatches();
+    updateAuthNote();
+  }
+
+  function updateAuthNote() {
+    var n = $('authNote');
+    if (!n) return;
+    if (XXAuth.isEnabled()) {
+      n.innerHTML = '<span class="ticks all">✓ 已设密码</span>　'
+        + '当前账号：<b>' + esc(XXAuth.account() || '（未填）') + '</b><br>'
+        + '⚠️ 这是<b>本机门禁</b>：拦住的是「别人拿起这台设备随手点开」，'
+        + '<b>不是加密</b>。拿到连接密钥的人绕过这个页面照样能读云端。';
+    } else {
+      n.innerHTML = '还没设密码。设了以后，打开象信要先输密码。<br>'
+        + '⚠️ 这是<b>本机门禁</b>，不是加密 —— 请勿用它保护真正敏感的内容。';
+    }
+  }
+
+  /// saveName() 后半段调用：把个人资料落盘（本机 + 尽量上云）
+  function saveProfileExtras() {
+    var acc = ($('accountInput') ? $('accountInput').value : '').trim();
+    var p1 = $('passInput') ? $('passInput').value : '';
+    var p2 = $('passConfirm') ? $('passConfirm').value : '';
+    var pending = Promise.resolve();
+    if (p1 || p2) {
+      if (p1 !== p2) return Promise.reject(new Error('两次输入的密码不一样'));
+      if (p1.length < 4) return Promise.reject(new Error('密码至少 4 位'));
+      pending = XXAuth.setCredential(acc, p1);
+    } else if (acc && XXAuth.cred()) {
+      // 只改了账号名：哈希不用重算，直接换名字
+      var c = XXAuth.cred();
+      c.account = acc;
+      XXAuth.setCredRaw(c);
+    }
+    return pending.then(function () {
+      return pushProfileToCloud();
+    }).then(function (cloud) {
+      if ($('passInput')) { $('passInput').value = ''; $('passConfirm').value = ''; }
+      updateAuthNote();
+      return { cloud: cloud };
+    });
+  }
+
+  function bindProfileUI() {
+    // ── 主题 ──
+    if ($('segLight')) $('segLight').onclick = function () { Theme.set('gtalk-light'); };
+    if ($('segDark')) $('segDark').onclick = function () { Theme.set('gtalk-dark'); };
+
+    // ── 头像 ──
+    if ($('avPick')) $('avPick').onclick = function () { $('avFile').click(); };
+    if ($('avFile')) $('avFile').onchange = function () {
+      var f = this.files && this.files[0];
+      this.value = '';                       // 允许连续选同一个文件
+      if (!f) return;
+      var hint = $('avHint');
+      hint.textContent = '处理中…';
+      makeSquareImage(f, 256, 0.85, function (err, dataUrl) {
+        if (err) { hint.textContent = err; return; }
+        Profile.setLocalAvatar(dataUrl);
+        renderAvatarPreview();
+        Profile.refreshHeader();
+        hint.textContent = '正在同步到云端…';
+        pushProfileToCloud().then(function (r) {
+          hint.textContent = (r && r.ok)
+            ? '✓ 头像已保存并同步'
+            : (r && r.reason === 'host-mode'
+                ? '✓ 已保存到本机（Mac 宿主模式下头像暂不同步到手机）'
+                : '✓ 已保存到本机；云端同步失败：' + esc((r && r.reason) || ''));
+        });
+      });
+    };
+    if ($('avClear')) $('avClear').onclick = function () {
+      Profile.setLocalAvatar('');
+      renderAvatarPreview();
+      Profile.refreshHeader();
+      pushProfileToCloud().then(function (r) {
+        $('avHint').textContent = (r && r.ok) ? '头像已清除' : '头像已在本机清除';
+      });
+    };
+
+    // ── 背景 ──
+    if ($('wallSwatches')) $('wallSwatches').onclick = function (e) {
+      var b = e.target.closest ? e.target.closest('[data-wall]') : null;
+      if (!b) return;
+      var v = b.getAttribute('data-wall');
+      Wallpaper.set(v === 'none' ? null : { kind: 'color', value: v });
+    };
+    if ($('wallPick')) $('wallPick').onclick = function () { $('wallFile').click(); };
+    if ($('wallFile')) $('wallFile').onchange = function () {
+      var f = this.files && this.files[0];
+      this.value = '';
+      if (!f) return;
+      var hint = $('wallHint');
+      hint.textContent = '处理中…';
+      makeWallpaperImage(f, 1600, 0.82, function (err, dataUrl) {
+        if (err) { hint.textContent = err; return; }
+        Wallpaper.set({ kind: 'image', value: dataUrl });
+        hint.textContent = '✓ 已换成自定义背景（只存在本机）';
+      });
+    };
+    if ($('wallClear')) $('wallClear').onclick = function () {
+      Wallpaper.set(null);
+      $('wallHint').textContent = '已恢复默认背景';
+    };
+
+    // ── 密码 ──
+    if ($('passSave')) $('passSave').onclick = function () {
+      var acc = ($('accountInput').value || '').trim();
+      var p1 = $('passInput').value, p2 = $('passConfirm').value;
+      if (!p1 && !p2) { $('settingsErr').innerHTML = '<div class="errbox">请先输入密码</div>'; return; }
+      if (p1 !== p2) { $('settingsErr').innerHTML = '<div class="errbox">两次输入的密码不一样</div>'; return; }
+      if (p1.length < 4) { $('settingsErr').innerHTML = '<div class="errbox">密码至少 4 位</div>'; return; }
+      $('settingsErr').innerHTML = '';
+      XXAuth.setCredential(acc, p1).then(function () {
+        $('passInput').value = ''; $('passConfirm').value = '';
+        updateAuthNote();
+        toast('密码已设置');
+        return pushProfileToCloud();
+      }).then(function (r) {
+        if (r && r.ok === false && r.reason === 'host-mode') toast('密码已存在本机');
+        else if (r && r.ok === false) toast('已存本机，云端同步失败', true);
+      });
+    };
+    if ($('passClear')) $('passClear').onclick = function () {
+      if (!XXAuth.isEnabled()) { toast('本来就没设密码'); return; }
+      if (!window.confirm('清掉这台设备的密码？\n\n消息不会丢（没有加密），只是以后打开不再要密码。')) return;
+      XXAuth.clearCredential().then(function () {
+        try { localStorage.removeItem('xx.remember'); } catch (e) {}
+        $('passInput').value = ''; $('passConfirm').value = '';
+        updateAuthNote();
+        toast('密码已清除');
+        return pushProfileToCloud();
+      });
+    };
+    if ($('lockNow')) $('lockNow').onclick = function () {
+      if (!XXAuth.isEnabled()) { toast('还没设密码'); return; }
+      XXAuth.lock();
+      try { localStorage.removeItem('xx.remember'); } catch (e) {}
+      location.reload();
+    };
   }
 
   // ══════════════════════════════════════════════════════════
@@ -2126,6 +3300,16 @@ body.mini #list{padding:12px 10px 4px}
 
   /// 起来之后开始轮询。手机走网络，每次刷新都是往返 —— 别 3 秒一次，太费流量。
   function startPolling() {
+    // 门禁：设了密码又没解锁，就先弹门禁，不扫消息、不轮询。
+    // 放在这里而不是脚本开头 —— 因为两条启动路径（手机直连 / 宿主）
+    // 最后都会走到 startPolling()，卡这一处就够，不会漏掉哪条路。
+    // ⚠️ 必须同时判断 isEnabled()：没设密码时 isUnlocked() 也是 false，
+    //    只看 isUnlocked() 的话，**全新装的用户一进来就被弹一个门禁**，
+    //    而且门禁上还没有密码可输 —— 直接把自己关在门外。
+    if (XXAuth.isEnabled() && !XXAuth.isUnlocked()) {
+      showGate(startPolling);
+      return;
+    }
     var interval = (API.mode === 'core') ? 5000 : 3000;
     refresh(true).then(function () {
       setInterval(function () {
@@ -2135,6 +3319,36 @@ body.mini #list{padding:12px 10px 4px}
       setInterval(function () { render(); }, 30000);   // 每 30 秒重算一次"几分钟前"
     });
   }
+
+  // ── 资料层启动 ──────────────────────────────────────────────
+  // 主题和背景已经在 <head> 的引导脚本里恢复过了（那是为了不闪），
+  // 这里做剩下的事：绑事件、同步分段控件的选中态、画一次头像。
+  try {
+    bindGate();
+    bindProfileUI();
+    Theme.syncSeg();
+    Wallpaper.apply();
+    Profile.refreshHeader();
+  } catch (e) {
+    noteJsError('资料层启动：' + ((e && e.message) || e));
+  }
+
+  // 图标加载不出来就退回 emoji —— 否则页面上会留一个「破图」占位符。
+  // ⚠️ 必须同时判断 complete/naturalWidth：onerror 可能在绑定之前就已经触发过，
+  //    只挂 onerror 的话，这种「早就失败完了」的情况永远补不上。
+  function iconFallback(img, fallbackText) {
+    if (!img) return;
+    var swap = function () {
+      var p = img.parentNode;
+      if (p) p.textContent = fallbackText;
+    };
+    img.onerror = swap;
+    if (img.complete && img.naturalWidth === 0) swap();
+  }
+  try {
+    iconFallback($('brandLogo'), '🐘');
+    iconFallback($('gateLogo'), '🐘');
+  } catch (e) { /* 图标兜底失败不影响使用 */ }
 
   if (!hasHost) {
     // ── 没有宿主：手机浏览器直连 Supabase ──
