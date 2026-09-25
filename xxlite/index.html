@@ -663,7 +663,7 @@ textarea:focus{border-color:var(--brand);outline:none}
 /* ── ⑫ 小窗（Mac 悬浮球）保持紧凑 ─────────────────────────── */
 body.mini header{padding:6px 9px}
 body.mini .me-btn,body.mini #openSettings,body.mini .hintline,
-body.mini #mode,body.mini #attach{display:none}
+body.mini #appName,body.mini #backBtn,body.mini #attach{display:none}
 body.mini footer{padding:6px 8px 8px}
 body.mini textarea{height:36px;min-height:36px;font-size:15px}
 body.mini #send{height:36px;min-width:54px;padding:0 13px}
@@ -676,6 +676,115 @@ body.mini .title{font-size:13px}
 body.mini .me-av{width:22px;height:22px}
 </style>
 
+<style id="xx-home-skin">
+/* ══════════════════════════════════════════════════════════════
+   首页（Gtalk 式）· 视图切换
+   ──────────────────────────────────────────────────────────────
+   三个视图，靠 <body> 上的 class 切：
+     view-home   首页：我的资料卡 + 会话列表
+     view-chat   聊天：消息列表 + 输入条
+     view-setup  连接/错误页（那些是把 HTML 写进 #list 的，所以要让 #list 可见）
+   ══════════════════════════════════════════════════════════════ */
+
+#home{
+  display:none; flex:1; overflow-y:auto; padding:14px 12px 10px;
+  background-color:var(--wall-color,transparent);
+  background-image:var(--wall-img,var(--wall-default));
+  background-size:cover; background-position:center;
+  -webkit-overflow-scrolling:touch; overscroll-behavior:contain;
+}
+body.view-home #home{display:block}
+body.view-home #list,body.view-home footer{display:none}
+body.view-chat #home{display:none}
+/* ⚠️ 连接页/错误页是把内容写进 #list 的 —— 首页要是还占着，那一屏就看不见了 */
+body.view-setup #home{display:none}
+body.view-setup #list{display:block}
+body.view-setup footer{display:none}
+
+/* ── 顶栏的两态 ── */
+.backbtn{
+  display:none; width:26px; height:26px; flex:none; line-height:1;
+  border-radius:var(--radius); background:var(--panel3); color:var(--dim);
+  font-size:15px; align-items:center; justify-content:center;
+}
+.backbtn:hover{background:var(--hover); color:var(--fg)}
+body.view-chat .backbtn{display:inline-flex}
+.hdrtxt{min-width:0}
+.appname{font-weight:600; font-size:15px; letter-spacing:.2px; white-space:nowrap}
+body.view-chat .appname{display:none}
+body.view-home .convbtn{display:none}
+body.view-home #readAll{display:none}
+body.view-setup .appname{display:none}
+/* 连接页/错误页也不该露出聊天专用的按钮 */
+body.view-setup .convbtn,body.view-setup #readAll,body.view-setup #miniOnly{display:none}
+
+/* ── 我的资料卡 ──
+   等于是 Gtalk 那条「Available ▾」状态栏的现代样子 */
+.mecard{
+  display:flex; align-items:center; gap:12px; padding:11px 12px;
+  background:var(--panel); border:1px solid var(--line); border-radius:var(--radius-lg);
+}
+.mecard-av{
+  width:52px; height:52px; flex:none; overflow:hidden;
+  border-radius:var(--radius); background:var(--av-me-bg); color:var(--av-me-fg);
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px; font-weight:600;
+}
+.mecard-av img{width:100%; height:100%; object-fit:cover; display:block}
+.mecard-txt{min-width:0; flex:1}
+.mecard-name{font-size:15px; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.mecard-sub{
+  font-size:11.5px; color:var(--dim); margin-top:1px;
+  font-family:ui-monospace,Menlo,monospace;
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.mecard-status{
+  display:inline-flex; align-items:center; gap:5px; margin-top:6px;
+  padding:2px 9px; border-radius:999px; font-size:11.5px; color:var(--dim);
+  background:var(--panel3); border:1px solid var(--line);
+}
+.mecard-status:hover{background:var(--hover); color:var(--fg)}
+.st-dot{width:7px; height:7px; border-radius:50%; background:var(--ok); flex:none}
+.mecard-edit{
+  width:28px; height:28px; flex:none; border-radius:var(--radius);
+  background:var(--panel3); color:var(--dim); font-size:13px;
+}
+.mecard-edit:hover{background:var(--hover); color:var(--fg)}
+
+/* ── 会话列表 ── */
+.homesec{margin-top:16px}
+.homesec-h{
+  font-size:11px; font-weight:600; color:var(--dim); margin:0 2px 8px;
+  text-transform:uppercase; letter-spacing:.6px;
+}
+.convcard{
+  display:flex; align-items:center; gap:10px; width:100%; text-align:left;
+  padding:9px 10px; margin-bottom:6px;
+  border-radius:var(--radius); background:var(--panel); border:1px solid var(--line);
+}
+.convcard:hover{background:var(--hover)}
+.convcard.on{border-color:var(--brand); background:var(--brand-soft)}
+.cc-av{
+  width:38px; height:38px; flex:none; overflow:hidden;
+  border-radius:var(--radius); background:var(--av-bg); color:var(--av-fg);
+  display:flex; align-items:center; justify-content:center;
+  font-size:15px; font-weight:600;
+}
+.cc-av img{width:100%; height:100%; object-fit:cover; display:block}
+.cc-txt{min-width:0; flex:1; display:flex; flex-direction:column; gap:1px}
+.cc-name{font-size:14px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.convcard.on .cc-name{font-weight:600}
+.cc-sub{font-size:11px; color:var(--dim2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.homeacts{margin-top:10px}
+.homeacts .ghost{width:100%; padding:9px}
+.homefoot{margin-top:16px; text-align:center; font-size:10.5px; color:var(--dim2)}
+
+/* ── 小窗（悬浮球）：直接进聊天，不给首页 ──
+   小窗是"快速回复"用的，多一层首页只会碍事。 */
+body.mini #home{display:none !important}
+body.mini .backbtn,body.mini .appname{display:none}
+body.mini .mecard{padding:0}
+</style>
 </style>
 <!-- ══════════════════════════════════════════════════════════════
      主题引导 · 必须在首屏绘制前跑完
@@ -721,11 +830,13 @@ body.mini .me-av{width:22px;height:22px}
 <body>
 
 <header>
+  <!-- 返回首页。只在聊天视图里出现 —— Gtalk 是「先看联系人列表，点进去才开聊天窗」 -->
+  <button class="backbtn" id="backBtn" title="返回首页">←</button>
   <div class="logo"><img src="icon.svg" alt="象信" id="brandLogo"></div>
-  <div>
+  <div class="hdrtxt">
     <div class="title">
+      <span class="appname" id="appName">象信 Lite</span>
       <button class="convbtn" id="convBtn" title="切换 / 新建会话">会话 ▾</button>
-      <span class="sub" id="mode">异步私信</span>
     </div>
     <div class="sub" id="whoami">…</div>
   </div>
@@ -740,6 +851,40 @@ body.mini .me-av{width:22px;height:22px}
   </button>
 </header>
 <div id="bar"></div>
+<!-- ══════════════════════════════════════════════════════════════
+     首页（Gtalk 式）· 我的资料卡 + 会话列表
+     ──────────────────────────────────────────────────────────────
+     为什么要有这一屏：原来打开就是聊天窗口，像「一个工具」而不像「一个应用」。
+     Gtalk 原版就是先给你好友列表，双击某个联系人**才**开聊天窗。
+     所以这里也是：先看到「我是谁 + 有哪些会话」，点进去才进聊天。
+     （小窗 ?mini=1 例外 —— 那是快速回复用的，直接进聊天。）
+     ══════════════════════════════════════════════════════════════ -->
+<div id="home">
+  <div class="mecard">
+    <div class="mecard-av" id="homeAv"></div>
+    <div class="mecard-txt">
+      <div class="mecard-name" id="homeName">…</div>
+      <div class="mecard-sub" id="homeId">…</div>
+      <button class="mecard-status" id="homeStatus" title="点一下改状态 / 改资料">
+        <span class="st-dot" id="homeStatusDot"></span><span id="homeStatusTxt">在线</span>
+      </button>
+    </div>
+    <button class="mecard-edit" id="homeEdit" title="编辑资料">✎</button>
+  </div>
+
+  <div class="homesec">
+    <div class="homesec-h">会话</div>
+    <div id="homeConvs"></div>
+    <div class="homeacts">
+      <button class="ghost" id="homeNewConv">＋ 新建 / 管理会话</button>
+    </div>
+  </div>
+
+  <div class="homefoot">
+    <span id="homeHint"></span>
+  </div>
+</div>
+
 
 <div id="list"></div>
 
@@ -780,6 +925,16 @@ body.mini .me-av{width:22px;height:22px}
       <div class="field" style="margin-top:14px">
         <label>用户名（对方看到的名字）</label>
         <input id="nameInput" placeholder="例如：乌鸦">
+      </div>
+      <div class="field">
+        <label>状态</label>
+        <div class="seg" id="statusSeg">
+          <button data-st="在线">在线</button>
+          <button data-st="离开">离开</button>
+          <button data-st="忙碌">忙碌</button>
+          <button data-st="勿扰">勿扰</button>
+        </div>
+        <div class="hintline" style="margin-top:5px">显示在首页的资料卡上，也会跟着资料同步到云端。</div>
       </div>
       <div class="field">
         <label>用户号</label>
@@ -1512,7 +1667,7 @@ body.mini .me-av{width:22px;height:22px}
   var lastListHtml = null;     // 上一次渲染出来的列表 HTML（用来判断「内容变了没有」）
   var lastHintHtml = null;     // 同上，顶栏那行提示
   var MINI = /[?&]mini=1/.test(location.search);
-  window.__xxVer = 'gtalk-1';      // 诊断面板里显示，方便确认线上页面是不是新版
+  window.__xxVer = 'gtalk-2';      // 诊断面板里显示，方便确认线上页面是不是新版
   /// 自动已读：记住"已经为哪一组未读消息标过已读"，避免同一组反复发请求
   var autoReadFor = '';
 
@@ -1600,7 +1755,11 @@ body.mini .me-av{width:22px;height:22px}
     // 以前只靠右上角那个「全部已读」按钮，用户看了消息、角标还挂着 1，以为是坏了。
     // 小窗（悬浮球快速回复）不算"看过"，不自动标。
     // 用一组未读的 id 当键：同一组只标一次，失败了也不会每 5 秒重发。
-    if (!MINI && unread > 0) {
+    // ⚠️ 有了首页之后，自动已读必须**只在聊天视图**触发：
+    //    否则一打开应用就把消息全标成已读，首页会话上的未读角标
+    //    还没被人看见就已经没了 —— 首页的未读提示就白做了。
+    //    所以原来的「打开完整页面即已读」现在变成「进聊天才算看过」。
+    if (!MINI && VIEW === 'chat' && unread > 0) {
       var unreadKey = state.messages.filter(function (m) { return m.unread; })
                                     .map(function (m) { return m.id; }).join(',');
       if (unreadKey && unreadKey !== autoReadFor) {
@@ -1611,11 +1770,17 @@ body.mini .me-av{width:22px;height:22px}
 
     $('convBtn').textContent = (state.conversationName || '会话') + ' ▾';
     $('convBtn').title = '当前会话：' + (state.conversationName || '未命名') + '（点一下切换或新建）';
-    $('whoami').textContent = MINI
+    var who = MINI
       ? (state.deviceName || state.deviceID || '…')
       : (state.deviceName ? (state.deviceName + ' · ' + state.deviceID)
                           : (state.deviceID || '…'));
+    // 首页顶栏说的是「我是谁」（名字 · 用户号）；聊天页说的是设备信息
+    if (VIEW === 'home') {
+      who = (state.deviceName || '未命名') + (state.owner ? (' · ' + state.owner) : '');
+    }
+    $('whoami').textContent = who;
     Profile.refreshHeader();
+    if (VIEW === 'home') renderHome();
 
     // 设置面板里的只读信息
     $('kvID').textContent = state.deviceID || '—';
@@ -2774,6 +2939,7 @@ body.mini .me-av{width:22px;height:22px}
     if ($('passInput')) { $('passInput').value = ''; $('passConfirm').value = ''; }
     renderAvatarPreview();
     Theme.syncSeg();
+    if (typeof Status !== 'undefined') Status.syncSeg();
     Wallpaper.syncSwatches();
     updateAuthNote();
   }
@@ -2914,6 +3080,166 @@ body.mini .me-av{width:22px;height:22px}
       try { localStorage.removeItem('xx.remember'); } catch (e) {}
       location.reload();
     };
+  }
+
+  // ── ⑪ 首页 / 聊天 两态 + 在线状态 ────────────────────────────
+  //  ⚠️ VIEW 是 var（不是 let），而且 render() 会读它 ——
+  //     声明被提升，但赋值发生在这里；render() 第一次真正跑是在
+  //     连接完成之后，所以那时 VIEW 已经有值了。
+  var VIEW = 'home';
+
+  // Gtalk 的招牌就是那个状态菜单，这里给它 4 个档
+  var STATUSES = ['在线', '离开', '忙碌', '勿扰'];
+  var STATUS_COLORS = { '在线': '#0f9d58', '离开': '#f4b400', '忙碌': '#d93025', '勿扰': '#8a9096' };
+
+  var Status = {
+    get: function () {
+      try {
+        var v = localStorage.getItem('xx.status');
+        return STATUSES.indexOf(v) >= 0 ? v : '在线';
+      } catch (e) { return '在线'; }
+    },
+    set: function (v) {
+      if (STATUSES.indexOf(v) < 0) return;
+      try { localStorage.setItem('xx.status', v); } catch (e) {}
+      // 状态也塞进 profile 一起上云 —— 对方以后想看就看得到，不用改引擎
+      if (API.engine && API.engine.cfg) {
+        API.engine.cfg.profile = API.engine.cfg.profile || {};
+        API.engine.cfg.profile.status = v;
+        pushProfileToCloud();
+      }
+      renderHome();
+      Status.syncSeg();
+    },
+    syncSeg: function () {
+      var box = $('statusSeg');
+      if (!box) return;
+      var cur = Status.get();
+      var btns = box.querySelectorAll('[data-st]');
+      for (var i = 0; i < btns.length; i++) {
+        btns[i].className = (btns[i].getAttribute('data-st') === cur) ? 'on' : '';
+      }
+    }
+  };
+
+  /// 切视图。min = 小窗（悬浮球），永远直接进聊天 —— 那是快速回复用的。
+  function setView(v) {
+    if (MINI) v = 'chat';
+    if (v !== 'home' && v !== 'chat' && v !== 'setup') v = 'home';
+    VIEW = v;
+    var cl = document.body.classList;
+    cl.remove('view-home'); cl.remove('view-chat'); cl.remove('view-setup');
+    cl.add('view-' + v);
+    if (v === 'home') renderHome();
+  }
+
+  /// 找一个「对方」设备（既不是我这台、也不是我这个身份码的），
+  /// 拿它的头像当会话头像 —— 会话列表里光有名字太干。
+  function peerDeviceId() {
+    var ids = Object.keys(state.devices || {});
+    for (var i = 0; i < ids.length; i++) {
+      var d = ids[i], rec = state.devices[d] || {};
+      var ow = (state.owners || {})[d] || d;
+      if (!rec.isMe && ow !== state.owner) return d;
+    }
+    return '';
+  }
+
+  function convSub(c) {
+    var kind = (c && c.kind === 'webdav') ? '坚果云'
+             : (API.usingSupabase ? 'Supabase' : '本地文件夹');
+    // ⚠️ 两个坑：
+    //   ① core 模式（手机）下 state.root 是 core.js 里写死的 '坚果云 WebDAV'，
+    //      在 Supabase 底座上是个错的说法 —— 所以不显示它；
+    //   ② path 为空时 shortPath('') 会返回 '（未设置）'，直接显示出来很怪。
+    var p = (!API.usingSupabase && c && c.path) ? shortPath(c.path) : '';
+    return p ? (kind + ' · ' + p) : kind;
+  }
+
+  function renderHome() {
+    if (!$('homeName')) return;
+
+    // 我的资料卡
+    var av = $('homeAv');
+    if (av) av.innerHTML = Profile.html(state.deviceID, true, state.deviceName);
+    $('homeName').textContent = state.deviceName || '未命名';
+    var ow = state.owner || state.deviceID || '';
+    $('homeId').textContent = ow ? ('用户号 ' + ow) : '用户号未设置（点 ✎ 去设）';
+    var st = Status.get();
+    $('homeStatusTxt').textContent = st;
+    var dot = $('homeStatusDot');
+    if (dot) dot.style.background = STATUS_COLORS[st] || '#0f9d58';
+
+    // 会话列表
+    // ⚠️ **手机（core 模式）根本没有"会话"这个概念** ——
+    //    core.js 的 snapshot() 不返回 conversations 字段，state.conversations 是空的。
+    //    原来这里直接列空 → 首页显示"还没有会话" → **点不进聊天，人被困在首页**。
+    //    所以没有会话时就兜一张代表"当前这条对话"的卡片，保证永远进得去。
+    var list = (state.conversations && state.conversations.length) ? state.conversations
+             : [{ id: state.activeConversation || '', name: state.conversationName || '我的对话',
+                  path: state.root || '', kind: '' }];
+    var pid = peerDeviceId();
+    var avHtml = pid ? Profile.html(pid, false, (state.devices[pid] || {}).name)
+                     : '<span>🐘</span>';
+    var html = '';
+    for (var i = 0; i < list.length; i++) {
+      var c = list[i];
+      var on = (c.id === state.activeConversation);
+      var unread = on ? (state.unreadCount || 0) : 0;
+      html += '<button class="convcard' + (on ? ' on' : '') + '" data-enter="' + esc(c.id) + '">' +
+                '<span class="cc-av">' + avHtml + '</span>' +
+                '<span class="cc-txt">' +
+                  '<span class="cc-name">' + esc(c.name || '未命名') + '</span>' +
+                  '<span class="cc-sub">' + esc(convSub(c)) + '</span>' +
+                '</span>' +
+                (unread ? '<span class="badge">' + unread + '</span>' : '') +
+              '</button>';
+    }
+    $('homeConvs').innerHTML = html ||
+      '<div class="hintline" style="padding:6px 2px">还没有会话，点下面新建一个</div>';
+
+    var h = $('homeHint');
+    if (h) {
+      var n = (state.messages || []).length;
+      h.textContent = n ? ('这台设备共 ' + n + ' 条消息') : '';
+    }
+  }
+
+  /// 从首页进某个会话
+  function enterConv(id) {
+    var go = function () { setView('chat'); refresh(true); };
+    // ⚠️ 空 id 就直接进聊天：core 模式没有会话 id，
+    //    拿空字符串去调 selectConversation 会报"没有这个会话"。
+    if (!id || id === state.activeConversation) { go(); return; }
+    if (id) {
+      busyOn(true);
+      API.selectConversation(id).then(function (r) {
+        busyOn(false);
+        if (r && r.error) { toast(r.error, true); return; }
+        go();
+      }, function () { busyOn(false); go(); });
+      return;
+    }
+    go();
+  }
+
+  function bindHome() {
+    if ($('backBtn')) $('backBtn').onclick = function () { setView('home'); };
+    if ($('homeEdit')) $('homeEdit').onclick = function () { openSettings(); };
+    if ($('homeStatus')) $('homeStatus').onclick = function () { openSettings(); };
+    if ($('homeNewConv')) $('homeNewConv').onclick = function () { openConvs(); };
+    if ($('homeConvs')) {
+      $('homeConvs').onclick = function (e) {
+        var b = (e.target && e.target.closest) ? e.target.closest('[data-enter]') : null;
+        if (b) enterConv(b.getAttribute('data-enter'));
+      };
+    }
+    if ($('statusSeg')) {
+      $('statusSeg').onclick = function (e) {
+        var b = (e.target && e.target.closest) ? e.target.closest('[data-st]') : null;
+        if (b) Status.set(b.getAttribute('data-st'));
+      };
+    }
   }
 
   // ══════════════════════════════════════════════════════════
@@ -3188,6 +3514,7 @@ body.mini .me-av{width:22px;height:22px}
   //  启动
   // ══════════════════════════════════════════════════════════
   function showDead(title, body, hint) {
+    try { setView('setup'); } catch (e) {}
     listEl.innerHTML =
       '<div class="empty"><div class="big">🐘</div>' +
       '<div>' + esc(title) + '</div>' +
@@ -3199,6 +3526,7 @@ body.mini .me-av{width:22px;height:22px}
 
   /// 手机端首启：还没配坚果云账号。**这是个正常的中间状态，不是错误。**
   function showSetup() {
+    try { setView('setup'); } catch (e) {}
     listEl.innerHTML =
       '<div class="empty"><div class="big">🐘</div>' +
       '<div>还差一步：配置坚果云账号</div>' +
@@ -3256,6 +3584,7 @@ body.mini .me-av{width:22px;height:22px}
 
   /// 页面内的"连接设置"。不用 window.prompt —— 手机上那个经常被屏蔽。
   function showConnectSetup(errMsg) {
+    try { setView('setup'); } catch (e) {}
     $('hint').textContent = '还没有连接';
     $('send').disabled = true;
     $('attach').disabled = true;
@@ -3326,9 +3655,14 @@ body.mini .me-av{width:22px;height:22px}
   try {
     bindGate();
     bindProfileUI();
+    bindHome();
     Theme.syncSeg();
+    Status.syncSeg();
     Wallpaper.apply();
     Profile.refreshHeader();
+    // 打开先到首页（Gtalk 就是这样：先看列表，点进去才开聊天窗）。
+    // 小窗 ?mini=1 例外 —— 那是快速回复用的，直接进聊天。
+    setView(MINI ? 'chat' : 'home');
   } catch (e) {
     noteJsError('资料层启动：' + ((e && e.message) || e));
   }
