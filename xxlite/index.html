@@ -882,6 +882,11 @@ body.mini .mecard{padding:0}
     <button class="mecard-edit" id="homeEdit" title="编辑资料">✎</button>
   </div>
 
+  <div class="homesec" id="contactsSec" style="display:none">
+    <div class="homesec-h">联系人</div>
+    <div id="homeContacts"></div>
+  </div>
+
   <div class="homesec">
     <div class="homesec-h">会话</div>
     <div id="homeConvs"></div>
@@ -1833,6 +1838,8 @@ body.mini .mecard{padding:0}
     // 首页顶栏说的是「我是谁」（名字 · 用户号）；聊天页说的是设备信息
     if (VIEW === 'home') {
       who = (state.deviceName || '未命名') + (state.owner ? (' · ' + state.owner) : '');
+    } else if (activePeer) {
+      who = '跟 ' + peerName(activePeer) + ' 的对话';
     }
     $('whoami').textContent = who;
     Profile.refreshHeader();
@@ -1864,7 +1871,19 @@ body.mini .mecard{padding:0}
     }
 
     // 小窗只渲染最近的若干条（DOM 少、开得快）；完整页面全渲染
+    // 按当前选中的联系人过滤（activePeer 为空 = 全部）
     var all = state.messages;
+    if (activePeer) {
+      all = all.filter(function (m) { return peerOf(m) === activePeer; });
+      if (!all.length) {
+        var none = '<div class="empty"><div class="big">💬</div><div>跟「' +
+                   esc(peerName(activePeer)) + '」还没有消息</div>' +
+                   '<div style="font-size:12px;max-width:340px">在下面说一句，' +
+                   '他/它收到就会回。</div></div>';
+        if (none !== lastListHtml) { lastListHtml = none; listEl.innerHTML = none; }
+        return;
+      }
+    }
     var from = 0;
     if (MINI && all.length > 40) from = all.length - 40;
     var html = '';
@@ -3365,8 +3384,98 @@ body.mini .mecard{padding:0}
     return p ? (kind + ' · ' + p) : kind;
   }
 
-  function renderHome() {
+  /* ══════════════════════════════════════════════════════
+   联系人列表
+   ──────────────────────────────────────────────────────
+   象信是「一条共享消息流」，不是通讯录：消息里没有收件人，
+   靠「用户号(owner)」分成「我自己人」和「对方」两堆。
+   所以这里的联系人 = 按对方用户号分的组，点一下就只看跟他的往来。
+
+   activePeer === ''   全部
+   activePeer === 'me' 我的设备（owner 跟我一样的那些）
+   其它值              某个对方（比如 NIKCORE）
+   ══════════════════════════════════════════════════════ */
+var activePeer = '';
+var lastContactsHtml = '';
+
+function peerOf(m) {
+  var own = (state.owners || {})[m.from] || m.from;
+  if (m.isMe || (state.owner && own === state.owner)) return 'me';
+  return own;
+}
+
+function deviceIdOfOwner(p) {
+  var ids = Object.keys(state.devices || {});
+  for (var i = 0; i < ids.length; i++) {
+    var d = ids[i], ow = (state.owners || {})[d] || d;
+    if (ow === p) return d;
+  }
+  return '';
+}
+
+function myDeviceIds() {
+  var out = [];
+  var ids = Object.keys(state.devices || {});
+  for (var i = 0; i < ids.length; i++) {
+    var d = ids[i], ow = (state.owners || {})[d] || d;
+    if (ow === state.owner) out.push(d);
+  }
+  return out;
+}
+
+function peerName(p) {
+  if (p === 'me') return '我的设备';
+  var d = deviceIdOfOwner(p);
+  if (d) return (state.devices[d] || {}).name || d;
+  return p;
+}
+
+function renderContacts() {
+  var host = $('homeContacts'), sec = $('contactsSec');
+  if (!host || !sec) return;
+  var by = {};
+  (state.messages || []).forEach(function (m) {
+    var p = peerOf(m);
+    var o = by[p] || (by[p] = { n: 0, last: 0, unread: 0 });
+    o.n++;
+    if ((m.ts || 0) > o.last) o.last = m.ts || 0;
+    if (m.unread) o.unread++;
+  });
+  var keys = Object.keys(by);
+  if (!keys.length) { sec.style.display = 'none'; lastContactsHtml = ''; return; }
+  sec.style.display = '';
+  keys.sort(function (a, b) { return (by[b].last || 0) - (by[a].last || 0); });
+
+  var html = '';
+  keys.forEach(function (p) {
+    var o = by[p];
+    var nm = peerName(p);
+    if (p === 'me') nm += '（' + myDeviceIds().length + ' 台）';
+    var av = (p === 'me') ? '<span>📱</span>'
+                          : Profile.html(deviceIdOfOwner(p), false, nm);
+    html += '<button class="convcard' + (activePeer === p ? ' on' : '') +
+              '" data-peer="' + esc(p) + '">' +
+              '<span class="cc-av">' + av + '</span>' +
+              '<span class="cc-txt">' +
+                '<span class="cc-name">' + esc(nm) + '</span>' +
+                '<span class="cc-sub">' + o.n + ' 条' +
+                  (o.last ? ' · ' + fmtTime(o.last) : '') + '</span>' +
+              '</span>' +
+              (o.unread ? '<span class="badge">' + o.unread + '</span>' : '') +
+            '</button>';
+  });
+  if (html !== lastContactsHtml) { lastContactsHtml = html; host.innerHTML = html; }
+}
+
+function enterPeer(p) {
+  activePeer = p || '';
+  setView('chat');
+  refresh(true);
+}
+
+function renderHome() {
     if (!$('homeName')) return;
+    renderContacts();
 
     // 我的资料卡
     var av = $('homeAv');
@@ -3416,6 +3525,7 @@ body.mini .mecard{padding:0}
 
   /// 从首页进某个会话
   function enterConv(id) {
+    activePeer = '';                 // 从「会话」进去 = 看全部
     var go = function () { setView('chat'); refresh(true); };
     // ⚠️ 空 id 就直接进聊天：core 模式没有会话 id，
     //    拿空字符串去调 selectConversation 会报"没有这个会话"。
@@ -3441,6 +3551,12 @@ body.mini .mecard{padding:0}
       $('homeConvs').onclick = function (e) {
         var b = (e.target && e.target.closest) ? e.target.closest('[data-enter]') : null;
         if (b) enterConv(b.getAttribute('data-enter'));
+      };
+    }
+    if ($('homeContacts')) {
+      $('homeContacts').onclick = function (e) {
+        var b = (e.target && e.target.closest) ? e.target.closest('[data-peer]') : null;
+        if (b) enterPeer(b.getAttribute('data-peer'));
       };
     }
     // 「并成同一人」：把我的用户号填成那台设备的值。
