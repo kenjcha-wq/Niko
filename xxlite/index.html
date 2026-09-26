@@ -2090,6 +2090,53 @@ body.mini .mecard{padding:0}
       $('stagedName').textContent = '📎 ' + stagedFiles.length + ' 个文件（共 ' + fmtSize(total) + '）';
     }
     el.className = 'staged show';
+    // 暂存时就提醒，别等按了发送白等一场。
+    // ⚠️ 必须"推迟一拍"再弹（setTimeout 0），不能在这里直接 toast：
+    //    调用方（pickFiles / 拖拽）在 pushStaged 返回**之后**还会同栈弹一句
+    //    "已选择…"，而 toast 是同一个 #toast 节点 —— 后写的直接盖掉先写的，
+    //    结果就是"文件太大"这句话用户一个字都看不到（曾经就是这个 bug）。
+    //    推迟到下一轮事件循环，让那句"已选择"先说，警告最后说，才盖不住。
+    var warn = attSizeWarning(stagedFiles);
+    var bar = $('stagedName');
+    bar.title = warn || '';        // 顺带常驻：鼠标停在文件名上也能看到原因
+    if (warn) {
+      bar.textContent += '　⚠️ 偏大';
+      setTimeout(function () { toast(warn, true); }, 0);
+    }
+  }
+
+  // ⚠️ 这些数字是**实测出来的**，不是拍的：
+  //    10MB 稳（4.4s）、12MB 三次里只成一次、15MB 和 18MB 全挂。
+  //    根因不是"文件太大"，是 **Postgres 的 statement_timeout**（默认 8 秒）：
+  //    整份附件是**一个 SQL 语句**写进去的（base64 存一列），写慢了就被数据库掐掉，
+  //    报 57014。界面上只会显示一句 "HTTP 500 ... statement timeout"，
+  //    完全看不出是文件太大的缘故。所以这里提前说清楚。
+  var ATT_WARN = 8 * 1024 * 1024;    // 超过就提醒（留点余量，12MB 就已经飘了）
+  var ATT_HARD = 15 * 1024 * 1024;   // 超过基本传不过去
+
+  /// 返回一句给用户看的话；不用提醒就返回空串
+  function attSizeWarning(list) {
+    var big = 0, nm = '', i;
+    for (i = 0; i < (list || []).length; i++) {
+      if ((list[i].size || 0) > big) { big = list[i].size || 0; nm = list[i].name || ''; }
+    }
+    if (big <= ATT_WARN) return '';
+    var mb = (big / 1048576).toFixed(1);
+    if (big > ATT_HARD) {
+      return nm + ' 有 ' + mb + ' MB —— 超过可靠上限（约 10 MB），基本上传不过去。'
+           + '建议先压缩，或者换个小一点的文件。';
+    }
+    return nm + ' 有 ' + mb + ' MB —— 偏大（可靠上限约 10 MB），可能传不完。';
+  }
+
+  /// 把服务端的错误翻成人话
+  function humanizeSendError(s) {
+    var t = String(s == null ? '' : s);
+    if (/57014|statement timeout/i.test(t)) {
+      return '文件太大，服务端写入超时了（实测可靠上限约 10 MB）。'
+           + '建议压缩后再发 —— 这个限制是数据库的写入超时，不是网络问题。';
+    }
+    return t;
   }
 
   function pushStaged(files) {
@@ -2111,6 +2158,11 @@ body.mini .mecard{padding:0}
   function sendStaged(caption) {
     var list = stagedFiles.slice();
     if (!list.length) return Promise.resolve({ sent: 0, failed: [] });
+    // 超过可靠上限就先问一句 —— 让用户自己决定要不要试
+    var warn = attSizeWarning(list);
+    if (warn && !window.confirm(warn + '　　还是要试一下吗？')) {
+      return Promise.resolve({ sent: 0, failed: [], canceled: true });
+    }
     var sent = 0, failed = [], i = 0;
     $('send').disabled = true;
     busyOn(true);
@@ -2128,9 +2180,9 @@ body.mini .mecard{padding:0}
         });
       }
       return p.then(function (r) {
-        if (r && r.error) failed.push(f.name + '：' + r.error); else sent++;
+        if (r && r.error) failed.push(f.name + '：' + humanizeSendError(r.error)); else sent++;
       }, function (e) {
-        failed.push(f.name + '：' + (e && e.message || e));
+        failed.push(f.name + '：' + humanizeSendError(e && e.message || e));
       }).then(function () {
         i++;
         return step();
@@ -2146,6 +2198,7 @@ body.mini .mecard{padding:0}
   }
 
   function finishSend(res, txt) {
+    if (res && res.canceled) return;   // 确认框里选了"不试"：什么都不做，暂存留着
     if (res.failed && res.failed.length) {
       toast('有 ' + res.failed.length + ' 个没发出去：' + res.failed[0], true);
     } else if (res.sent > 1) {
