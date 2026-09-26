@@ -3434,6 +3434,14 @@ function renderContacts() {
   var host = $('homeContacts'), sec = $('contactsSec');
   if (!host || !sec) return;
   var by = {};
+  // 先把「已知的对方」和「我的设备」放进去 —— 哪怕还没聊过。
+  // 否则新设备（比如 NikCore）要等你先发一条、它回了才会出现，
+  // 而这时候你正是想找它才好发第一条。
+  Object.keys(state.devices || {}).forEach(function (d) {
+    var ow = (state.owners || {})[d] || d;
+    if (ow !== state.owner) by[ow] = by[ow] || { n: 0, last: 0, unread: 0 };
+  });
+  if (myDeviceIds().length) by['me'] = by['me'] || { n: 0, last: 0, unread: 0 };
   (state.messages || []).forEach(function (m) {
     var p = peerOf(m);
     var o = by[p] || (by[p] = { n: 0, last: 0, unread: 0 });
@@ -3458,8 +3466,9 @@ function renderContacts() {
               '<span class="cc-av">' + av + '</span>' +
               '<span class="cc-txt">' +
                 '<span class="cc-name">' + esc(nm) + '</span>' +
-                '<span class="cc-sub">' + o.n + ' 条' +
-                  (o.last ? ' · ' + fmtTime(o.last) : '') + '</span>' +
+                '<span class="cc-sub">' +
+                  (o.n ? (o.n + ' 条' + (o.last ? ' · ' + fmtTime(o.last) : '')) : '还没聊过') +
+                '</span>' +
               '</span>' +
               (o.unread ? '<span class="badge">' + o.unread + '</span>' : '') +
             '</button>';
