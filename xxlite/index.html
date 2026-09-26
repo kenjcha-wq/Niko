@@ -1874,7 +1874,7 @@ body.mini .mecard{padding:0}
     // 按当前选中的联系人过滤（activePeer 为空 = 全部）
     var all = state.messages;
     if (activePeer) {
-      all = all.filter(function (m) { return peerOf(m) === activePeer; });
+      all = all.filter(function (m) { return visibleInPeer(m, activePeer); });
       if (!all.length) {
         var none = '<div class="empty"><div class="big">💬</div><div>跟「' +
                    esc(peerName(activePeer)) + '」还没有消息</div>' +
@@ -2043,6 +2043,11 @@ body.mini .mecard{padding:0}
       }
       refresh.retried = false;
       state.messages = r.messages || [];
+      // 刚发出去的消息：挂到「发的时候在跟谁聊」名下（消息本身没这个字段）
+      if (pendingPeer) {
+        tagNewMine(pendingBefore || {}, pendingPeer);
+        pendingPeer = null; pendingBefore = null;
+      }
       state.devices = r.devices || {};
       state.owners = r.owners || {};        // 设备ID → 身份码（core.js 已经算好）
       state.deviceID = r.deviceID || '';
@@ -2239,6 +2244,11 @@ body.mini .mecard{padding:0}
     }
     $('send').disabled = true;
     busyOn(true);
+    // 记下当前在跟谁聊 —— 发完 refresh 之后要把这条挂到他名下
+    var beforeIds = {};
+    (state.messages || []).forEach(function (m) { beforeIds[m.id] = 1; });
+    pendingPeer = activePeer || 'me';
+    pendingBefore = beforeIds;
     API.send(t).then(function (r) {
       $('send').disabled = false;
       busyOn(false);
@@ -3397,6 +3407,51 @@ body.mini .mecard{padding:0}
    ══════════════════════════════════════════════════════ */
 var activePeer = '';
 var lastContactsHtml = '';
+
+/* ⚠️ 象信的消息【没有收件人字段】—— 一条消息发出去，谁都能看到。
+   所以「我刚发的这条是发给 NikCore 的」这件事，消息本身记不住，
+   只能在本机记一笔：messageId → 对方用户号。
+   不记的后果：你在 NikCore 那条线里发消息，发完一刷新
+   —— 那条是我发的（peer='me'），被过滤器滤掉，看起来就是「一转眼没了」。 */
+var sentTo = {};
+try { sentTo = JSON.parse(localStorage.getItem('xx.sentTo') || '{}'); } catch (e) { sentTo = {}; }
+var pendingPeer = null;      // 下一次 refresh 之后，把新出现的「我的」消息归给谁
+var pendingBefore = null;    // 发送前那一刻已有消息的 id 集合
+
+function saveSentTo() {
+  try {
+    var ks = Object.keys(sentTo);
+    if (ks.length > 800) {
+      var o = {};
+      ks.slice(-800).forEach(function (k) { o[k] = sentTo[k]; });
+      sentTo = o;
+    }
+    localStorage.setItem('xx.sentTo', JSON.stringify(sentTo));
+  } catch (e) {}
+}
+
+/* refresh 之后调用：把这一轮新出现的「我发的」消息挂到 pendingPeer 名下 */
+function tagNewMine(beforeIds, peer) {
+  if (!peer) return;
+  var n = 0;
+  (state.messages || []).forEach(function (m) {
+    if (beforeIds[m.id]) return;
+    if (peerOf(m) !== 'me') return;
+    sentTo[m.id] = peer;
+    n++;
+  });
+  if (n) saveSentTo();
+}
+
+/* 这条消息算不算「在这个联系人的线里」 */
+function visibleInPeer(m, peer) {
+  var p = peerOf(m);
+  if (p === peer) return true;          // 对方发的
+  if (p !== 'me') return false;         // 别人发的，跟这条线无关
+  var t = sentTo[m.id];
+  if (t) return t === peer;             // 我发的：看记着是给谁的
+  return peer === 'me';                 // 没记着的（别的设备发的）归「我的设备」
+}
 
 function peerOf(m) {
   var own = (state.owners || {})[m.from] || m.from;
