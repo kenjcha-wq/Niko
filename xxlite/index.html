@@ -1559,7 +1559,7 @@ body.mini .mecard{padding:0}
     },
 
     send: function (text, to) {
-      if (API.mode === 'host') return call('xx.send', { text: text });
+      if (API.mode === 'host') return call('xx.send', { text: text, to: to || '' });
       return API.engine.sendText(text, null, null, to).then(function () { return { ok: true }; },
         function (e) { return { error: String(e && e.message || e) }; });
     },
