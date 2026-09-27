@@ -211,6 +211,10 @@
       from: name.dev, fromName: o.deviceName || '', text: text,
       schema: 'xiangxin.message/1'
     };
+    // 可选：这一条是「发给谁的」（对方用户号）。
+    // 象信是一池共享消息，靠这个字段才能分清"我发给 NikCore 的"和"我发给自己的"。
+    // 老客户端不认识它 —— parseMessage 不认的字段会忽略，所以是向后兼容的。
+    if (o && o.to) msg.to = String(o.to).toUpperCase();
     return { name: name, msg: msg, fileName: name.stem + '.json' };
   }
 
@@ -252,7 +256,8 @@
       fromName: (typeof o.fromName === 'string' && o.fromName) ? o.fromName : name.dev,
       text: (typeof o.text === 'string') ? o.text : '',
       ref: null,
-      replyTo: (typeof o.replyTo === 'string') ? o.replyTo : null
+      replyTo: (typeof o.replyTo === 'string') ? o.replyTo : null,
+      to: (typeof o.to === 'string' && o.to) ? o.to.toUpperCase() : null
     };
     if (o.ref && typeof o.ref === 'object') {
       msg.ref = {
@@ -635,8 +640,9 @@
       });
     }
 
-    function sendText(text, now, random) {
-      var c = composeText(text, { device: cfg.deviceID, deviceName: cfg.deviceName, now: now, random: random });
+    function sendText(text, now, random, to) {
+      var c = composeText(text, { device: cfg.deviceID, deviceName: cfg.deviceName,
+                                  now: now, random: random, to: to });
       return writeMessage(c.name, c.msg).then(function () {
         seenFiles[c.name.stem] = true;
         saveState();

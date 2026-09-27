@@ -1546,9 +1546,9 @@ body.mini .mecard{padding:0}
       return Promise.resolve({ error: '还没有和宿主握手' });
     },
 
-    send: function (text) {
+    send: function (text, to) {
       if (API.mode === 'host') return call('xx.send', { text: text });
-      return API.engine.sendText(text).then(function () { return { ok: true }; },
+      return API.engine.sendText(text, null, null, to).then(function () { return { ok: true }; },
         function (e) { return { error: String(e && e.message || e) }; });
     },
 
@@ -2249,7 +2249,9 @@ body.mini .mecard{padding:0}
     (state.messages || []).forEach(function (m) { beforeIds[m.id] = 1; });
     pendingPeer = activePeer || 'me';
     pendingBefore = beforeIds;
-    API.send(t).then(function (r) {
+    // 把「发给谁」写进消息本身（在 NikCore 那条线里 = 发给他）
+    var toPeer = (activePeer && activePeer !== 'me') ? activePeer : null;
+    API.send(t, toPeer).then(function (r) {
       $('send').disabled = false;
       busyOn(false);
       if (!r || r.error) {
@@ -3448,9 +3450,10 @@ function visibleInPeer(m, peer) {
   var p = peerOf(m);
   if (p === peer) return true;          // 对方发的
   if (p !== 'me') return false;         // 别人发的，跟这条线无关
+  if (m.to) return m.to === peer;       // 消息自己带着「发给谁」（首选）
   var t = sentTo[m.id];
-  if (t) return t === peer;             // 我发的：看记着是给谁的
-  return peer === 'me';                 // 没记着的（别的设备发的）归「我的设备」
+  if (t) return t === peer;             // 次选：本机记的
+  return peer === 'me';                 // 都没记：归「我的设备」
 }
 
 function peerOf(m) {
