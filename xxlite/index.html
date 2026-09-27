@@ -775,6 +775,18 @@ body.view-setup .convbtn,body.view-setup #readAll,body.view-setup #miniOnly{disp
 .cc-name{font-size:14px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
 .convcard.on .cc-name{font-weight:600}
 .cc-sub{font-size:11px; color:var(--dim2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+   /* 小标识：这条线是「我的设备」还是「对方的设备」。
+      实测两个设备的显示名会撞车（自己的叫「乌鸦🐦‍⬛」、对方的叫「乌鸦」），
+      光看名字分不清 —— 所以把身份/设备ID 直接摆出来。 */
+   .cc-tag{
+     display:inline-block; margin-left:5px; padding:1px 5px; border-radius:4px;
+     font-size:10px; font-weight:400; vertical-align:1px;
+     background:var(--brand-soft); color:var(--brand);
+   }
+   .cc-tag.other{
+     background:var(--panel3); color:var(--dim2); border:1px solid var(--line);
+     font-family:Menlo,Consolas,monospace; letter-spacing:.4px;
+   }
 .homeacts{margin-top:10px}
 .homeacts .ghost{width:100%; padding:9px}
 .homefoot{margin-top:16px; text-align:center; font-size:10.5px; color:var(--dim2)}
@@ -1912,7 +1924,8 @@ body.mini .mecard{padding:0}
       html += '<div class="row' + (me ? ' me' : '') + '">';
       html += '<div class="avatar">' + Profile.html(m.from, me, m.fromName || m.from) + '</div>';
       html += '<div class="col">';
-      if (!me) html += '<div class="who">' + esc(m.fromName || m.from) + '</div>';
+      // 自己的消息也标上是谁发的 —— 在「我的设备」里看到某个设备名时不至于误以为串线
+      html += '<div class="who">' + (me ? '我的 · ' : '') + esc(m.fromName || m.from) + '</div>';
 
       if (m.file) {
         var ready = m.file.ready;
@@ -3516,20 +3529,33 @@ function renderContacts() {
   keys.forEach(function (p) {
     var o = by[p];
     var nm = peerName(p);
-    if (p === 'me') nm += '（' + myDeviceIds().length + ' 台）';
+    var tag = '', sub = '';
+    if (p === 'me') {
+      // 「我的设备」到底有哪几台 —— 直接列出来，免得看到自己的设备名以为串线了
+      var mineNames = myDeviceIds().map(function (d) {
+        return (state.devices[d] || {}).name || d;
+      });
+      nm += '（' + mineNames.length + ' 台）';
+      tag = '<span class="cc-tag">我的</span>';
+      sub = mineNames.join('、');
+    } else {
+      var did = deviceIdOfOwner(p);
+      tag = '<span class="cc-tag other">' + esc(did || p) + '</span>';
+    }
     var av = (p === 'me') ? '<span>📱</span>'
-                          : Profile.html(deviceIdOfOwner(p), false, nm);
+        : Profile.html(deviceIdOfOwner(p), false, nm);
     html += '<button class="convcard' + (activePeer === p ? ' on' : '') +
-              '" data-peer="' + esc(p) + '">' +
-              '<span class="cc-av">' + av + '</span>' +
-              '<span class="cc-txt">' +
-                '<span class="cc-name">' + esc(nm) + '</span>' +
-                '<span class="cc-sub">' +
-                  (o.n ? (o.n + ' 条' + (o.last ? ' · ' + fmtTime(o.last) : '')) : '还没聊过') +
-                '</span>' +
-              '</span>' +
-              (o.unread ? '<span class="badge">' + o.unread + '</span>' : '') +
-            '</button>';
+      '" data-peer="' + esc(p) + '">' +
+      '<span class="cc-av">' + av + '</span>' +
+      '<span class="cc-txt">' +
+        '<span class="cc-name">' + esc(nm) + tag + '</span>' +
+        '<span class="cc-sub">' +
+          (o.n ? (o.n + ' 条' + (o.last ? ' · ' + fmtTime(o.last) : '')) : '还没聊过') +
+          (sub ? ' · ' + esc(sub) : '') +
+      '</span>' +
+      '</span>' +
+      (o.unread ? '<span class="badge">' + o.unread + '</span>' : '') +
+    '</button>';
   });
   if (html !== lastContactsHtml) { lastContactsHtml = html; host.innerHTML = html; }
 }
