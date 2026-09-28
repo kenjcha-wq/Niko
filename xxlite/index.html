@@ -2625,6 +2625,11 @@ window.addEventListener('error', function (e) {
                           : '否'));
     lines.push('scan：' + (window.__lastScan || '★一次都没发起过')
       + '　polling：' + (window.__pollingStarted ? '已启动' : '★没启动'));
+    // 当前加载的是哪一版代码，看这行就知道（旧版是 60 秒，新版 180 秒）
+    lines.push('超时：scan/state ' + Math.round(callTimeoutFor('xx.scan') / 1000) + 's'
+      + '　info ' + Math.round(callTimeoutFor('info') / 1000) + 's'
+      + '　其他 ' + Math.round(CALL_TIMEOUT_MS / 1000) + 's'
+      + ((window.__lastScan && window.__lastScan.indexOf('完成') === 0) ? '　★扫描已完成过' : ''));
     if (jsErrors.length) {
       lines.push('', '── 脚本报错（' + jsErrors.length + '）──');
       jsErrors.slice(-6).forEach(function (e) { lines.push(e); });
