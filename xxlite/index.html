@@ -823,6 +823,27 @@ body.mini .mecard{padding:0}
    "界面会安静地显示成没有消息，而且不会报任何错"）。
    现在：任何未捕获错误 → 页面顶部一条红横幅，写清错误和行号。
    看见它就截图，一眼能定位。 */
+window.__showBanner = function (msg) {
+  try {
+    var host = document.body || document.documentElement;
+    var el = document.getElementById('__errbanner');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = '__errbanner';
+      el.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:99999;background:#7a1f2b;' +
+        'color:#fff;font:12px/1.5 -apple-system,system-ui,sans-serif;padding:9px 12px;' +
+        'white-space:pre-wrap;box-shadow:0 2px 10px rgba(0,0,0,.4)';
+      (host || document.documentElement).appendChild(el);
+    }
+    el.textContent = '⚠️ 象信 Lite 出错（这条请截图给 Nik）：' + msg;
+  } catch (_) {}
+};
+// Promise 被拒绝也要说（页面自己的 unhandledrejection 只写进 #hint，
+// 而 #hint 在首页视图里根本看不见 —— 这就是"卡住不动、没任何反应"）
+window.addEventListener('unhandledrejection', function (e) {
+  var r = e && e.reason;
+  window.__showBanner('Promise 未处理：' + ((r && (r.message || r)) || r));
+});
 window.addEventListener('error', function (e) {
   try {
     var msg = (e && (e.message || (e.error && e.error.message))) || '未知错误';
@@ -837,7 +858,7 @@ window.addEventListener('error', function (e) {
         'white-space:pre-wrap;box-shadow:0 2px 10px rgba(0,0,0,.4)';
       (host || document.documentElement).appendChild(el);
     }
-    el.textContent = '⚠️ 象信 Lite 页面出错（这条请截图给 Nik）：' + msg + where;
+    window.__showBanner(msg + where);
   } catch (_) {}
 });
 
@@ -1266,6 +1287,7 @@ window.addEventListener('error', function (e) {
             if (!_rec[action] || _now - _rec[action] > 30000) {
               _rec[action] = _now;
               if (typeof noteJsError === 'function') noteJsError(_msg);
+              if (window.__showBanner) window.__showBanner(_msg);
             }
           } catch (_) {}
           finish({ error: _msg });
