@@ -816,6 +816,31 @@ body.mini .mecard{padding:0}
         深色用户会看到刺眼的白色闪一下（浅色用户看到黑闪）。
      ══════════════════════════════════════════════════════════════ -->
 <script>
+/* ── 页面出错别静默（2026-09-28）──────────────────────────────
+   以前页面一抛异常：轮询停了、界面不动，用户只看到"卡住不动"，
+   而控制台在外面根本看不见（主机不转发、系统日志也没有）——查无可查。
+   这份代码里早就踩过一次同样的坑（宿主回传 JSON 字符串那次：
+   "界面会安静地显示成没有消息，而且不会报任何错"）。
+   现在：任何未捕获错误 → 页面顶部一条红横幅，写清错误和行号。
+   看见它就截图，一眼能定位。 */
+window.addEventListener('error', function (e) {
+  try {
+    var msg = (e && (e.message || (e.error && e.error.message))) || '未知错误';
+    var where = (e && e.filename) ? ('\n' + String(e.filename).split('/').pop() + ':' + (e.lineno || '?')) : '';
+    var host = document.body || document.documentElement;
+    var el = document.getElementById('__errbanner');
+    if (!el) {
+      el = document.createElement('div');
+      el.id = '__errbanner';
+      el.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:99999;background:#7a1f2b;' +
+        'color:#fff;font:12px/1.5 -apple-system,system-ui,sans-serif;padding:9px 12px;' +
+        'white-space:pre-wrap;box-shadow:0 2px 10px rgba(0,0,0,.4)';
+      (host || document.documentElement).appendChild(el);
+    }
+    el.textContent = '⚠️ 象信 Lite 页面出错（这条请截图给 Nik）：' + msg + where;
+  } catch (_) {}
+});
+
 (function () {
   var t = 'gtalk-light';
   try {
