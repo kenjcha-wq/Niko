@@ -1254,8 +1254,21 @@ window.addEventListener('error', function (e) {
         setTimeout(function () {
           if (waiters[id] !== finish) return;      // 已经回过了，别覆盖真结果
           delete waiters[id];
-          finish({ error: '宿主没有响应（' + action + ' 超过 ' +
-                          Math.round(CALL_TIMEOUT_MS / 1000) + ' 秒）' });
+          var _msg = '宿主没有响应（' + action + ' 超过 ' +
+                     Math.round(CALL_TIMEOUT_MS / 1000) + ' 秒）';
+          // ⚠️ 2026-09-28：以前这里只 resolve 一个 error，界面上**什么都不显示** ——
+          //    用户看到的就是"卡住不动、没任何反应"，完全不知道是宿主没回话。
+          //    （作者当时的克制是对的：发送成功不该打红字；但**真失败**必须说话。）
+          //    节流：同一动作 30 秒内只报一次（页面每 5 秒轮询，不节流会刷屏）。
+          try {
+            var _rec = window.__hostTimeoutAt || (window.__hostTimeoutAt = {});
+            var _now = Date.now();
+            if (!_rec[action] || _now - _rec[action] > 30000) {
+              _rec[action] = _now;
+              if (typeof noteJsError === 'function') noteJsError(_msg);
+            }
+          } catch (_) {}
+          finish({ error: _msg });
         }, CALL_TIMEOUT_MS);
       }
       var obj = Object.assign({ id: id, action: action }, payload || {});
