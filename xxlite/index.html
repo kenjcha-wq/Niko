@@ -1242,6 +1242,16 @@ window.addEventListener('error', function (e) {
   // 超时时长允许被测试覆盖（window.__xxCallTimeout），生产就是 60 秒
   var CALL_TIMEOUT_MS = (typeof window.__xxCallTimeout === 'number' && window.__xxCallTimeout > 0)
     ? window.__xxCallTimeout : 60000;
+  // ⚠️ 2026-09-28：**扫描类要单独放宽**。
+  //    实测（异步象信/selftest-supabase 接真库跑）：一次冷扫描 41 条消息要 **23 秒**
+  //    —— 因为它是"逐条读 N 个消息文件"（N+1 次往返），每次 400~800ms。
+  //    真实设备消息更多 → 必然超过 60 秒 → 页面超时 → 用户看到"卡住不动"。
+  //    第二次扫描走文件缓存只要 1.4 秒（所以只要熬过第一次就好）。
+  //    真正修法是批量读（N+1 → 1），这里先止血。
+  var CALL_TIMEOUT_OVERRIDE = { 'xx.scan': 180000, 'xx.state': 180000, 'info': 45000 };
+  function callTimeoutFor(action) {
+    return CALL_TIMEOUT_OVERRIDE[action] || CALL_TIMEOUT_MS;
+  }
 
   // 最近几次桥调用：有没有回话、用了多久。
   // 「消息发出去了但输入框没清」这种事，光看界面完全不知道为什么 ——
@@ -1276,7 +1286,7 @@ window.addEventListener('error', function (e) {
           if (waiters[id] !== finish) return;      // 已经回过了，别覆盖真结果
           delete waiters[id];
           var _msg = '宿主没有响应（' + action + ' 超过 ' +
-                     Math.round(CALL_TIMEOUT_MS / 1000) + ' 秒）';
+                     Math.round(callTimeoutFor(action) / 1000) + ' 秒）';
           // ⚠️ 2026-09-28：以前这里只 resolve 一个 error，界面上**什么都不显示** ——
           //    用户看到的就是"卡住不动、没任何反应"，完全不知道是宿主没回话。
           //    （作者当时的克制是对的：发送成功不该打红字；但**真失败**必须说话。）
@@ -1291,7 +1301,7 @@ window.addEventListener('error', function (e) {
             }
           } catch (_) {}
           finish({ error: _msg });
-        }, CALL_TIMEOUT_MS);
+        }, callTimeoutFor(action));
       }
       var obj = Object.assign({ id: id, action: action }, payload || {});
       try {
@@ -2103,12 +2113,13 @@ window.addEventListener('error', function (e) {
   //  刷新
   // ══════════════════════════════════════════════════════════
   function refresh(showBar) {
+    window.__refreshCount = (window.__refreshCount || 0) + 1;
     // ⚠️ busy 是**整页共享**的防抖标志。某次 scan 永远不结束的话，
     //    busy 会一直卡在 true，之后**所有** refresh 都变成空操作 ——
     //    界面上就是「消息列表再也不更新 / 发出去的消息不出现」。
     //    加了 call() 的超时之后基本不会发生了，这里再兜一道。
     if (busy) {
-      if (busySince && (Date.now() - busySince) > 90000) {
+      if (busySince && (Date.now() - busySince) > 200000) {   // 冷扫描可能一两分钟，别再 90 秒就抢跑
         noteJsError('refresh 卡了 ' + Math.round((Date.now() - busySince) / 1000) +
                     ' 秒，强制放行一次');
       } else {
@@ -2118,7 +2129,10 @@ window.addEventListener('error', function (e) {
     busy = true;
     busySince = Date.now();
     if (showBar) busyOn(true);
+    window.__lastScan = '发起 ' + new Date().toLocaleTimeString('zh-CN');
     return API.scan().then(function (r) {
+      window.__lastScan = '完成 ' + new Date().toLocaleTimeString('zh-CN') +
+        (r && r.error ? (' ✗ ' + r.error) : (' ✓ ' + ((r && r.messages || []).length) + ' 条'));
       busy = false;
       busySince = 0;
       busyOn(false);
@@ -2600,6 +2614,17 @@ window.addEventListener('error', function (e) {
     lines.push('同步位置：' + (state.root || '?'));
     lines.push('会话数：' + ((state.conversations || []).length));
     lines.push('界面：' + (MINI ? '小窗' : '完整') + '　UA：' + navigator.userAgent.slice(0, 80));
+    // ── 「卡在哪一步」的硬指标（2026-09-28 加）─────────────────────
+    // 起因：电脑端停在首页、state 全空，而 callLog 里只有 info ✓ ——
+    // 但**卡住的调用不会进 callLog**（日志只在完成时记），所以"只有 info"
+    // 同时符合两种可能：门禁挡着、或 busy 卡死让 refresh 变成空操作。
+    // 这两行直接把答案摆出来，不用再猜。
+    var _gate = !XXAuth.isEnabled() ? '未设' : (XXAuth.isUnlocked() ? '已解锁' : '★锁着（卡在这）');
+    lines.push('门禁：' + _gate + '　refresh 次数：' + (window.__refreshCount || 0)
+      + '　busy：' + (busy ? ('★卡住 ' + Math.round((Date.now() - (busySince || Date.now())) / 1000) + 's')
+                          : '否'));
+    lines.push('scan：' + (window.__lastScan || '★一次都没发起过')
+      + '　polling：' + (window.__pollingStarted ? '已启动' : '★没启动'));
     if (jsErrors.length) {
       lines.push('', '── 脚本报错（' + jsErrors.length + '）──');
       jsErrors.slice(-6).forEach(function (e) { lines.push(e); });
@@ -4151,6 +4176,7 @@ function renderHome() {
       showGate(startPolling);
       return;
     }
+    window.__pollingStarted = true;
     var interval = (API.mode === 'core') ? 5000 : 3000;
     refresh(true).then(function () {
       setInterval(function () {
