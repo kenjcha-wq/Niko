@@ -1815,7 +1815,16 @@ body.mini .mecard{padding:0}
   // ══════════════════════════════════════════════════════════
   //  渲染
   // ══════════════════════════════════════════════════════════
+  // ── 打开/切换会话时要**直接跳到底**（2026-09-28 用户报"打开得往下滑"）──
+  // 原因见下面渲染处：nearBottom 是渲染**之前**算的，刚打开时 scrollTop=0 →
+  // 不算贴底 → 走 else 把位置还原成 0，所以每次打开都在顶部。
+  var stickForce = true;        // 首屏必跳
+  var lastPeerDrawn = null;     // 上一个渲染的会话（换了就跳）
+  var lastViewDrawn = null;     // 上一个视图（首页→聊天也跳）
+
   function render() {
+    var peerNow = (typeof activePeer === 'string') ? activePeer : '';
+    var jumpBottom = stickForce || peerNow !== lastPeerDrawn || VIEW !== lastViewDrawn;
     var nearBottom = (listEl.scrollHeight - listEl.scrollTop - listEl.clientHeight) < 90;
     var unread = state.messages.filter(function (m) { return m.unread; }).length;
     state.unreadCount = unread;
@@ -1969,8 +1978,19 @@ body.mini .mecard{padding:0}
       var keepTop = listEl.scrollTop;    // 不在底部时，等会儿要还原到这个位置
       listEl.innerHTML = html;
       // 贴底就跟着新消息走；否则把原位置还回去（**原来这里缺 else：一刷新就跳**）
-      if (nearBottom) listEl.scrollTop = listEl.scrollHeight;
-      else listEl.scrollTop = keepTop;
+      if (jumpBottom || nearBottom) {
+        // 打开/切会话：**瞬移**到底。容器是 scroll-behavior:smooth，
+        // 不临时改掉的话会从顶上滑一段（看着像"卡了一下"）。
+        var sb = listEl.style.scrollBehavior;
+        if (jumpBottom) listEl.style.scrollBehavior = 'auto';
+        listEl.scrollTop = listEl.scrollHeight;
+        if (jumpBottom) listEl.style.scrollBehavior = sb || '';
+      } else {
+        listEl.scrollTop = keepTop;
+      }
+      stickForce = false;
+      lastPeerDrawn = peerNow;
+      lastViewDrawn = VIEW;
     }
 
     // 图片预览每轮都过一遍：已预览过的很便宜（只是 display 一下），
